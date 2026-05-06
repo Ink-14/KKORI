@@ -43,6 +43,11 @@ TEST_SPELL_CHECK_RULES = [
     .id("는다던가_는다든가_오타")
     .form("는다던가")
     .msg("나열할 때는 '는다던가'가 올바른 표현입니다.").build(),
+    
+    *rule()
+    .id("던지_든지_오타")
+    .AND(tags({Tag.연결어미, Tag.종결어미, Tag.보조사}), form("던지"))
+    .msg("나열할 때는 '든지'가 올바른 표현입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:
@@ -75,9 +80,11 @@ ML_TRAINED = [
 
 ML_LABELINGS = [
     *rule()
-    .id("던지_든지_오타")
-    .AND(tags({Tag.연결어미, Tag.종결어미, Tag.보조사}), form("던지"))
-    .msg("나열할 때는 '든지'가 올바른 표현입니다.").build(),
+    .id("예요_오타")
+    .AND(tags({Tag.일반명사, Tag.의존명사, Tag.고유명사, Tag.명사파생접미사, Tag.명사형전성어미}), NOT(any_batchim()))
+    .tag_form(Tag.긍정지정사, "이").opt()
+    .tag_form(Tag.종결어미, "에요")
+    .msg("'{dform[0]}예요'가 올바른 표현입니다.").build(),
 ]
 
 SPELL_CHECK_RULES: list[KoSpellRules] = [

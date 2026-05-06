@@ -2004,6 +2004,15 @@ _VV = [
     .tag(Tag.일반명사)
     .tag_form(Tag.동사, "부리").if_not_spaced()
     .msg("'{dform[0]} 부리다'로 띄어 써야 합니다.").build(),
+    
+    *rule()
+    .id("사그라들다_붙여쓰기")
+    .tag_form(Tag.동사, "사")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.동사, "그라")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "들").if_spaced()
+    .msg("'사그라들다'로 붙여 써야 합니다.").build(),
 ]
 
 _NNG_VV = [
@@ -2079,6 +2088,7 @@ _NNG_VV = [
     *NNG_and_some("판가름", "나", "동사", SpacingRule.SPACED),
     *NNG_and_some("소름", "돋", "동사불규칙활용", SpacingRule.SPACED),
     *NNG_and_some("이득", "보", "동사", SpacingRule.SPACED),
+    *NNG_and_some("뒷짐", "지", "동사", SpacingRule.SPACED),
 ]
 
 _VV_EC_VV = [
@@ -2257,6 +2267,12 @@ _VX = [
     .tag_form(Tag.연결어미, "ᆯ까")
     .tag_form(Tag.보조용언, "보").if_not_spaced()
     .msg("'~까 봐'로 띄어 써야 합니다.").build(),
+    
+    *rule()
+    .id("게 하다_띄어쓰기")
+    .tag_form(Tag.연결어미, "게")
+    .tag_form(Tag.보조용언, "하").if_not_spaced()
+    .msg("'~게 하다'로 띄어 써야 합니다.").build(),
 ]
 
 _있다_없다_띄어쓰기_set = {"인기", "필요", "품위", "가치", "자비", "자신", "면목", "관심", "부담", "실력", "인망", "의미"}
@@ -2274,7 +2290,7 @@ _VA = [
 
     *rule()
     .NOT(tag(Tag.관형사)).context()
-    .forms({"꼼짝", "쓸데", "문제", "빈틈", "온데간데", "꾸밈", "스스럼", "부질", "재미", "소용", "틀림", "쓸데", "끊임", "다름", "염치", "빈틈", "정신", "다름", "변함", "끄떡", "문제", "어처구니", "인정사정"})
+    .forms({"꼼짝", "쓸데", "문제", "빈틈", "온데간데", "꾸밈", "스스럼", "부질", "재미", "소용", "틀림", "쓸데", "끊임", "다름", "염치", "빈틈", "정신", "다름", "변함", "끄떡", "문제", "어처구니", "인정사정", "어이"})
     .OR(tag_form(Tag.형용사, "없"), tag_form(Tag.일반부사, "없이")).if_spaced()
     .msg("'{form[0]}없다'로 붙여 써야 합니다.").build(),
 
