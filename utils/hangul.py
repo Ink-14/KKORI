@@ -11,6 +11,9 @@ CHO_LIST = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ'
 JUNG_LIST = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ']
 JONG_LIST = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
 BATCHIM_LIST = ['', 'ᆨ', 'ᆩ', 'ᆪ', 'ᆫ', 'ᆬ', 'ᆭ', 'ᆮ', 'ᆯ', 'ᆰ', 'ᆱ', 'ᆲ', 'ᆳ', 'ᆴ', 'ᆵ', 'ᆶ', 'ᆷ', 'ᆸ', 'ᆹ', 'ᆺ', 'ᆻ', 'ᆼ', 'ᆽ', 'ᆾ', 'ᆿ', 'ᇀ', 'ᇁ', 'ᇂ']
+BATCHIM_DICT = {"__UNK__": 0}
+for i in BATCHIM_LIST:
+    BATCHIM_DICT[i] = len(BATCHIM_DICT)
 
 CHO_SET = {i for i in CHO_LIST}
 JUNG_SET = {i for i in JUNG_LIST}
@@ -18,11 +21,6 @@ JONG_SET = {i for i in JONG_LIST}
 JAMO_SET = CHO_SET | JUNG_SET | JONG_SET - {''}
 JAEUM_SET = CHO_SET | JONG_SET
 JAMO_CHARCODE_SET = {ord(i) for i in JAMO_SET}
-
-BATCHIM_REPLACE_MAP = {
-    "ᆯ": "ㄹ",
-    "ᆫ": "ᆫ"
-}
 
 def is_hangul(char: str):
     charpoint = ord(char)
@@ -52,6 +50,12 @@ def get_jongseong(char: str) -> str:
 
 def get_compatible_batchim(char) -> str:
     return BATCHIM_LIST[(convert_to_hangul_charpoint(char) % JONGSEONG_IDX_POINT)]
+
+def get_compatible_batchim_int(char: str) -> int:
+    if HANGUL_COMP_START <= ord(char) <= HANGUL_COMP_END:
+        return convert_to_hangul_charpoint(char) % JONGSEONG_IDX_POINT + 1
+    else:
+        return 0
 
 def remove_batchim(char: str) -> str:
     if len(char) != 1:

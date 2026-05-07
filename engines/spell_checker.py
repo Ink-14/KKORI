@@ -2,10 +2,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from collections import deque
 from typing import Iterator
+from abc import ABC, abstractmethod
 
 from korean_spell_checker.models.interface import KoToken, SpellError, SpellErrorType
-from korean_spell_checker.models.spell_checker_classes import SpacingRule, Condition, TagCondition, FormCondition, TagAndFormCondition, NotCondition, BatchimCondition, AnyBatchimCondition
-from korean_spell_checker.utils.hangul import get_compatible_batchim, is_jamo
+from korean_spell_checker.models.spell_checker_classes import SpacingRule, Condition, TagCondition, FormCondition, TagAndFormCondition, NotCondition, BatchimCondition, AnyBatchimCondition, AndCondition, OrCondition
+from korean_spell_checker.utils.hangul import get_compatible_batchim_int, BATCHIM_DICT
 from korean_spell_checker.configs.spell_checker_config_builder import KoSpellRules, CompiledMessage
 
 @dataclass(slots=True)
@@ -16,15 +17,35 @@ class _EnrichedToken:
     end: int
     len: int
     lemma: str
-    batchim: str
+    batchim: int
 
 @dataclass(frozen=True, slots=True)
 class _Transition:
-    condition: Condition
+    condition: Condition | InternedCondition
     target_node: _RuleNode
     spacing_rule: SpacingRule = SpacingRule.ANY
     is_optional: bool = False
     is_context: bool = False
+
+# rust 포팅 시 struct가 될 부분이므로 엔진에서 정의
+@dataclass(frozen=True, slots=True)
+class InternedCondition(ABC):
+    @abstractmethod
+    def match(self, token: _EnrichedToken) -> bool:
+        """상속받은 클래스에서 구현해야 하는 추상 메서드. 조건 만족 시 True를 반환하도록 구현해야 함."""
+        raise NotImplementedError
+
+@dataclass(frozen=True, slots=True)
+class InternedBatchimCondition(InternedCondition):
+    batchim: int
+    
+    def match(self, token: _EnrichedToken) -> bool:
+        return token.batchim == self.batchim
+    
+@dataclass(frozen=True, slots=True)
+class InternedAnyBatchimCondition(InternedCondition):
+    def match(self, token: _EnrichedToken) -> bool:
+        return token.batchim > 1 # 0 = UNK, 1 = 받침 없음
 
 class _RuleNode:
     __slots__ = ('tag_transitions', 'form_transitions', 'form_and_tag_transitions', 'batchim_transitions', 'any_batchim_transitions', 'fallback_transitions', '_all_transitions', '_optional_closure', 'output_message', 'output_path', 'error_type', 'rule_id')
@@ -38,7 +59,7 @@ class _RuleNode:
         self.tag_transitions: dict[str, list[_Transition]] = {}
         self.form_transitions: dict[str, list[_Transition]] = {}
         self.form_and_tag_transitions: dict[str, dict[str, list[_Transition]]] = {}
-        self.batchim_transitions: dict[str, list[_Transition]] = {}
+        self.batchim_transitions: list[list[_Transition] | None] | None = None
         self.any_batchim_transitions: list[_Transition] = []
 
         self.fallback_transitions: list[_Transition] = []
@@ -74,7 +95,7 @@ class _RuleNode:
         self._optional_closure = closure
         return closure
     
-    def get_or_create_next_node(self, condition: Condition, spacing_rule: SpacingRule, is_optional: bool, is_context: bool) -> _RuleNode:
+    def get_or_create_next_node(self, condition: Condition | InternedCondition, spacing_rule: SpacingRule, is_optional: bool, is_context: bool) -> _RuleNode:
         """조건에 맞는 간선을 찾거나 새로 생성하여 다음 노드를 반환하는 함수."""
         
         existing_node = self._find_transition(condition, spacing_rule, is_optional, is_context)
@@ -88,7 +109,7 @@ class _RuleNode:
         
         return next_node
     
-    def _find_transition(self, cond: Condition, spacing: SpacingRule, optional: bool, context: bool) -> _RuleNode | None:
+    def _find_transition(self, cond: Condition | InternedCondition, spacing: SpacingRule, optional: bool, context: bool) -> _RuleNode | None:
         target_list = []
         
         if isinstance(cond, TagAndFormCondition):
@@ -99,9 +120,13 @@ class _RuleNode:
             target_list = self.tag_transitions.get(cond.tag, [])
         elif isinstance(cond, FormCondition):
             target_list = self.form_transitions.get(cond.form, [])
-        elif isinstance(cond, BatchimCondition):
-            target_list = self.batchim_transitions.get(cond.batchim, [])
-        elif isinstance(cond, AnyBatchimCondition):
+        elif isinstance(cond, InternedBatchimCondition):
+            if self.batchim_transitions is None:
+                return None
+            if self.batchim_transitions[cond.batchim] is None: # type: ignore
+                return None
+            target_list = self.batchim_transitions[cond.batchim] # type: ignore
+        elif isinstance(cond, InternedAnyBatchimCondition):
             target_list = self.any_batchim_transitions
         else:
             for t in self.fallback_transitions:
@@ -115,16 +140,20 @@ class _RuleNode:
             
         return None
 
-    def _add_transition_to_node(self, cond: Condition, trans: _Transition):
+    def _add_transition_to_node(self, cond: Condition | InternedCondition, trans: _Transition):
         if isinstance(cond, TagAndFormCondition):
             self.form_and_tag_transitions.setdefault(cond.form, {}).setdefault(cond.tag, []).append(trans)
         elif isinstance(cond, TagCondition):
             self.tag_transitions.setdefault(cond.tag, []).append(trans)
         elif isinstance(cond, FormCondition):
             self.form_transitions.setdefault(cond.form, []).append(trans)
-        elif isinstance(cond, BatchimCondition):
-            self.batchim_transitions.setdefault(cond.batchim, []).append(trans)
-        elif isinstance(cond, AnyBatchimCondition):
+        elif isinstance(cond, InternedBatchimCondition):
+            if self.batchim_transitions is None:
+                self.batchim_transitions = [None] * 29 # type: ignore
+            if self.batchim_transitions[cond.batchim] is None: # type: ignore
+                self.batchim_transitions[cond.batchim] = [] # type: ignore
+            self.batchim_transitions[cond.batchim].append(trans) # type: ignore
+        elif isinstance(cond, InternedAnyBatchimCondition):
             self.any_batchim_transitions.append(trans)
         else:
             self.fallback_transitions.append(trans)
@@ -135,6 +164,19 @@ class SpellChecker:
         self._root = _RuleNode()
         self._is_frozen: bool = False
         self._debug: bool = debug
+        
+    def _interning(self, cond: Condition) -> InternedCondition | Condition:
+        if isinstance(cond, BatchimCondition):
+            return InternedBatchimCondition(BATCHIM_DICT[cond.batchim])
+        elif isinstance(cond, AnyBatchimCondition):
+            return InternedAnyBatchimCondition()
+        elif isinstance(cond, AndCondition):
+            return AndCondition(conditions=tuple(self._interning(c) for c in cond.conditions))  # type: ignore
+        elif isinstance(cond, OrCondition):
+            return OrCondition(conditions=tuple(self._interning(c) for c in cond.conditions))  # type: ignore
+        elif isinstance(cond, NotCondition):
+            return NotCondition(condition=self._interning(cond.condition))  # type: ignore
+        return cond
 
     def _add_rule(self, rules: KoSpellRules) -> None:
         if self._is_frozen:
@@ -148,6 +190,7 @@ class SpellChecker:
             return
           
         for cond, spacing, optional, context in conditions:
+            cond = self._interning(cond)
             current = current.get_or_create_next_node(condition=cond, spacing_rule=spacing, is_optional=optional, is_context=context)
             if self._debug:
                 path.append(f"{cond}, {spacing}, {optional}, {context}")
@@ -205,7 +248,7 @@ class SpellChecker:
         enriched_tokens = [
             _EnrichedToken(
                 form=t.form, tag=t.tag, start=t.start, end=t.end, len=t.len, lemma=t.lemma,
-                batchim=(t.form[-1] if is_jamo(t.form[-1]) else get_compatible_batchim(t.form[-1]))
+                batchim=(get_compatible_batchim_int(t.form[-1]))
             )
             for t in tokens
         ]
@@ -294,8 +337,8 @@ class SpellChecker:
                 if ft2 := node.form_transitions.get(token.form):
                     candidates.extend(ft2)
                 if token.batchim:
-                    if bt := node.batchim_transitions.get(token.batchim):
-                        candidates.extend(bt)
+                    if node.batchim_transitions is not None and node.batchim_transitions[token.batchim] is not None:
+                        candidates.extend(node.batchim_transitions[token.batchim]) # type: ignore
                     candidates.extend(node.any_batchim_transitions)
 
                 for t in node.fallback_transitions:
