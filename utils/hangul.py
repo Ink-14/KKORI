@@ -52,8 +52,9 @@ def get_compatible_batchim(char) -> str:
     return BATCHIM_LIST[(convert_to_hangul_charpoint(char) % JONGSEONG_IDX_POINT)]
 
 def get_compatible_batchim_int(char: str) -> int:
-    if HANGUL_COMP_START <= ord(char) <= HANGUL_COMP_END:
-        return convert_to_hangul_charpoint(char) % JONGSEONG_IDX_POINT + 1
+    charpoint = ord(char)
+    if HANGUL_COMP_START <= charpoint <= HANGUL_COMP_END:
+        return (charpoint - HANGUL_COMP_START) % JONGSEONG_IDX_POINT + 1 # 0번은 '한글 아님'으로 예약
     else:
         return 0
 
