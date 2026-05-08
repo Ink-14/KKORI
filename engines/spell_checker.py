@@ -492,7 +492,7 @@ class SpellChecker:
             start_idx, end_idx = idxs
 
             for trans in current_node.fallback_transitions:
-                if not isinstance(trans.condition, NotCondition) and not trans.spacing_rule == SpacingRule.ANY and not trans.is_context:
+                if not (isinstance(trans.condition, NotCondition) and trans.spacing_rule == SpacingRule.ANY and trans.is_context):
                     continue
 
                 target = trans.target_node
