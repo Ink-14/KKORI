@@ -180,6 +180,12 @@ class TagGroup:
     전부 = set(Tag)
 
 TAG_NAMES = {i.name for i in Tag}
+TAG2IDX = {"__UNK__": 0}
+TAGNAME2IDX = {"__UNK__": 0}
+
+for idx, tag in enumerate(Tag):
+    TAG2IDX[tag.value] = idx + 1
+    TAGNAME2IDX[tag.name] = idx + 1
 
 class KoToken(Protocol):
     """한국어 토큰 인터페이스.

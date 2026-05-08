@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import warnings
 
 from korean_spell_checker.models.spell_checker_classes import *
-from korean_spell_checker.models.interface import SpellErrorType, Tag, TagGroup
+from korean_spell_checker.models.interface import SpellErrorType, Tag
 from korean_spell_checker.configs.spell_checker_config_builder_parser import MessageTokenizer, MessageParser, TagNode, TextNode, MethodNode, QuotedNode, MESSAGE_METHODS
 
 ErrorMessage: TypeAlias = str
@@ -203,7 +203,7 @@ class _RuleStepData:
 class RuleBuilder:
     def __init__(self, error_type: SpellErrorType):
         self.steps: list[_RuleStepData] = []
-        self.message: str
+        self.message: str | None = None
         self.error_type: SpellErrorType = error_type
         self.rule_id: str = ""
 
@@ -283,7 +283,7 @@ class RuleBuilder:
         if not self.steps:
             raise ValueError("No condition to set context flag. Call a condition method first.")
         if self.steps[-1].is_context:
-            warnings.warn("Context flag is already set on this condition.")
+            warnings.warn("Context flag is already set on this condition.", stacklevel=2)
         
         self.steps[-1].is_context = True
         return self
@@ -335,10 +335,10 @@ class RuleBuilder:
             errors.append("Error message must be set using msg().")
         if self.error_type == SpellErrorType.NOT_SET:
             errors.append("Error type has not been set. Use errtype() to set it.")
-        elif self.error_type == SpellErrorType.NEED_ML_JUDGE and self.rule_id is None:
+        elif self.error_type == SpellErrorType.NEED_ML_JUDGE and self.rule_id == "":
             errors.append("NEED_ML_JUDGE type requires a rule_id.")
-        if self.steps and not any(not s.is_context for s in self.steps):
-            errors.append("At least one non-context condition must be added.")
+        if self.steps and not any((not s.is_context) and (not s.is_optional) for s in self.steps):
+            errors.append("At least one required (non-context, non-optional) condition must be added.")
 
         if errors:
             raise ValueError(
