@@ -12,9 +12,9 @@ class SpacingRule(Enum):
         ATTACHED: 붙어 있는 상태.
         ANY: 아무 상태나 허용.
     """
-    SPACED = auto()
-    ATTACHED = auto()
-    ANY = auto()
+    ANY = 0
+    SPACED = 1
+    ATTACHED = 2
 
 @dataclass(frozen=True, slots=True)
 class Condition(ABC):
