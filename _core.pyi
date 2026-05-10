@@ -1,5 +1,110 @@
+from typing import Any, Callable
+
 class RustRawStringSearcher:
     def __new__(cls) -> "RustRawStringSearcher": ...
     def add_word(self, word: str, msg: str, error_type: str, rule_id: str) -> None: ...
     def build(self) -> None: ...
     def search_raw(self, word: str) -> list[tuple[str, str, int, int, str]]: ...
+
+# ── Condition 타입들 ──
+
+class TagCondition:
+    def __new__(cls, tag: str) -> "TagCondition": ...
+
+class FormCondition:
+    def __new__(cls, form: str) -> "FormCondition": ...
+
+class TagAndFormCondition:
+    def __new__(cls, form: str, tag: str) -> "TagAndFormCondition": ...
+
+class LemmaCondition:
+    def __new__(cls, lemma: str) -> "LemmaCondition": ...
+
+class AnyCondition:
+    def __new__(cls) -> "AnyCondition": ...
+
+class AnyBatchimCondition:
+    def __new__(cls) -> "AnyBatchimCondition": ...
+
+class NoBatchimCondition:
+    def __new__(cls) -> "NoBatchimCondition": ...
+
+class BatchimCondition:
+    def __new__(cls, batchim: str) -> "BatchimCondition": ...
+
+class LengthCondition:
+    def __new__(cls, length: int) -> "LengthCondition": ...
+
+class FirstTokenCondition:
+    def __new__(cls) -> "FirstTokenCondition": ...
+
+class TagSetCondition:
+    def __new__(cls, tags: list[str]) -> "TagSetCondition": ...
+
+class FormSetCondition:
+    def __new__(cls, forms: list[str]) -> "FormSetCondition": ...
+
+class AndCondition:
+    def __new__(cls, conditions: list[Any]) -> "AndCondition": ...
+
+class OrCondition:
+    def __new__(cls, conditions: list[Any]) -> "OrCondition": ...
+
+class NotCondition:
+    def __new__(cls, condition: Any) -> "NotCondition": ...
+
+# ── SpellError / SpellErrorType ──
+
+class SpellErrorType:
+    NotSet: "SpellErrorType"
+    SpellingRaw: "SpellErrorType"
+    SpacingRaw: "SpellErrorType"
+    MeaningRaw: "SpellErrorType"
+    LoanwordRaw: "SpellErrorType"
+    Spacing: "SpellErrorType"
+    Meaning: "SpellErrorType"
+    Spelling: "SpellErrorType"
+    Specific: "SpellErrorType"
+    Loanword: "SpellErrorType"
+    Warning: "SpellErrorType"
+    NeedMLJudge: "SpellErrorType"
+    Test: "SpellErrorType"
+
+    def __int__(self) -> int: ...
+
+class SpellError:
+    @property
+    def error_type(self) -> SpellErrorType: ...
+    @property
+    def error_message(self) -> str: ...
+    @property
+    def start_index(self) -> int: ...
+    @property
+    def end_index(self) -> int: ...
+    @property
+    def rule_id(self) -> str: ...
+    @property
+    def debug_path(self) -> str | None: ...
+
+# ── RuleCheckerBuilder / RuleChecker ──
+
+_RustCondition = (
+    TagCondition | FormCondition | TagAndFormCondition | LemmaCondition |
+    AnyCondition | AnyBatchimCondition | NoBatchimCondition | BatchimCondition |
+    LengthCondition | FirstTokenCondition | TagSetCondition | FormSetCondition |
+    AndCondition | OrCondition | NotCondition
+)
+
+class RuleCheckerBuilder:
+    def __new__(cls, dbg_mode: bool) -> "RuleCheckerBuilder": ...
+    def add_rule(
+        self,
+        steps: list[tuple[Any, int, bool, bool]],
+        message: str | Callable[..., str],
+        error_type: int,
+        rule_id: str,
+    ) -> None: ...
+    def build(self) -> "RuleChecker": ...
+
+class RuleChecker:
+    def check(self, tokens: list[Any]) -> list[SpellError]: ...

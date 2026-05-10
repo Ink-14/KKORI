@@ -3,22 +3,23 @@ from typing import  Protocol
 from dataclasses import dataclass
 
 class SpellErrorType(Enum):
-    SPELLING_RAW = auto()
-    SPACING_RAW = auto()
-    MEANING_RAW = auto()
-    LOANWORD_RAW = auto()
+    NOT_SET = 0
 
-    SPACING = auto()
-    MEANING = auto()
-    SPELLING = auto()
-    SPECIFIC = auto()
-    LOANWORD = auto()
+    SPELLING_RAW = 1
+    SPACING_RAW = 2
+    MEANING_RAW = 3
+    LOANWORD_RAW = 4
 
-    WARNING = auto()
-    NEED_ML_JUDGE = auto()
+    SPACING = 5
+    MEANING = 6
+    SPELLING = 7
+    SPECIFIC = 8
+    LOANWORD = 9
+
+    WARNING = 10
+    NEED_ML_JUDGE = 11
     
-    TEST = auto()
-    NOT_SET = auto()
+    TEST = 999
 
 @dataclass(frozen=True, slots=True)
 class SpellError:
