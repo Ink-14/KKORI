@@ -38,7 +38,7 @@ impl EnrichedToken {
     }
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Condition {
     Tag(u8),
     Form(u32),
@@ -64,7 +64,7 @@ impl Condition {
             Condition::Form(form) => *form == token.form(),
             Condition::FormTag(formtag) => *formtag == token.form_tag,
             Condition::Length(length) => *length == token.len,
-            Condition::Batchim(batchim) => *batchim == token.batchim,
+            Condition::Batchim(batchim) => *batchim == token.batchim, 
             Condition::Lemma(lemma) => *lemma == token.lemma,
             Condition::Any => true,
             Condition::AnyBatchim => token.batchim > 1, // 0 = 한글 이외, 1 = 받침 없음
@@ -103,4 +103,51 @@ impl Condition {
     pub fn not(condition: Condition) -> Condition {
         Condition::Not(Box::new(condition))
     }
+}
+
+#[derive(PartialEq)]
+pub enum SpacingRule {
+    ANY = 0,
+    SPACED,
+    ATTACHED
+}
+
+type RuleStep = (Condition, SpacingRule, bool, bool);
+
+pub struct KoSpellRule {
+    pub steps: Vec<RuleStep>,
+    pub message: String,
+    pub error_type: String,
+    pub rule_id: String,
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub enum SpellErrorType {
+    NotSet = 0,
+
+    SpellingRaw,
+    SpacingRaw,
+    MeaningRaw,
+    LoanwordRaw,
+
+    Spacing,
+    Meaning,
+    Spelling,
+    Specific,
+    Loanword,
+
+    Warning,
+    NeedMLJudge,
+
+    Test,
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct SpellError {
+    pub error_type: SpellErrorType,
+    pub error_message: String,
+    pub start_index: u32,
+    pub end_index: u32,
+    pub rule_id: String,
+    pub debug_path: Option<String>
 }
