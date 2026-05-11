@@ -72,15 +72,6 @@ impl AnyBatchimCondition {
 }
 
 #[pyclass]
-pub struct NoBatchimCondition;
-
-#[pymethods]
-impl NoBatchimCondition {
-    #[new]
-    pub fn new() -> Self { NoBatchimCondition }
-}
-
-#[pyclass]
 pub struct BatchimCondition {
     pub batchim: String,
 }

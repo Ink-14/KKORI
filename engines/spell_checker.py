@@ -10,7 +10,6 @@ from _core import (
     LemmaCondition as RustLemmaCondition,
     AnyCondition as RustAnyCondition,
     AnyBatchimCondition as RustAnyBatchimCondition,
-    NoBatchimCondition as RustNoBatchimCondition,
     BatchimCondition as RustBatchimCondition,
     LengthCondition as RustLengthCondition,
     FirstTokenCondition as RustFirstTokenCondition,

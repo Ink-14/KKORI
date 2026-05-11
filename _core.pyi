@@ -28,9 +28,6 @@ class AnyCondition:
 class AnyBatchimCondition:
     def __new__(cls) -> "AnyBatchimCondition": ...
 
-class NoBatchimCondition:
-    def __new__(cls) -> "NoBatchimCondition": ...
-
 class BatchimCondition:
     def __new__(cls, batchim: str) -> "BatchimCondition": ...
 
@@ -92,7 +89,7 @@ class SpellError:
 
 _RustCondition = (
     TagCondition | FormCondition | TagAndFormCondition | LemmaCondition |
-    AnyCondition | AnyBatchimCondition | NoBatchimCondition | BatchimCondition |
+    AnyCondition | AnyBatchimCondition | BatchimCondition |
     LengthCondition | FirstTokenCondition | TagSetCondition | FormSetCondition |
     AndCondition | OrCondition | NotCondition
 )

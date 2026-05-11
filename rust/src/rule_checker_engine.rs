@@ -351,9 +351,6 @@ impl RuleCheckerBuilder {
         if obj.downcast::<AnyBatchimCondition>().is_ok() {
             return Ok(Condition::AnyBatchim);
         }
-        if obj.downcast::<NoBatchimCondition>().is_ok() {
-            return Ok(Condition::NoBatchim);
-        }
         if obj.downcast::<FirstTokenCondition>().is_ok() {
             return Ok(Condition::First);
         }
@@ -552,7 +549,7 @@ impl RuleChecker {
                 if let Some(start_token_idx) = start_idx {
                     if start_token_idx < i && !yielded_outputs.contains(&(node_idx, start_token_idx)) {
                         yielded_outputs.insert((node_idx, start_token_idx));
-                        Self::collect_error(node, tokens, node_idx, start_token_idx, end_idx, &mut current_step_errors);
+                        Self::collect_error(node, node_idx, start_token_idx, end_idx, &mut current_step_errors);
                     }
                 }
 
@@ -624,7 +621,7 @@ impl RuleChecker {
             let Some(start_token_idx) = start_idx else { continue; };
             if yielded_outputs.contains(&(node_idx, start_token_idx)) { continue; }
             let node = &self.nodes[node_idx];
-            Self::collect_error(node, tokens, node_idx, start_token_idx, end_idx, &mut final_step_errors);
+            Self::collect_error(node, node_idx, start_token_idx, end_idx, &mut final_step_errors);
         }
 
         for (_, err) in final_step_errors {
@@ -663,7 +660,6 @@ impl RuleChecker {
 
     fn collect_error(
         node: &RuleNode,
-        tokens: &[EnrichedToken],
         node_idx: usize,
         start_token_idx: usize,
         end_idx: usize,

@@ -234,6 +234,10 @@ class RuleBuilder:
         self.steps.append(_RuleStepData([AnyBatchimCondition()]))
         return self
     
+    def no_batchim(self):
+        self.steps.append(_RuleStepData([BatchimCondition(batchim="")]))
+        return self
+    
     def any(self):
         self.steps.append(_RuleStepData([AnyCondition()]))
         return self
@@ -387,6 +391,9 @@ def batchim(b: str) -> BatchimCondition:
 
 def any_batchim() -> AnyBatchimCondition:
     return AnyBatchimCondition()
+
+def no_batchim() -> BatchimCondition:
+    return BatchimCondition(batchim="")
 
 def first() -> FirstTokenCondition:
     return FirstTokenCondition()

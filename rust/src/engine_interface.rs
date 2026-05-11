@@ -50,7 +50,6 @@ pub enum Condition {
     Lemma(u16),
     Any,
     AnyBatchim,
-    NoBatchim,
     First,
     TagSet(u128),
     FormSet(Vec<u32>),
@@ -70,7 +69,6 @@ impl Condition {
             Condition::Lemma(lemma) => *lemma == token.lemma,
             Condition::Any => true,
             Condition::AnyBatchim => token.batchim > 1, // 0 = 한글 이외, 1 = 받침 없음
-            Condition::NoBatchim => token.batchim == 1,
             Condition::First => token.start == 0,
             Condition::TagSet(mask) => (mask >> token.tag()) & 1 == 1,
             Condition::FormSet(forms) => forms.binary_search(&token.form()).is_ok(),

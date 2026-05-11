@@ -58,13 +58,13 @@ _CERTAINS: list[KoSpellRules] = [
     *rule()
     .batchim("ᆫ")
     .tag_form(Tag.명사파생접미사, "률")
-    .msg("ᆫ받침으로 끝나는 명사에는 '율'을 사용해야 합니다.")
+    .msg("ㄴ받침으로 끝나는 명사에는 '율'을 사용해야 합니다.")
     .build(),
     
     *rule()
-    .NOT(any_batchim())
+    .no_batchim()
     .tag_form(Tag.명사파생접미사, "률")
-    .msg("명사에는 '율'을 사용해야 합니다.")
+    .msg("받침 없는 명사에는 '율'을 사용해야 합니다.")
     .build(),
     
     *rule()
@@ -584,7 +584,7 @@ _REP = [
     
     *rule()
     .id("예요_오타")
-    .AND(tags({Tag.일반명사, Tag.의존명사, Tag.고유명사, Tag.명사파생접미사, Tag.명사형전성어미}), NOT(any_batchim()))
+    .AND(tags({Tag.일반명사, Tag.의존명사, Tag.고유명사, Tag.명사파생접미사, Tag.명사형전성어미}), no_batchim())
     .tag_form(Tag.긍정지정사, "이").opt()
     .tag_form(Tag.종결어미, "에요")
     .msg("'{dform[0]}예요'가 올바른 표현입니다.").build(),
