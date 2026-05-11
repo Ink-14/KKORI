@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use rustc_hash::{FxHashMap, FxHashSet};
 use pyo3::prelude::*;
+use rayon::prelude::*;
 
 struct TrieNode {
     children: FxHashMap<char, usize>,
@@ -106,6 +107,30 @@ impl RustRawStringSearcher {
             self.build();
         }
 
+        Ok(self.search_inner(word))
+    }
+
+    pub fn search_raw_batch(&mut self, py: Python, words: Vec<String>) -> PyResult<Vec<Vec<(String, String, usize, usize, String)>>> {
+        if self.nodes[0].children.is_empty() {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "You must have at least one word to search."
+            ));
+        }
+
+        if !self.built {
+            self.build();
+        }
+
+        Ok(py.allow_threads(|| {
+            words.par_iter()
+                .map(|word| self.search_inner(word))
+                .collect()
+        }))
+    }
+}
+
+impl RustRawStringSearcher {
+    fn search_inner(&self, word: &str) -> Vec<(String, String, usize, usize, String)> {
         let mut current = 0;
         let mut result = Vec::new();
 
@@ -122,6 +147,6 @@ impl RustRawStringSearcher {
             }
         }
 
-        Ok(result)
+        result
     }
 }

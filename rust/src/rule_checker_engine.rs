@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 use rustc_hash::{FxHashMap, FxHashSet};
+use rayon::prelude::*;
 
 use crate::engine_interface::{EnrichedToken, Condition, SpacingRule, TAG2IDX, BATCHIM2IDX};
 use crate::py_types::*;
@@ -444,9 +445,48 @@ impl RuleChecker {
         let enriched = self.enrich_tokens(tokens)?;
         Ok(py.allow_threads(|| self.check_inner(&enriched)))
     }
+
+    pub fn check_batch(&self, py: Python, batch: Vec<Bound<'_, PyList>>) -> PyResult<Vec<Vec<(u32, u32, u32)>>> {
+        let enriched_batch: PyResult<Vec<_>> = batch.iter()
+            .map(|tokens| self.enrich_tokens(tokens))
+            .collect();
+        let enriched_batch = enriched_batch?;
+
+        Ok(py.allow_threads(|| {
+            enriched_batch.par_iter()
+                .map(|enriched| self.check_inner(enriched))
+                .collect()
+        }))
+    }
+
+    pub fn check_batch_tuples(
+        &self,
+        py: Python,
+        batch: Vec<Vec<(String, String, u32, u32, u16, String)>>,
+    ) -> PyResult<Vec<Vec<(u32, u32, u32)>>> {
+        let enriched_batch: Vec<Vec<EnrichedToken>> = batch.iter()
+            .map(|tokens| self.enrich_from_tuples(tokens))
+            .collect();
+
+        Ok(py.allow_threads(|| {
+            enriched_batch.par_iter()
+                .map(|enriched| self.check_inner(enriched))
+                .collect()
+        }))
+    }
 }
 
 impl RuleChecker {
+    fn enrich_from_tuples(&self, tokens: &[(String, String, u32, u32, u16, String)]) -> Vec<EnrichedToken> {
+        tokens.iter().map(|(form, tag, start, end, len, lemma)| {
+            let form_idx  = self.form_dict.get(form.as_str()).copied().unwrap_or(0);
+            let tag_idx   = TAG2IDX.get(tag.as_str()).copied().unwrap_or(0);
+            let lemma_idx = self.lemma_dict.get(lemma.as_str()).copied().unwrap_or(0);
+            let batchim   = Self::get_batchim(form);
+            EnrichedToken::new(form_idx, tag_idx, *start, *end, lemma_idx, *len, batchim)
+        }).collect()
+    }
+
     fn enrich_tokens(&self, tokens: &Bound<'_, PyList>) -> PyResult<Vec<EnrichedToken>> {
         tokens.iter()
             .map(|t| {

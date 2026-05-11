@@ -108,6 +108,11 @@ class SpellChecker:
         for rule in rules:
             self._add_rule(rule)
 
+    def _ensure_built(self) -> None:
+        if self._checker is None:
+            self._checker = self._builder.build()  # type: ignore
+            self._builder = None
+
     def check(self, tokens: list[KoToken]) -> Iterator[SpellError]:
         """토큰을 검사하는 함수.
 
@@ -123,9 +128,8 @@ class SpellChecker:
         if not self._has_rules:
             raise ValueError("You must have at least one rule to check spelling.")
 
-        if self._checker is None:
-            self._checker = self._builder.build() # type: ignore
-            self._builder = None
+        self._ensure_built()
+        assert self._checker is not None
 
         rust_errors = self._checker.check(tokens)
         for match_id, start_index, end_index in rust_errors:
@@ -138,3 +142,32 @@ class SpellChecker:
                 rule_id=meta.rule_id,
                 debug_path=meta.debug_path,
             )
+
+    def check_batch(self, batch: list[list[KoToken]]) -> list[list[SpellError]]:
+        """병렬 검사용 함수."""
+        if not self._has_rules:
+            raise ValueError("You must have at least one rule to check spelling.")
+
+        self._ensure_built()
+        assert self._checker is not None
+
+        tuple_batch = [
+            [(t.form, t.tag, t.start, t.end, t.len, t.lemma) for t in tokens]
+            for tokens in batch
+        ]
+        rust_batch = self._checker.check_batch_tuples(tuple_batch)
+        result = []
+        for tokens, rust_errors in zip(batch, rust_batch):
+            errors = []
+            for match_id, start_index, end_index in rust_errors:
+                meta = self._registry[match_id]
+                errors.append(SpellError(
+                    error_type=meta.error_type,
+                    error_message=meta.msg.render(tokens[start_index : end_index + 1]),
+                    start_index=tokens[start_index].start,
+                    end_index=tokens[end_index].end,
+                    rule_id=meta.rule_id,
+                    debug_path=meta.debug_path,
+                ))
+            result.append(errors)
+        return result
