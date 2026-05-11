@@ -4,11 +4,10 @@ from dataclasses import dataclass
 import warnings
 
 from korean_spell_checker.models.spell_checker_classes import *
-from korean_spell_checker.models.interface import SpellErrorType, Tag
+from korean_spell_checker.models.interface import SpellErrorType, Tag, RuleId
 from korean_spell_checker.configs.spell_checker_config_builder_parser import MessageTokenizer, MessageParser, TagNode, TextNode, MethodNode, QuotedNode, MESSAGE_METHODS
 
 ErrorMessage: TypeAlias = str
-RuleId: TypeAlias = str
 RuleSteps: TypeAlias = list[tuple[Condition, SpacingRule, bool, bool]]
 KoSpellRules: TypeAlias = tuple[RuleSteps, "CompiledMessage", SpellErrorType, RuleId]
 AndParam: TypeAlias = "Condition | _TagSet | _FormSet"

@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyList;
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::engine_interface::{EnrichedToken, Condition, SpacingRule, SpellError, SpellErrorType, TAG2IDX, BATCHIM2IDX};
+use crate::engine_interface::{EnrichedToken, Condition, SpacingRule, TAG2IDX, BATCHIM2IDX};
 use crate::py_types::*;
 
 struct Transition {
@@ -21,11 +21,6 @@ impl Transition {
     }
 }
 
-enum MessageTemplate {
-    Static(String),
-    Dynamic(PyObject),
-}
-
 struct RuleNode {
     tag_transitions: FxHashMap<u8, Vec<usize>>,
     form_transitions: FxHashMap<u32, Vec<usize>>,
@@ -34,10 +29,7 @@ struct RuleNode {
     any_batchim_transitions: Vec<usize>,
     fallback_transitions: Vec<usize>,
 
-    output_message: Option<MessageTemplate>,
-    rule_id: Option<String>,
-    error_type: SpellErrorType,
-    debug_path: Option<String>,
+    match_id: Option<u32>,
 }
 
 impl RuleNode {
@@ -49,10 +41,8 @@ impl RuleNode {
             batchim_transitions: None,
             any_batchim_transitions: Vec::new(),
             fallback_transitions: Vec::new(),
-            output_message: None,
-            rule_id: None,
-            error_type: SpellErrorType::NotSet,
-            debug_path: None,
+
+            match_id: None,
         }
     }
 
@@ -127,7 +117,6 @@ impl RuleNode {
 
 #[pyclass]
 pub struct RuleCheckerBuilder {
-    debug_mode: bool,
     nodes: Vec<RuleNode>,
     transitions: Vec<Transition>,
     form_vec: FxHashMap<String, u32>,
@@ -137,9 +126,8 @@ pub struct RuleCheckerBuilder {
 #[pymethods]
 impl RuleCheckerBuilder {
     #[new]
-    pub fn new(dbg_mode: bool) -> Self {
+    pub fn new() -> Self {
         let mut builder = RuleCheckerBuilder {
-            debug_mode: dbg_mode,
             nodes: Vec::new(),
             transitions: Vec::new(),
             form_vec: FxHashMap::default(),
@@ -155,33 +143,11 @@ impl RuleCheckerBuilder {
         &mut self,
         py: Python,
         steps: Vec<(PyObject, PyObject, bool, bool)>,
-        message: PyObject,
-        error_type: PyObject,
-        rule_id: String,
+        match_id: u32,
     ) -> PyResult<()> {
         if steps.is_empty() { return Ok(()); }
 
-        let error_type = match error_type.extract::<i32>(py)? {
-            0   => SpellErrorType::NotSet,
-            1   => SpellErrorType::SpellingRaw,
-            2   => SpellErrorType::SpacingRaw,
-            3   => SpellErrorType::MeaningRaw,
-            4   => SpellErrorType::LoanwordRaw,
-            5   => SpellErrorType::Spacing,
-            6   => SpellErrorType::Meaning,
-            7   => SpellErrorType::Spelling,
-            8   => SpellErrorType::Specific,
-            9   => SpellErrorType::Loanword,
-            10  => SpellErrorType::Warning,
-            11  => SpellErrorType::NeedMLJudge,
-            999 => SpellErrorType::Test,
-            v   => return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                format!("unknown SpellErrorType: {v}")
-            )),
-        };
-
         let mut current: usize = 0;
-        let mut path: Vec<String> = Vec::new();
 
         for (cond_obj, spacing_obj, is_optional, is_context) in &steps {
             let spacing = match spacing_obj.extract::<i32>(py)? {
@@ -193,31 +159,11 @@ impl RuleCheckerBuilder {
                 )),
             };
 
-            let (cond, cond_str) = self.intern_condition(py, cond_obj)?;
-
-            if self.debug_mode {
-                path.push(format!("{cond_str}, {}, {is_optional}, {is_context}",
-                    spacing_obj.extract::<i32>(py)?
-                ));
-            }
-
+            let cond = self.intern_condition(py, cond_obj)?;
             current = self.get_or_create_next_node(current, cond, spacing, *is_optional, *is_context);
         }
 
-        self.nodes[current].output_message = Some(
-            if let Ok(s) = message.extract::<String>(py) {
-                MessageTemplate::Static(s)
-            } else {
-                MessageTemplate::Dynamic(message)
-            }
-        );
-        self.nodes[current].error_type = error_type;
-        self.nodes[current].rule_id = Some(rule_id);
-
-        if self.debug_mode {
-            self.nodes[current].debug_path = Some(path.join("  →  "));
-        }
-
+        self.nodes[current].match_id = Some(match_id);
         Ok(())
     }
 
@@ -239,7 +185,7 @@ impl RuleCheckerBuilder {
 }
 
 impl RuleCheckerBuilder {
-        fn add_node(&mut self) -> usize {
+    fn add_node(&mut self) -> usize {
         let id = self.nodes.len();
         self.nodes.push(RuleNode::new());
         id
@@ -261,26 +207,40 @@ impl RuleCheckerBuilder {
 
     fn compute_optional_closure(&self) -> Vec<Vec<usize>> {
         let n = self.nodes.len();
-        let mut optional_closure: Vec<Vec<usize>> = Vec::with_capacity(n);
+        let mut closures: Vec<Vec<usize>> = vec![Vec::new(); n];
 
-        for node_idx in 0..n {
-            let mut closure: Vec<usize> = vec![node_idx];
-            let mut queue: VecDeque<usize> = VecDeque::from([node_idx]);
+        let mut seen = vec![0usize; n];
+        let mut stamp = 1usize;
 
-            while let Some(current) = queue.pop_front() {
-                for &trans_idx in self.nodes[current].iter_all_transitions() {
-                    let trans = &self.transitions[trans_idx];
-                    if trans.is_optional && !closure.contains(&trans.target_node) {
-                        closure.push(trans.target_node);
-                        queue.push_back(trans.target_node);
+        for node_idx in (0..n).rev() {
+            let mut closure = Vec::new();
+
+            seen[node_idx] = stamp;
+            closure.push(node_idx);
+
+            for &trans_idx in self.nodes[node_idx].iter_all_transitions() {
+                let trans = &self.transitions[trans_idx];
+
+                if trans.is_optional {
+                    debug_assert!(
+                        trans.target_node > node_idx,
+                        "optional closure assumes acyclic forward node indices"
+                    );
+
+                    for &reachable in &closures[trans.target_node] {
+                        if seen[reachable] != stamp {
+                            seen[reachable] = stamp;
+                            closure.push(reachable);
+                        }
                     }
                 }
             }
 
-            optional_closure.push(closure);
+            closures[node_idx] = closure;
+            stamp += 1;
         }
 
-        optional_closure
+        closures
     }
 
     fn compute_eof_closure(&self) -> Vec<Vec<usize>> {
@@ -343,25 +303,24 @@ impl RuleCheckerBuilder {
         result.into_iter().collect()
     }
 
-    fn intern_condition(&mut self, py: Python, obj: &PyObject) -> PyResult<(Condition, String)> {
+    fn intern_condition(&mut self, py: Python, obj: &PyObject) -> PyResult<Condition> {
         let obj = obj.bind(py);
 
         if let Ok(c) = obj.downcast::<TagCondition>() {
             let borrowed = c.borrow();
-            let tag = borrowed.tag.as_str();
-            let idx = TAG2IDX.get(tag)
+            let idx = TAG2IDX.get(borrowed.tag.as_str())
                 .copied()
                 .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                    format!("unknown tag: {tag}")
+                    format!("unknown tag: {}", borrowed.tag)
                 ))?;
-            return Ok((Condition::Tag(idx), format!("TagCondition(tag='{tag}')")));
+            return Ok(Condition::Tag(idx));
         }
 
         if let Ok(c) = obj.downcast::<FormCondition>() {
             let form = c.borrow().form.clone();
             let next = self.form_vec.len() as u32;
-            let idx = *self.form_vec.entry(form.clone()).or_insert(next);
-            return Ok((Condition::Form(idx), format!("FormCondition(form='{form}')")));
+            let idx = *self.form_vec.entry(form).or_insert(next);
+            return Ok(Condition::Form(idx));
         }
 
         if let Ok(c) = obj.downcast::<TagAndFormCondition>() {
@@ -372,103 +331,90 @@ impl RuleCheckerBuilder {
                     format!("unknown tag: {}", b.tag)
                 ))?;
             let form = b.form.clone();
-            let tag  = b.tag.clone();
             drop(b);
             let next = self.form_vec.len() as u32;
-            let form_idx = *self.form_vec.entry(form.clone()).or_insert(next);
-            return Ok((
-                Condition::FormTag((form_idx << 7) | tag_idx as u32),
-                format!("TagAndFormCondition(form='{form}', tag='{tag}')"),
-            ));
+            let form_idx = *self.form_vec.entry(form).or_insert(next);
+            return Ok(Condition::FormTag((form_idx << 7) | tag_idx as u32));
         }
 
         if let Ok(c) = obj.downcast::<LemmaCondition>() {
             let lemma = c.borrow().lemma.clone();
-            let next  = self.lemma_vec.len() as u16;
-            let idx   = *self.lemma_vec.entry(lemma.clone()).or_insert(next);
-            return Ok((Condition::Lemma(idx), format!("LemmaCondition(lemma='{lemma}')")));
+            let next = self.lemma_vec.len() as u16;
+            let idx = *self.lemma_vec.entry(lemma).or_insert(next);
+            return Ok(Condition::Lemma(idx));
         }
 
-        if let Ok(_) = obj.downcast::<AnyCondition>() {
-            return Ok((Condition::Any, "AnyCondition()".to_string()));
+        if obj.downcast::<AnyCondition>().is_ok() {
+            return Ok(Condition::Any);
         }
-
-        if let Ok(_) = obj.downcast::<AnyBatchimCondition>() {
-            return Ok((Condition::AnyBatchim, "AnyBatchimCondition()".to_string()));
+        if obj.downcast::<AnyBatchimCondition>().is_ok() {
+            return Ok(Condition::AnyBatchim);
         }
-
-        if let Ok(_) = obj.downcast::<NoBatchimCondition>() {
-            return Ok((Condition::NoBatchim, "NoBatchimCondition()".to_string()));
+        if obj.downcast::<NoBatchimCondition>().is_ok() {
+            return Ok(Condition::NoBatchim);
         }
-
-        if let Ok(_) = obj.downcast::<FirstTokenCondition>() {
-            return Ok((Condition::First, "FirstTokenCondition()".to_string()));
+        if obj.downcast::<FirstTokenCondition>().is_ok() {
+            return Ok(Condition::First);
         }
 
         if let Ok(c) = obj.downcast::<BatchimCondition>() {
             let borrowed = c.borrow();
-            let batchim  = borrowed.batchim.as_str();
-            let idx = BATCHIM2IDX.get(batchim)
+            let idx = BATCHIM2IDX.get(borrowed.batchim.as_str())
                 .copied()
                 .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                    format!("unknown batchim: {batchim}")
+                    format!("unknown batchim: {}", borrowed.batchim)
                 ))?;
-            return Ok((Condition::Batchim(idx), format!("BatchimCondition(batchim='{batchim}')")));
+            return Ok(Condition::Batchim(idx));
         }
 
         if let Ok(c) = obj.downcast::<LengthCondition>() {
-            let length = c.borrow().length;
-            return Ok((Condition::Length(length), format!("LengthCondition(length={length})")));
+            return Ok(Condition::Length(c.borrow().length));
         }
 
         if let Ok(c) = obj.downcast::<TagSetCondition>() {
-            let borrowed = c.borrow();
-            let tags = borrowed.tags.iter()
+            let tags = c.borrow().tags.iter()
                 .map(|t| TAG2IDX.get(t.as_str()).copied()
                     .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyValueError, _>(
                         format!("unknown tag: {t}")
                     )))
                 .collect::<PyResult<Vec<u8>>>()?;
-            let tag_str = borrowed.tags.join(", ");
-            return Ok((Condition::tag_set(tags), format!("TagSetCondition(tags=[{tag_str}])")));
+            return Ok(Condition::tag_set(tags));
         }
 
         if let Ok(c) = obj.downcast::<FormSetCondition>() {
-            let borrowed = c.borrow();
-            let forms = borrowed.forms.iter()
+            let forms = c.borrow().forms.iter()
                 .map(|f| {
                     let next = self.form_vec.len() as u32;
                     *self.form_vec.entry(f.clone()).or_insert(next)
                 })
                 .collect();
-            let form_str = borrowed.forms.join(", ");
-            return Ok((Condition::form_set(forms), format!("FormSetCondition(forms=[{form_str}])")));
+            return Ok(Condition::form_set(forms));
         }
 
         if let Ok(c) = obj.downcast::<AndCondition>() {
-            let conditions: Vec<PyObject> = c.borrow().conditions.iter().map(|o| o.clone_ref(py)).collect();
-            let (conds, strs): (Vec<_>, Vec<_>) = conditions.iter()
+            let conditions: Vec<PyObject> = c.borrow().conditions.iter()
+                .map(|o| o.clone_ref(py))
+                .collect();
+            let conds = conditions.iter()
                 .map(|o| self.intern_condition(py, o))
-                .collect::<PyResult<Vec<_>>>()?
-                .into_iter()
-                .unzip();
-            return Ok((Condition::and(conds), format!("AndCondition({})", strs.join(", "))));
+                .collect::<PyResult<Vec<_>>>()?;
+            return Ok(Condition::and(conds));
         }
 
         if let Ok(c) = obj.downcast::<OrCondition>() {
-            let conditions: Vec<PyObject> = c.borrow().conditions.iter().map(|o| o.clone_ref(py)).collect();
-            let (conds, strs): (Vec<_>, Vec<_>) = conditions.iter()
+            let conditions: Vec<PyObject> = c.borrow().conditions.iter()
+                .map(|o| o.clone_ref(py))
+                .collect();
+            let conds = conditions.iter()
                 .map(|o| self.intern_condition(py, o))
-                .collect::<PyResult<Vec<_>>>()?
-                .into_iter()
-                .unzip();
-            return Ok((Condition::or(conds), format!("OrCondition({})", strs.join(", "))));
+                .collect::<PyResult<Vec<_>>>()?;
+            return Ok(Condition::or(conds));
         }
 
         if let Ok(c) = obj.downcast::<NotCondition>() {
             let inner_obj = c.borrow().condition.clone_ref(py);
-            let (inner, inner_str) = self.intern_condition(py, &inner_obj)?;
-            return Ok((Condition::not(inner), format!("NotCondition({inner_str})")));
+            let inner = self.intern_condition(py, &inner_obj)?;
+            return Ok(Condition::not(inner));
         }
 
         Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
@@ -476,6 +422,10 @@ impl RuleCheckerBuilder {
         ))
     }
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RuleChecker
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 #[pyclass]
 pub struct RuleChecker {
@@ -490,10 +440,9 @@ pub struct RuleChecker {
 
 #[pymethods]
 impl RuleChecker {
-    pub fn check(&self, py: Python, tokens: &Bound<'_, PyList>) -> PyResult<Vec<SpellError>> {
+    pub fn check(&self, py: Python, tokens: &Bound<'_, PyList>) -> PyResult<Vec<(u32, u32, u32)>> {
         let enriched = self.enrich_tokens(tokens)?;
-        let py_tokens: Py<PyList> = tokens.clone().unbind();
-        self.check_inner(py, enriched, &py_tokens)
+        Ok(py.allow_threads(|| self.check_inner(&enriched)))
     }
 }
 
@@ -505,7 +454,7 @@ impl RuleChecker {
                 let tag:   String = t.getattr("tag")?.extract()?;
                 let start: u32    = t.getattr("start")?.extract()?;
                 let end:   u32    = t.getattr("end")?.extract()?;
-                let len:   u16     = t.getattr("len")?.extract()?;
+                let len:   u16    = t.getattr("len")?.extract()?;
                 let lemma: String = t.getattr("lemma")?.extract()?;
 
                 let form_idx  = self.form_dict.get(&form).copied().unwrap_or(0);
@@ -513,7 +462,7 @@ impl RuleChecker {
                 let lemma_idx = self.lemma_dict.get(&lemma).copied().unwrap_or(0);
                 let batchim   = Self::get_batchim(&form);
 
-                Ok(EnrichedToken::new(form_idx, tag_idx, start, end, lemma_idx, len, batchim, form, tag))
+                Ok(EnrichedToken::new(form_idx, tag_idx, start, end, lemma_idx, len, batchim))
             })
             .collect()
     }
@@ -527,10 +476,10 @@ impl RuleChecker {
         ((code - 0xAC00) % 28 + 1) as u8
     }
 
-    fn check_inner(&self, py: Python, tokens: Vec<EnrichedToken>, py_tokens: &Py<PyList>) -> PyResult<Vec<SpellError>> {
-        if tokens.is_empty() { return Ok(Vec::new()); }
+    fn check_inner(&self, tokens: &[EnrichedToken]) -> Vec<(u32, u32, u32)> {
+        if tokens.is_empty() { return Vec::new(); }
 
-        let mut errors: Vec<SpellError> = Vec::new();
+        let mut errors: Vec<(u32, u32, u32)> = Vec::new();
         let mut active_cursors:   FxHashMap<usize, (Option<usize>, usize)> = FxHashMap::default();
         let mut next_cursors:     FxHashMap<usize, (Option<usize>, usize)> = FxHashMap::default();
         let mut expanded_cursors: FxHashMap<usize, (Option<usize>, usize)> = FxHashMap::default();
@@ -554,7 +503,7 @@ impl RuleChecker {
 
             // ── Phase 2: 출력 수집 & 전이 탐색 ──
             next_cursors.clear();
-            let mut current_step_errors: FxHashMap<(usize, usize), SpellError> = FxHashMap::default();
+            let mut current_step_errors: FxHashMap<(usize, usize), (u32, u32, u32)> = FxHashMap::default();
 
             for (&node_idx, &(start_idx, end_idx)) in &expanded_cursors {
                 let node = &self.nodes[node_idx];
@@ -563,7 +512,7 @@ impl RuleChecker {
                 if let Some(start_token_idx) = start_idx {
                     if start_token_idx < i && !yielded_outputs.contains(&(node_idx, start_token_idx)) {
                         yielded_outputs.insert((node_idx, start_token_idx));
-                        self.collect_error(py, &tokens, py_tokens, node_idx, start_token_idx, end_idx, &mut current_step_errors)?;
+                        Self::collect_error(node, tokens, node_idx, start_token_idx, end_idx, &mut current_step_errors);
                     }
                 }
 
@@ -591,7 +540,7 @@ impl RuleChecker {
                         candidates.extend_from_slice(&node.any_batchim_transitions);
                     }
                 }
-                // fallback은 batchim 여부와 무관하게 항상 탐색
+                
                 for &trans_idx in &node.fallback_transitions {
                     let trans = &self.transitions[trans_idx];
                     if trans.condition.check_match(token) {
@@ -630,17 +579,19 @@ impl RuleChecker {
         let mut final_expanded: FxHashMap<usize, (Option<usize>, usize)> = FxHashMap::default();
         Self::expand_cursors(&active_cursors, &self.eof_closure, &mut final_expanded);
 
-        let mut final_step_errors: FxHashMap<(usize, usize), SpellError> = FxHashMap::default();
+        let mut final_step_errors: FxHashMap<(usize, usize), (u32, u32, u32)> = FxHashMap::default();
         for (node_idx, (start_idx, end_idx)) in final_expanded {
             let Some(start_token_idx) = start_idx else { continue; };
             if yielded_outputs.contains(&(node_idx, start_token_idx)) { continue; }
-            self.collect_error(py, &tokens, py_tokens, node_idx, start_token_idx, end_idx, &mut final_step_errors)?;
+            let node = &self.nodes[node_idx];
+            Self::collect_error(node, tokens, node_idx, start_token_idx, end_idx, &mut final_step_errors);
         }
+
         for (_, err) in final_step_errors {
             errors.push(err);
         }
 
-        Ok(errors)
+        errors
     }
 
     fn is_later_start(new: Option<usize>, old: Option<usize>) -> bool {
@@ -652,86 +603,39 @@ impl RuleChecker {
     }
 
     fn update_shortest_match(
-        storage: &mut FxHashMap<(usize, usize), SpellError>,
+        storage: &mut FxHashMap<(usize, usize), (u32, u32, u32)>,
         node_idx: usize,
         start_token_idx: usize,
-        error: SpellError,
+        entry: (u32, u32, u32),
     ) {
         let key = (node_idx, start_token_idx);
         match storage.get(&key) {
-            None => { storage.insert(key, error); }
+            None => { storage.insert(key, entry); }
             Some(existing) => {
-                let old_len = existing.end_index - existing.start_index;
-                let new_len = error.end_index   - error.start_index;
-                if new_len < old_len || (new_len == old_len && error.start_index > existing.start_index) {
-                    storage.insert(key, error);
+                let old_len = existing.2 - existing.1;
+                let new_len = entry.2 - entry.1;
+                if new_len < old_len || (new_len == old_len && entry.1 > existing.1) {
+                    storage.insert(key, entry);
                 }
             }
         }
-    }
-
-    fn render_message_static(msg: &str, tokens: &[EnrichedToken], start: usize) -> String {
-        let mut result = String::with_capacity(msg.len());
-        let bytes = msg.as_bytes();
-        let mut i = 0;
-        while i < bytes.len() {
-            if bytes[i] == b'{' {
-                if let Some(close) = msg[i..].find('}') {
-                    let inner = &msg[i + 1..i + close];
-                    let replaced = if let Some(rest) = inner.strip_prefix("dform[") {
-                        rest.strip_suffix(']')
-                            .and_then(|n| n.parse::<usize>().ok())
-                            .and_then(|n| tokens.get(start + n))
-                            .map(|t| t.form_str.as_str())
-                    } else if let Some(rest) = inner.strip_prefix("dtag[") {
-                        rest.strip_suffix(']')
-                            .and_then(|n| n.parse::<usize>().ok())
-                            .and_then(|n| tokens.get(start + n))
-                            .map(|t| t.tag_str.as_str())
-                    } else {
-                        None
-                    };
-                    if let Some(s) = replaced {
-                        result.push_str(s);
-                        i += close + 1;
-                        continue;
-                    }
-                }
-            }
-            result.push(msg[i..].chars().next().unwrap());
-            i += msg[i..].chars().next().unwrap().len_utf8();
-        }
-        result
     }
 
     fn collect_error(
-        &self,
-        py: Python,
+        node: &RuleNode,
         tokens: &[EnrichedToken],
-        py_tokens: &Py<PyList>,
         node_idx: usize,
         start_token_idx: usize,
         end_idx: usize,
-        storage: &mut FxHashMap<(usize, usize), SpellError>,
-    ) -> PyResult<()> {
-        let node = &self.nodes[node_idx];
-        let Some(msg) = &node.output_message else { return Ok(()); };
-        let rendered = match msg {
-            MessageTemplate::Static(s) => Self::render_message_static(s, tokens, start_token_idx),
-            MessageTemplate::Dynamic(callable) => {
-                callable.call1(py, (py_tokens.bind(py), start_token_idx))?.extract::<String>(py)?
-            }
-        };
-        let err = SpellError {
-            error_type:    node.error_type.clone(),
-            error_message: rendered,
-            start_index:   tokens[start_token_idx].start,
-            end_index:     tokens[end_idx].end,
-            rule_id:       node.rule_id.clone().unwrap_or_default(),
-            debug_path:    node.debug_path.clone(),
-        };
-        Self::update_shortest_match(storage, node_idx, start_token_idx, err);
-        Ok(())
+        storage: &mut FxHashMap<(usize, usize), (u32, u32, u32)>,
+    ) {
+        let Some(match_id) = node.match_id else { return; };
+        let entry = (
+            match_id,
+            start_token_idx as u32,
+            end_idx as u32,
+        );
+        Self::update_shortest_match(storage, node_idx, start_token_idx, entry);
     }
 
     fn expand_cursors(

@@ -6,10 +6,8 @@ pub struct EnrichedToken {
     pub start: u32,
     pub end: u32,
     pub lemma: u16,
-    pub len: u16,
+    pub len: u16, // 토크나이저가 띄어쓰기 안 한 단어를 한 덩어리로 반환해 u8 overflow가 발생하는 경우가 있어 u16으로 확장
     pub batchim: u8,
-    pub form_str: String,
-    pub tag_str: String,
 }
 
 impl EnrichedToken {
@@ -21,8 +19,6 @@ impl EnrichedToken {
         lemma: u16,
         len: u16,
         batchim: u8,
-        form_str: String,
-        tag_str: String,
     ) -> Self {
         debug_assert!(form < (1 << 25), "form exceeds 25 bits!");
         EnrichedToken {
@@ -32,8 +28,6 @@ impl EnrichedToken {
             lemma,
             len,
             batchim,
-            form_str,
-            tag_str,
         }
     }
 
@@ -120,43 +114,15 @@ pub enum SpacingRule {
     ATTACHED,
 }
 
-#[pyclass(eq, eq_int)]
-#[derive(PartialEq, Debug, Clone)]
-pub enum SpellErrorType {
-    NotSet = 0,
-
-    SpellingRaw = 1,
-    SpacingRaw = 2,
-    MeaningRaw = 3,
-    LoanwordRaw = 4,
-
-    Spacing = 5,
-    Meaning = 6,
-    Spelling = 7,
-    Specific = 8,
-    Loanword = 9,
-    Warning = 10,
-
-    NeedMLJudge = 11,
-
-    Test = 999,
-}
-
 #[pyclass]
 #[derive(PartialEq, Debug, Clone)]
-pub struct SpellError {
+pub struct RuleMatchedError {
     #[pyo3(get)]
-    pub error_type: SpellErrorType,
-    #[pyo3(get)]
-    pub error_message: String,
+    pub match_id: u32,
     #[pyo3(get)]
     pub start_index: u32,
     #[pyo3(get)]
     pub end_index: u32,
-    #[pyo3(get)]
-    pub rule_id: String,
-    #[pyo3(get)]
-    pub debug_path: Option<String>,
 }
 
 pub static TAG2IDX: phf::Map<&'static str, u8> = phf_map! {

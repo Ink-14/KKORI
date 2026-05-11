@@ -1,25 +1,28 @@
 from enum import StrEnum, Enum, auto
-from typing import  Protocol
+from typing import  Protocol, TypeAlias
 from dataclasses import dataclass
 
+RuleId: TypeAlias = str
+DebugPath: TypeAlias = str
+
 class SpellErrorType(Enum):
-    NOT_SET = 0
+    NOT_SET = auto()
 
-    SPELLING_RAW = 1
-    SPACING_RAW = 2
-    MEANING_RAW = 3
-    LOANWORD_RAW = 4
+    SPELLING_RAW = auto()
+    SPACING_RAW = auto()
+    MEANING_RAW = auto()
+    LOANWORD_RAW = auto()
 
-    SPACING = 5
-    MEANING = 6
-    SPELLING = 7
-    SPECIFIC = 8
-    LOANWORD = 9
+    SPACING = auto()
+    MEANING = auto()
+    SPELLING = auto()
+    SPECIFIC = auto()
+    LOANWORD = auto()
 
-    WARNING = 10
-    NEED_ML_JUDGE = 11
+    WARNING = auto()
+    NEED_ML_JUDGE = auto()
     
-    TEST = 999
+    TEST = auto()
 
 @dataclass(frozen=True, slots=True)
 class SpellError:

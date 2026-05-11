@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Iterator
+from dataclasses import dataclass
 
 from _core import (
     RuleCheckerBuilder, RuleChecker,
@@ -30,6 +31,12 @@ from korean_spell_checker.models.spell_checker_classes import (
 )
 from korean_spell_checker.configs.spell_checker_config_builder import KoSpellRules, CompiledMessage
 
+@dataclass(frozen=True, slots=True)
+class RuleMetaData:
+    error_type: SpellErrorType
+    msg: CompiledMessage
+    rule_id: str
+    debug_path: str | None = None
 
 def _to_rust_condition(cond: Condition) -> object:
     if isinstance(cond, TagAndFormCondition):
@@ -62,21 +69,14 @@ def _to_rust_condition(cond: Condition) -> object:
         return RustNotCondition(condition=_to_rust_condition(cond.condition))
     raise TypeError(f"Unknown condition type: {type(cond)}")
 
-
-def _message_to_rust(msg: CompiledMessage):
-    if all(isinstance(p, str) for p in msg._parts):
-        return "".join(msg._parts)  # type: ignore[arg-type]
-    def render(tokens, start):
-        return msg.render(tokens[start:])
-    return render
-
-
 class SpellChecker:
     def __init__(self, debug: bool = False):
-        self._builder: RuleCheckerBuilder | None = RuleCheckerBuilder(debug)
+        self._builder: RuleCheckerBuilder | None = RuleCheckerBuilder()
         self._checker: RuleChecker | None = None
         self._has_rules: bool = False
         self._debug: bool = debug
+
+        self._registry: list[RuleMetaData] = []
 
     def _add_rule(self, rules: KoSpellRules) -> None:
         if self._builder is None:
@@ -86,17 +86,21 @@ class SpellChecker:
         if not steps:
             return
 
-        rust_steps = [
-            (_to_rust_condition(cond), spacing.value, is_optional, is_context)
-            for cond, spacing, is_optional, is_context in steps
-        ]
+        rust_steps = []
+        path = []
+        
+        for cond, spacing, is_optional, is_context in steps:
+            if self._debug:
+                path.append(f"{cond}, {spacing}, {is_optional}, {is_context}")
+            rust_steps.append(
+                (_to_rust_condition(cond), spacing.value, is_optional, is_context)
+            )
 
-        self._builder.add_rule(
-            steps=rust_steps,
-            message=_message_to_rust(msg),
-            error_type=error_type.value,
-            rule_id=rule_id,
-        )
+        uid = len(self._registry)
+        debug_path = "  →  ".join(path) if self._debug else None
+        self._registry.append(RuleMetaData(error_type, msg, rule_id, debug_path))
+
+        self._builder.add_rule(steps=rust_steps, match_id=uid)
         self._has_rules = True
 
     def add_rule_from_list(self, rules: list[KoSpellRules]) -> None:
@@ -120,18 +124,17 @@ class SpellChecker:
             raise ValueError("You must have at least one rule to check spelling.")
 
         if self._checker is None:
-            self._checker = self._builder.build()
+            self._checker = self._builder.build() # type: ignore
             self._builder = None
 
         rust_errors = self._checker.check(tokens)
-        return (
-            SpellError(
-                error_type=SpellErrorType(int(e.error_type)),
-                error_message=e.error_message,
-                start_index=e.start_index,
-                end_index=e.end_index,
-                rule_id=e.rule_id,
-                debug_path=e.debug_path,
+        for match_id, start_index, end_index in rust_errors:
+            meta = self._registry[match_id]
+            yield SpellError(
+                error_type=meta.error_type,
+                error_message=meta.msg.render(tokens[start_index : end_index + 1]),
+                start_index=tokens[start_index].start,
+                end_index=tokens[end_index].end,
+                rule_id=meta.rule_id,
+                debug_path=meta.debug_path,
             )
-            for e in rust_errors
-        )

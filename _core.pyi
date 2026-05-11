@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from typing import Any
+from korean_spell_checker.models.interface import KoToken
 
 class RustRawStringSearcher:
     def __new__(cls) -> "RustRawStringSearcher": ...
@@ -96,15 +97,13 @@ _RustCondition = (
 )
 
 class RuleCheckerBuilder:
-    def __new__(cls, dbg_mode: bool) -> "RuleCheckerBuilder": ...
+    def __new__(cls) -> "RuleCheckerBuilder": ...
     def add_rule(
         self,
         steps: list[tuple[Any, int, bool, bool]],
-        message: str | Callable[..., str],
-        error_type: int,
-        rule_id: str,
+        match_id: int,
     ) -> None: ...
     def build(self) -> "RuleChecker": ...
 
 class RuleChecker:
-    def check(self, tokens: list[Any]) -> list[SpellError]: ...
+    def check(self, tokens: list[KoToken]) -> list[tuple[int, int, int]]: ...
