@@ -64,7 +64,7 @@ impl Condition {
             Condition::Tag(tag) => *tag == token.tag(),
             Condition::Form(form) => *form == token.form(),
             Condition::FormTag(formtag) => *formtag == token.form_tag,
-            Condition::Length(length) => *length == token.len,
+            Condition::Length(length) => token.len >= *length,
             Condition::Batchim(batchim) => *batchim == token.batchim,
             Condition::Lemma(lemma) => *lemma == token.lemma,
             Condition::Any => true,
