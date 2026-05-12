@@ -306,16 +306,24 @@ class RuleBuilder:
 
     def msg(self, input_msg: str):
         """에러 메시지를 입력하는 메서드.
-        에러 메시지는 반드시 입력해야 함.
-        
+        에러 메시지는 반드시 입력해야 함. 
         {form}으로 form 조건을 지정할 수 있음.
         
-        {form[0]}: 0번째 form 조건.(인덱스 필수)
-        {dform[0]}: 0번째 매칭된 토큰의 form.(인덱스 필수)
-        {dtag[0]}: 0번째 매칭된 토큰의 tag.(인덱스 필수)
-        
-        merge: 두 개 이상의 형태소를 합쳐 주는 메서드. merge((form, tag), (form, tag)...)로 사용.
-        batchim: batchim 앞에 있는 유효한 한글에 받침을 붙여 주는 메서드. batchim("받침없을때", "받침있을때")로 사용.
+        Methods:
+            {form[0]}
+                0번째 form 조건.(인덱스 필수)
+
+            {dform[0]}
+                0번째 매칭된 토큰의 form.(인덱스 필수)
+
+            {dtag[0]}
+                0번째 매칭된 토큰의 tag.(인덱스 필수)
+            
+            merge()
+                두 개 이상의 형태소를 합쳐 주는 메서드. merge((form, tag), (form, tag)...)로 사용.
+
+            batchim()
+                batchim 앞에 있는 유효한 한글에 받침을 붙여 주는 메서드. batchim("받침 있을 때", "받침 없을 때")로 사용.
         
         """
         self.message = input_msg
