@@ -43,12 +43,6 @@ _CERTAINS: list[KoSpellRules] = [
     .build(),
 
     *rule()
-    .AND(tag(Tag.동사), length(2))
-    .AND(tag(Tag.종결어미), forms({"구나", "군"}))
-    .msg("동사 뒤에는 '-는구나', '-는군'의 형태로 써야 합니다.")
-    .build(),
-
-    *rule()
     .tag_form(Tag.동사, "두르")
     .tag(Tag.연결어미)
     .tag_form(Tag.동사, "쌓이")
@@ -113,7 +107,7 @@ _CERTAINS: list[KoSpellRules] = [
     
     *rule()
     .tag_form(Tag.동사, "되")
-    .OR(tag_form(Tag.동사, "있"), tag_form(Tag.연결어미, "서"))
+    .OR(tag_form(Tag.동사, "있"), tag_form(Tag.연결어미, "서")).context()
     .msg("'돼'가 올바른 표현입니다.")
     .build(),
     
@@ -583,11 +577,28 @@ _REP = [
     .build(),
     
     *rule()
-    .id("예요_오타")
+    .id("REP_예요")
     .AND(tags({Tag.일반명사, Tag.의존명사, Tag.고유명사, Tag.명사파생접미사, Tag.명사형전성어미}), no_batchim())
     .tag_form(Tag.긍정지정사, "이").opt()
     .tag_form(Tag.종결어미, "에요")
     .msg("'{dform[0]}예요'가 올바른 표현입니다.").build(),
+    
+    *rule()
+    .id("REP_세다")
+    .AND(tag(Tag.형용사규칙활용), forms({"하얗", "허옇"})).context()
+    .tag_form(Tag.연결어미, "게").context()
+    .tag_form(Tag.동사, "새")
+    .msg("'희어지다'의 의미로는 '세다'가 올바른 표현입니다.").build(),
+    
+    *rule()
+    .id("REP_냬_녜")
+    .form("녜")
+    .msg("'~냐고 해'의 줄임말은 '냬'가 올바른 표현입니다.").build(),
+    
+    *rule()
+    .id("REP_쭈그리다_쭈구리다")
+    .tag_form(Tag.동사, "쭈구리")
+    .msg("'쭈그리다'가 올바른 표현입니다.").build(),
 ]
 
 # ᆯ 규칙 활용 관련
@@ -667,9 +678,9 @@ _MIF = [
     # .build(),
 
     *rule()
-    .tag_form(Tag.동사, "본뜨")
-    .OR(OR(tag_form(Tag.연결어미, "어서"), AND(tags({Tag.종결어미, Tag.연결어미}), form("어"))), tag_form(Tag.선어말어미, "었"))
-    .msg("'본떠/본딴'이 올바른 표현입니다.")
+    .tag_form(Tag.동사, "본따")
+    .tags({Tag.연결어미, Tag.관형사형전성어미, Tag.선어말어미})
+    .msg('\'merge(("본뜨", "동사"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.') # fixme - merge 메서드 오동작 중. 토크나이저 쪽 문제로 보임
     .build(),
 
     *rule()
@@ -880,6 +891,36 @@ _MIF = [
     .tag_form(Tag.보조용언, "싶")
     .tag_form(Tag.연결어미, "이")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"다\", \"연결어미\"))시피'가 올바른 표현입니다.").build(),
+
+    *rule()
+    .tag_form(Tag.선어말어미, "었").context()
+    .tag_form(Tag.호격조사, "아")
+    .msg("'어'의 오타가 아닌가요?").build(),
+
+    *rule()
+    .id("MIF_붓다_부은")
+    .tag_form(Tag.동사규칙활용, "붓")
+    .tag_form(Tag.관형사형전성어미, "운")
+    .msg("'부은'이 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("MIF_붓다_부으")
+    .tag_form(Tag.동사규칙활용, "붓")
+    .tag_form(Tag.연결어미, "우")
+    .any().context()
+    .msg("'부으'가 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("MIF_동사_는구나")
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), NOT(form("보")))
+    .tag_form(Tag.종결어미, "구나")
+    .msg('동사에는 \'는구나\'가 결합하므로, \'merge(({dform[0]}, {dtag[0]}), ("는구나", "종결어미"))\'로 써야 합니다.').build(),
+    
+    *rule()
+    .id("MIF_동사_는군")
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), NOT(form("보")))
+    .tag_form(Tag.종결어미, "군")
+    .msg('동사에는 \'는군\'이 결합하므로, \'merge(({dform[0]}, {dtag[0]}), ("는군", "종결어미"))\'으로 써야 합니다.').build(),
 ]
 
 _SHIFT_MISS = [
@@ -915,34 +956,39 @@ _NOT_CERTAINS = [
 
 _LOANWORDS = [
     *rule()
-    .id("브러쉬_외래어표기법")
+    .id("LOANWORD_브러쉬")
     .form("브러쉬")
     .msg("'브러시'가 올바른 표기입니다.").build(),
     
     *rule()
-    .id("드롭_외래어표기법")
+    .id("LOANWORD_드롭")
     .form("드랍")
     .msg("'드롭(drop)'이 올바른 표기입니다.").build(),
     
     *rule()
-    .id("배턴_외래어표기법")
+    .id("LOANWORD_배턴")
     .forms({"배톤", "배턴", "바톤"})
     .msg("'배턴' 또는 '바통'이 올바른 표기입니다.").build(),
     
     *rule()
-    .id("튀르키예_외래어표기법")
+    .id("LOANWORD_튀르키예")
     .tag_form(Tag.고유명사, "터키")
     .msg("나라 이름인 경우, '튀르키예'가 올바른 표기입니다.").build(),
     
     *rule()
-    .id("타월_외래어표기법")
+    .id("LOANWORD_타월")
     .tag_form(Tag.일반명사, "타올")
     .msg("'타월'이 올바른 표기입니다.").build(),
     
     *rule()
-    .id("수프_외래어표기법")
+    .id("LOANWORD_수프")
     .tag_form(Tag.일반명사, "스프")
     .msg("'수프(soup)'가 올바른 표기입니다.").build(),
+    
+    *rule()
+    .id("LOANWORD_레포트")
+    .tag_form(Tag.일반명사, "레포트")
+    .msg("'리포트'가 올바른 표기입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:
@@ -1000,6 +1046,11 @@ _NEED_ML_JUDGE = [
     .tag_form(Tag.고유명사, "캐롤")
     .msg("'캐럴'로 써야 합니다.")
     .build(),
+    
+    *rule()
+    .id("들르다_들리다_오타")
+    .tag_form(Tag.동사, "들리")
+    .msg("'지나가는 길에 방문하다'의 의미로는 '들르다'가 올바른 표현입니다.").build(),
 ]
 
 SPELL_MISS_ERRORS = [
