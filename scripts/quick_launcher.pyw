@@ -1490,7 +1490,7 @@ class Api:
               or self._folder_debug_rule_name != rule_name):
           try:
               self._folder_debug_spell = self._build_folder_spell_checker(
-                  rule_name, debug=True
+                  rule_name
               )
               self._folder_debug_rule_name = rule_name
           except Exception as e:
