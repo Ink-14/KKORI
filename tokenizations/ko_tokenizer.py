@@ -3,13 +3,16 @@ from pathlib import Path
 
 from kiwipiepy import Kiwi
 
-from korean_spell_checker.utils.file_io import get_all_file_paths, make_dictionary_list, make_termbase_list
+from korean_spell_checker.utils.file_io import get_all_file_paths, make_dictionary_list, make_termbase_list, make_pre_analyzed_dict_list
 from korean_spell_checker.models.interface import Tag
 
 class KoTokenizer(Kiwi):
     _instance = None
     DEFAULT_DICTIONARY_PATH = Path(__file__).parent.parent / "dictionary"
     DEFAULT_TERMBASE_PATH = Path(__file__).parent.parent.parent / "termbase"
+
+    DEFAULT_KO_DICT_FILE_NAME = "ko_dictionary"
+    DEFAULT_PRE_ANALYZED_DICT_FILE_NAME = "ko_preanalyzed"
 
     def __new__(cls):
         if cls._instance is None:
@@ -28,9 +31,14 @@ class KoTokenizer(Kiwi):
     def _make_dictionary(self):
         dictionary_files = get_all_file_paths(self.DEFAULT_DICTIONARY_PATH, "csv")
         for file in dictionary_files:
-            for words in make_dictionary_list(file):
-                word, tag, score = words
-                self.add_user_word(word=word, tag=tag, score=score)
+            if file.stem == self.DEFAULT_KO_DICT_FILE_NAME:
+                for words in make_dictionary_list(file):
+                    word, tag, score = words
+                    self.add_user_word(word=word, tag=tag, score=score)
+            elif file.stem == self.DEFAULT_PRE_ANALYZED_DICT_FILE_NAME:
+                for words in make_pre_analyzed_dict_list(file):
+                    word, form_tags, score = words
+                    self.add_pre_analyzed_word(word, form_tags, score)
 
     def _add_termbase(self):
         termbase_files = get_all_file_paths(self.DEFAULT_TERMBASE_PATH, "csv")

@@ -3,13 +3,14 @@ from pathlib import Path
 import json
 
 import pandas as pd
+import csv
 
 from korean_spell_checker.models.interface import Tag
 from korean_spell_checker.models.constants import DEFAULT_EXCEL_COL_NAME, DEFAULT_TERMBASE_COL_NAME
 
 warnings.filterwarnings('ignore', message='Data Validation extension is not supported')
 
-def make_dictionary_list(dictionary_file_name: Path) -> list[tuple[str, str, int]]:
+def make_dictionary_list(dictionary_file_name: Path) -> list[tuple[str, Tag, int]]:
 	df = pd.read_csv(dictionary_file_name, dtype=str)
 	if df["word"].isna().any() or (df["word"] == "").any():
 		raise ValueError("word column has empty values")
@@ -18,6 +19,27 @@ def make_dictionary_list(dictionary_file_name: Path) -> list[tuple[str, str, int
 	df["score"] = df["score"].fillna("0").replace("", "0")
 
 	return [(row.word, Tag[row.category], int(row.score)) for row in df.itertuples(index=False)] # type: ignore
+
+def make_pre_analyzed_dict_list(dictionary_file_name: Path) -> list[tuple[str, list[tuple[str, Tag]], float]]:
+	result = []
+	with open(dictionary_file_name, encoding='utf-8', newline='') as f:
+		reader = csv.reader(f)
+		next(reader, None)
+		
+		for row in reader:
+			if not row or not row[0]:
+				continue
+
+			word = row[0]
+			score = float(row[1]) if row[1] else 0.0
+
+			rest = row[2:]
+			
+			if len(rest) % 2 != 0:
+				raise ValueError(f"Form and Tag mismatched: {row}")
+			
+			result.append((word, [(rest[i], Tag[rest[i+1]].value) for i in range(0, len(rest), 2)], score))
+	return result
 
 def make_termbase_list(termbase_file_name: Path, col_names: list[str] = None) -> list[str]:
 	if col_names is None:
