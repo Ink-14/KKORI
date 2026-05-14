@@ -46,7 +46,7 @@ function Checker() {
   const [checked, setChecked] = useState(false)
 
   async function handleCheck() {
-    const res = await fetch('/check', {
+    const res = await fetch(`${__API_BASE__}/check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: inputText }),
