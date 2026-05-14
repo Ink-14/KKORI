@@ -104,6 +104,10 @@
   align-items: start;
 }
 
+.checker-result--full {
+  grid-template-columns: 1fr;
+}
+
 .checker-preview {
   padding: 16px 18px;
   background: #f8fafc;
@@ -199,6 +203,50 @@
   font-size: 14px;
   color: #166534;
   font-weight: 500;
+}
+
+.checker-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.checker-guide-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.checker-guide-item:last-child {
+  border-bottom: none;
+}
+
+.checker-guide-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checker-guide-item strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.checker-guide-item p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.6;
 }
 
 /* 반응형 */

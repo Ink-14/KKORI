@@ -125,8 +125,34 @@ function Checker() {
           </div>
         </div>
 
+        {!checked && !inputText && (
+          <div className="checker-guide">
+            <div className="checker-guide-item">
+              <span className="checker-guide-icon">✏️</span>
+              <div>
+                <strong>텍스트 입력</strong>
+                <p>검사할 문장을 위 입력창에 붙여넣거나 직접 입력하세요.</p>
+              </div>
+            </div>
+            <div className="checker-guide-item">
+              <span className="checker-guide-icon">🔍</span>
+              <div>
+                <strong>검사하기</strong>
+                <p>버튼을 누르면 맞춤법·띄어쓰기 오류를 자동으로 분석합니다.</p>
+              </div>
+            </div>
+            <div className="checker-guide-item">
+              <span className="checker-guide-icon">💡</span>
+              <div>
+                <strong>오류 확인</strong>
+                <p>빨간 밑줄 단어에 마우스를 올리면 오류 설명을 볼 수 있습니다.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {checked && inputText && (
-          <div className="checker-result">
+          <div className={`checker-result${errors.length === 0 ? ' checker-result--full' : ''}`}>
             <div className="checker-preview">
               {renderHighlighted(inputText, errors)}
             </div>
