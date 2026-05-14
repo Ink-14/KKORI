@@ -6,7 +6,7 @@ mod rule_checker_engine;
 use pyo3::prelude::*;
 use raw_searcher::RustRawStringSearcher;
 use py_types::*;
-use rule_checker_engine::{RuleCheckerBuilder, RuleChecker};
+use rule_checker_engine::{RuleCheckerBuilder, RuleChecker, RuleCheckerStats};
 
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -14,6 +14,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     m.add_class::<RuleCheckerBuilder>()?;
     m.add_class::<RuleChecker>()?;
+    m.add_class::<RuleCheckerStats>()?;
 
     m.add_class::<TagCondition>()?;
     m.add_class::<FormCondition>()?;

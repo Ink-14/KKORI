@@ -18,10 +18,11 @@ from _core import (
     AndCondition as RustAndCondition,
     OrCondition as RustOrCondition,
     NotCondition as RustNotCondition,
+    RuleCheckerStats
 )
 from korean_spell_checker.models.interface import KoToken, SpellError, SpellErrorType
 from korean_spell_checker.models.spell_checker_classes import (
-    SpacingRule, Condition,
+    Condition,
     TagCondition, FormCondition, TagAndFormCondition, LemmaCondition,
     AnyCondition, AnyBatchimCondition, BatchimCondition,
     LengthCondition, FirstTokenCondition,
@@ -170,3 +171,14 @@ class SpellChecker:
                 ))
             result.append(errors)
         return result
+    
+    def stats(self) -> RuleCheckerStats:
+        """
+        디버깅용.
+
+        Returns:
+            RuleCheckerStats: 체커의 노드 분포.
+        """
+        self._ensure_built()
+        assert self._checker is not None
+        return self._checker.stats()

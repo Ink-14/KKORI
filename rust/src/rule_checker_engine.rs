@@ -471,6 +471,23 @@ impl RuleChecker {
                 .collect()
         }))
     }
+
+    pub fn stats(&self) -> RuleCheckerStats {
+        let root = &self.nodes[0];
+        RuleCheckerStats {
+            total_nodes: self.nodes.len(),
+            total_transitions: self.transitions.len(),
+            root_tag_transitions: root.tag_transitions.len(),
+            root_form_transitions: root.form_transitions.len(),
+            root_form_and_tag_transitions: root.form_and_tag_transitions.len(),
+            root_batchim_transitions: root.batchim_transitions
+                .as_deref()
+                .map(|arr| arr.iter().filter(|s| s.is_some()).count())
+                .unwrap_or(0),
+            root_any_batchim_transitions: root.any_batchim_transitions.len(),
+            root_fallback_transitions: root.fallback_transitions.len(),
+        }
+    }
 }
 
 impl RuleChecker {
@@ -687,5 +704,31 @@ impl RuleChecker {
                 }
             }
         }
+    }
+}
+
+#[pyclass]
+#[derive(Clone)]
+pub struct RuleCheckerStats {
+    #[pyo3(get)] pub total_nodes: usize,
+    #[pyo3(get)] pub total_transitions: usize,
+    #[pyo3(get)] pub root_tag_transitions: usize,
+    #[pyo3(get)] pub root_form_transitions: usize,
+    #[pyo3(get)] pub root_form_and_tag_transitions: usize,
+    #[pyo3(get)] pub root_batchim_transitions: usize,
+    #[pyo3(get)] pub root_any_batchim_transitions: usize,
+    #[pyo3(get)] pub root_fallback_transitions: usize,
+}
+
+#[pymethods]
+impl RuleCheckerStats {
+    fn __repr__(&self) -> String {
+        format!(
+            "RuleCheckerStats(nodes={}, transitions={}, root[tag={}, form={}, tag+form={}, batchim={}, any_batchim={}, fallback={}])",
+            self.total_nodes, self.total_transitions,
+            self.root_tag_transitions, self.root_form_transitions,
+            self.root_form_and_tag_transitions, self.root_batchim_transitions,
+            self.root_any_batchim_transitions, self.root_fallback_transitions,
+        )
     }
 }
