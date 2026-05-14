@@ -34,7 +34,10 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://ink-14.github.io",
+    ],
     allow_methods=["POST"],
     allow_headers=["*"],
 )
