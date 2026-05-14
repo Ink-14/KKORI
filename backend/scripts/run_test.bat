@@ -1,3 +1,3 @@
 @echo off
-..\venv\Scripts\python -m pytest tests/ -s
+"%~dp0..\venv\Scripts\python" -m pytest "%~dp0..\tests" -s
 pause

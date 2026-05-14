@@ -9,14 +9,14 @@ ENV PATH="/root/.cargo/bin:$PATH"
 
 WORKDIR /build
 
-COPY requirements.txt .
+COPY requirements.prod.txt .
 RUN pip install --no-cache-dir maturin
 
 COPY rust/ rust/
 COPY pyproject.toml .
 RUN maturin build --release --manifest-path rust/Cargo.toml --out /wheels
 
-RUN pip install --no-cache-dir -r requirements.txt --target /deps
+RUN pip install --no-cache-dir -r requirements.prod.txt --target /deps
 RUN pip install --no-cache-dir /wheels/*.whl --target /deps
 
 
