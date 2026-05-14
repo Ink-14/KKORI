@@ -599,6 +599,18 @@ _REP = [
     .id("REP_쭈그리다_쭈구리다")
     .tag_form(Tag.동사, "쭈구리")
     .msg("'쭈그리다'가 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("REP_명사+채")
+    .tag(Tag.일반명사)
+    .tag_form(Tag.명사파생접미사, "채")
+    .msg("'그대로, 전부'의 의미인 경우 '{dform[0]}째'가 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("EP_엇")
+    .tags(TagGroup.용언)
+    .tag_form(Tag.선어말어미, "엇")
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("었", "선어말어미"))\'의 오타가 아닌가요?').build(),
 ]
 
 # ᆯ 규칙 활용 관련
@@ -923,6 +935,34 @@ _MIF = [
     .msg('동사에는 \'는군\'이 결합하므로, \'merge(({dform[0]}, {dtag[0]}), ("는군", "종결어미"))\'으로 써야 합니다.').build(),
 ]
 
+JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
+
+_JOSA = [
+    *rule()
+    .id("JOSA_으로")
+    .AND(tags(JOSA_TARGETS), OR(no_batchim(), batchim("ᆯ")))
+    .tag_form(Tag.부사격조사, "으로")
+    .msg('받침이 없거나 ㄹ로 끝나는 명사에는 \'로\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("로", "부사격조사"))\'의 오타가 아닌가요?').build(),
+
+    *rule()
+    .id("JOSA_로")
+    .AND(tags(JOSA_TARGETS), AND(any_batchim(), NOT(batchim("ᆯ"))))
+    .tag_form(Tag.부사격조사, "로")
+    .msg('ㄹ이 아닌 받침으로 끝나는 명사에는 \'으로\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("으로", "부사격조사"))\'의 오타가 아닌가요?').build(),
+
+    *rule()
+    .id("JOSA_을")
+    .AND(tags(JOSA_TARGETS), no_batchim())
+    .tag_form(Tag.목적격조사, "을")
+    .msg('받침 없는 명사에는 \'를\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("를", "목적격조사"))\'의 오타가 아닌가요?').build(),
+
+    *rule()
+    .id("JOSA_를")
+    .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.목적격조사, "를")
+    .msg('받침 있는 명사에는 \'을\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("을", "목적격조사"))\'의 오타가 아닌가요?').build(),
+]
+
 _SHIFT_MISS = [
     *rule()
     .tag_form(Tag.동사, "끄")
@@ -1061,6 +1101,7 @@ SPELL_MISS_ERRORS = [
     *_ADD,
     *_REP,
     *_MIF,
+    *_JOSA,
     *_SHIFT_MISS,
     *_LOANWORDS
 ]
