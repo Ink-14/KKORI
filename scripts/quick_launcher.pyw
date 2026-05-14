@@ -426,6 +426,10 @@ HTML = """
         <input type="checkbox" id="folder-labeling" onchange="onLabelingToggle()">
         라벨링 모드 (ML_LABELINGS, RawString 미적용)
       </label>
+      <label>
+        <input type="checkbox" id="folder-use-raw">
+        RawString 검사 사용
+      </label>
     </div>
     <button id="btn-folder-start" class="btn-primary" onclick="startFolderCheck()">
       폴더 선택 후 시작
@@ -706,16 +710,21 @@ function rebuildSpellRules() {
 function onLabelingToggle() {
   const mode = document.getElementById('folder-labeling').checked;
   document.getElementById('folder-rule').disabled = mode;
+  const rawChk = document.getElementById('folder-use-raw');
+  rawChk.disabled = mode;
+  if (mode) rawChk.checked = false;
 }
 
 function setFolderBlocking(on) {
   document.getElementById('btn-folder-start').disabled = on;
   document.getElementById('folder-labeling').disabled = on;
+  const labelingChecked = document.getElementById('folder-labeling').checked;
   if (on) {
     document.getElementById('folder-rule').disabled = true;
+    document.getElementById('folder-use-raw').disabled = true;
   } else {
-    document.getElementById('folder-rule').disabled =
-      document.getElementById('folder-labeling').checked;
+    document.getElementById('folder-rule').disabled = labelingChecked;
+    document.getElementById('folder-use-raw').disabled = labelingChecked;
   }
 }
 
@@ -754,8 +763,9 @@ async function startFolderCheck() {
   }
 
   setFolderStatus('처리 시작…');
+  const useRaw = !labelingMode && document.getElementById('folder-use-raw').checked;
   const startRes = await pywebview.api.start_folder_check(
-    folderRes.folder, ruleName, labelingMode, savePath
+    folderRes.folder, ruleName, labelingMode, savePath, useRaw
   );
   if (startRes.error) {
     setFolderBlocking(false);
@@ -1211,7 +1221,8 @@ class Api:
       return sc
 
     def start_folder_check(self, folder: str, rule_name: str,
-                           labeling_mode: bool, save_path: str | None) -> dict:
+                           labeling_mode: bool, save_path: str | None,
+                           use_raw: bool = False) -> dict:
         if err := self._ensure_ready():
             return err
         if self._folder_state and self._folder_state.get("running"):
@@ -1231,6 +1242,7 @@ class Api:
             "label_idx": 0,
             "save_path": save_path,
             "labeling_mode": labeling_mode,
+            "use_raw": use_raw and not labeling_mode,
             "rule_name": rule_name,
             "error": None,
             "history": [], # 뒤로 가기를 위한 히스토리
@@ -1273,7 +1285,7 @@ class Api:
 
             spell = self._build_folder_spell_checker(rule_name, debug=False)
             raw = None
-            if not labeling_mode:
+            if state.get("use_raw"):
                 importlib.reload(_raw_cfg)
                 raw = RawStringSearcher()
                 raw.add_word_from_list(_raw_cfg.RAW_STRING_RULES)
@@ -1490,7 +1502,7 @@ class Api:
               or self._folder_debug_rule_name != rule_name):
           try:
               self._folder_debug_spell = self._build_folder_spell_checker(
-                  rule_name
+                  rule_name, debug=True
               )
               self._folder_debug_rule_name = rule_name
           except Exception as e:
