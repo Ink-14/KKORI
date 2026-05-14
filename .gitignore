@@ -24,8 +24,7 @@ include/
 lib/
 
 # [Rust]
-/rust/target/
-/rust-engine/target/
+**/rust/target/
 Cargo.lock
 
 # [maturin 빌드 산출물]
