@@ -49,10 +49,17 @@
   display: flex;
   align-items: center;
   gap: 14px;
+  flex-wrap: wrap;
+}
+
+.checker-btn-group {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .checker-btn {
-  margin-left: auto;
   padding: 10px 28px;
   font-size: 15px;
   font-weight: 600;
@@ -62,7 +69,6 @@
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s, transform 0.1s;
-  flex-shrink: 0;
 }
 
 .checker-btn:hover {
@@ -71,6 +77,24 @@
 
 .checker-btn:active {
   transform: scale(0.97);
+}
+
+.checker-btn--clear {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.checker-btn--clear:hover {
+  background: #cbd5e1;
+}
+
+.checker-btn--clear:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.checker-btn--clear:disabled:active {
+  transform: none;
 }
 
 .checker-result {
@@ -106,18 +130,16 @@
   cursor: help;
 }
 
-.checker-error-word::before {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 10px;
+/* JS 툴팁 — fixed로 viewport 기준 위치 계산 */
+.checker-tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
   background: #1e293b;
   color: #e2e8f0;
   padding: 8px 12px;
   border-radius: 8px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
   white-space: pre-wrap;
   word-wrap: break-word;
   min-width: 180px;
@@ -125,33 +147,9 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 1.6;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.15s, visibility 0.15s;
-  z-index: 9999;
-  pointer-events: none;
-}
-
-.checker-error-word::after {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 4px;
-  border: 5px solid transparent;
-  border-top-color: #1e293b;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.15s, visibility 0.15s;
-  z-index: 9999;
-  pointer-events: none;
-}
-
-.checker-error-word:hover::before,
-.checker-error-word:hover::after {
-  opacity: 1;
-  visibility: visible;
+  /* 초기 위치는 JS가 설정하기 전 숨김 */
+  top: -9999px;
+  left: -9999px;
 }
 
 .checker-error-list {
@@ -201,4 +199,48 @@
   font-size: 14px;
   color: #166534;
   font-weight: 500;
+}
+
+/* 반응형 */
+@media (max-width: 600px) {
+  .checker-wrap {
+    padding: 24px 12px;
+  }
+
+  .checker-inner h1 {
+    font-size: 18px;
+  }
+
+  .checker-textarea {
+    min-height: 160px;
+    font-size: 14px;
+  }
+
+  .checker-btn-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .checker-btn-group {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .checker-btn {
+    flex: 1;
+    padding: 10px 0;
+    font-size: 14px;
+  }
+
+  .checker-result {
+    grid-template-columns: 1fr;
+  }
+
+  .checker-preview {
+    font-size: 14px;
+  }
+
+  .checker-tooltip {
+    max-width: calc(100vw - 24px);
+  }
 }
