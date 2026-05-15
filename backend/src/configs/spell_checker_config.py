@@ -15,32 +15,8 @@ SAMPLE = [
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"지\", \"연결어미\")) 않은'이 올바른 표현입니다.").build(),
 ]
 
-JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
-
 TEST_SPELL_CHECK_RULES = [
-    *rule()
-    .id("JOSA_으로")
-    .AND(tags(JOSA_TARGETS), OR(no_batchim(), batchim("ᆯ")))
-    .tag_form(Tag.부사격조사, "으로")
-    .msg('받침이 없거나 ㄹ로 끝나는 명사에는 \'로\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("로", "부사격조사"))\'의 오타가 아닌가요?').build(),
-
-    *rule()
-    .id("JOSA_로")
-    .AND(tags(JOSA_TARGETS), AND(any_batchim(), NOT(batchim("ᆯ"))))
-    .tag_form(Tag.부사격조사, "로")
-    .msg('ㄹ이 아닌 받침으로 끝나는 명사에는 \'으로\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("으로", "부사격조사"))\'의 오타가 아닌가요?').build(),
-
-    *rule()
-    .id("JOSA_을")
-    .AND(tags(JOSA_TARGETS), no_batchim())
-    .tag_form(Tag.목적격조사, "을")
-    .msg('받침 없는 명사에는 \'를\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("를", "목적격조사"))\'의 오타가 아닌가요?').build(),
-
-    *rule()
-    .id("JOSA_를")
-    .AND(tags(JOSA_TARGETS), any_batchim())
-    .tag_form(Tag.목적격조사, "를")
-    .msg('받침 있는 명사에는 \'을\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("을", "목적격조사"))\'의 오타가 아닌가요?').build(),
+    
 ]
 
 def rule() -> RuleBuilder:
@@ -106,10 +82,22 @@ ML_TRAINED = [
     .id("던지_든지_오타")
     .AND(tags({Tag.연결어미, Tag.종결어미, Tag.보조사}), form("던지"))
     .msg("나열할 때는 '든지'가 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("걸_띄어쓰기")
+    .tags({Tag.관형사형전성어미, Tag.관형사, Tag.관형격조사})
+    .AND(tag(Tag.의존명사), forms({"거"})).if_not_spaced()
+    .tag_form(Tag.목적격조사, "ᆯ")
+    .msg("'걸'을 앞 말과 띄어 써야 합니다.").build(),
 ]
 
 ML_LABELINGS = [
-    
+    *rule()
+    .id("는데_띄어쓰기")
+    .tag_form(Tag.관형사형전성어미, "는")
+    .tag_form(Tag.의존명사, "데").if_not_spaced()
+    .NOT(AND(tag(Tag.보조사), forms({"다", "다가"}))).context()
+    .msg("'는 데'로 띄어 써야 합니다.").build(),
 ]
 
 SPELL_CHECK_RULES: list[KoSpellRules] = [

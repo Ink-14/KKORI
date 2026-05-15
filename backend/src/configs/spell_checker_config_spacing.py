@@ -182,6 +182,17 @@ GENERAL_SPACING_ERRORS: list[KoSpellRules] = [
     .tag(Tag.명사파생접미사)
     .tag_form(Tag.동사파생접미사, "되").if_spaced()
     .msg("'되다'를 앞 말에 붙여 써야 합니다.").build(),
+
+    *rule()
+    .tag(Tag.일반부사)
+    .tag(Tag.보조용언).if_not_spaced()
+    .msg('\'merge(({dform[1]}, "보조용언"), ("다", "종결어미"))\'를 앞 말과 띄어 써야 합니다.').build(),
+
+    *rule()
+    .tag(Tag.관형사형전성어미)
+    .tags({Tag.일반명사, Tag.고유명사}).if_not_spaced()
+    .tag(Tag.주격조사).context()
+    .msg("명사 '{dform[1]}'batchim(\"을\", \"를\") 앞 말과 띄어 써야 합니다.").build(),
 ]
 
 _SPACING_ERRORS = [
@@ -251,7 +262,9 @@ _SPACING_ERRORS = [
     .msg("'지'를 붙여 써야 합니다.").build(),
     
     *rule()
+    .tag_form(Tag.관형사형전성어미, "ᆫ")
     .AND(tags({Tag.의존명사, Tag.대명사}), form("지")).if_not_spaced()
+    .tags(TagGroup.조사).opt().context()
     .tag(Tag.숫자).context()
     .msg("시간의 흐름을 나타내는 경우, '지'를 앞 말과 띄어 써야 합니다.").build(),
     
@@ -562,6 +575,11 @@ _SPACING_ERRORS = [
     .tag_form(Tag.일반부사, "안")
     .tag_form(Tag.동사, "되").if_not_spaced()
     .msg("'안 되다'로 띄어 써야 합니다.").build(),
+
+    *rule()
+    .tag(Tag.관형사형전성어미)
+    .tag_form(Tag.일반명사, "경우").if_not_spaced()
+    .msg("'경우'를 앞 말과 띄어 써야 합니다.").build(),
 ]
 
 _NNB = [
@@ -629,11 +647,6 @@ _NNB = [
     .msg("'데'를 앞 말과 띄어 써야 합니다.").build(),
     
     *rule()
-    .tag_form(Tag.일반부사, "안")
-    .AND(tag(Tag.동사), NOT(form("되"))).if_not_spaced()
-    .msg("'안'과 동사를 띄어 써야 합니다.").build(),
-    
-    *rule()
     .tag_form(Tag.의존명사, "수").context()
     .tag_form(Tag.형용사, "있").if_not_spaced()
     .msg("'있다'를 띄어 써야 합니다.").build(),
@@ -667,10 +680,11 @@ _NNB = [
     .msg("'것'을 앞 말과 띄어 써야 합니다.").build(),
 
     *rule()
+    .id("것_띄어쓰기")
     .NOT(tag_form(Tag.형용사, "달")).context()
     .tags({Tag.관형사형전성어미, Tag.관형사, Tag.관형격조사})
     .AND(tag(Tag.의존명사), forms({"거"})).if_not_spaced()
-    .NOT(tag_form(Tag.주격조사, "이")).context()
+    .NOT(tag_form(Tag.목적격조사, "ᆯ")).context()
     .msg("'것'을 앞 말과 띄어 써야 합니다.").build(),
     
     *rule()
@@ -740,6 +754,13 @@ _NNB = [
     .tag(Tag.일반명사)
     .tag_form(Tag.의존명사, "쪽").if_not_spaced()
     .msg("'{dform[0]} 쪽'으로 띄어 써야 합니다.").build(),
+
+    *rule()
+    .id("는 데다_띄어쓰기")
+    .tag_form(Tag.관형사형전성어미, "는")
+    .tag_form(Tag.의존명사, "데").if_not_spaced()
+    .AND(tag(Tag.보조사), forms({"다", "다가"})).context()
+    .msg("'는 데'로 띄어 써야 합니다.").build(),
 ]
 
 _NNG = [
@@ -1372,6 +1393,7 @@ _NNG_NNG = [
     *NNG_and_NNG("아기", "고양이", SpacingRule.SPACED),
     *NNG_and_NNG("여자", "친구", SpacingRule.SPACED),
     *NNG_and_NNG("남자", "친구", SpacingRule.SPACED),
+    *NNG_and_NNG("정신", "건강", SpacingRule.SPACED),
 ]
 
 _NR = [
@@ -1379,6 +1401,13 @@ _NR = [
     .tag_form(Tag.관형사, "수")
     .AND(tag(Tag.수사,), forms({"천", "십", "백", "만"})).if_spaced()
     .msg("'{form[1]}의 여러 배가 되는 수'의 의미인 경우, '{form[0]}{form[1]}'batchim(\"으로\",\"로\") 붙여 써야 합니다.").build(),
+
+    *rule()
+    .id("NR_만에 하나_띄어쓰기")
+    .tag_form(Tag.수사, "만")
+    .tag_form(Tag.부사격조사, "에")
+    .tag_form(Tag.수사, "하나").if_not_spaced()
+    .msg("'만에 하나'로 띄어 써야 합니다.").build(),
 ]
 
 _VV = [
@@ -1458,17 +1487,23 @@ _VV = [
     *rule()
     .tag_form(Tag.대명사, "뭐")
     .tag_form(Tag.동사, "하").if_not_spaced()
-    .any().opt()
-    .any().opt()
-    .tag_form(Tag.의존명사, "거")
+    .any().opt().context()
+    .any().opt().context()
+    .tag_form(Tag.의존명사, "거").context()
     .msg("'뭐 하다'로 띄어 써야 합니다.").build(),
     
     *rule()
-    .tag_form(Tag.연결어미, "더니")
+    .tag_form(Tag.연결어미, "더니").context()
     .tag_form(Tag.대명사, "뭐")
     .tag_form(Tag.동사, "하").if_not_spaced()
     .msg("'뭐 하다'로 띄어 써야 합니다.").build(),
     
+    *rule()
+    .id("뭐 하다_띄어쓰기")
+    .tag_form(Tag.대명사, "뭐")
+    .tag_form(Tag.동사, "하").if_not_spaced()
+    .msg("'무엇을 하다'의 의미인 경우, '뭐 하다'로 띄어 써야 합니다. '민망하다'의 의미인 경우에는 붙여 씁니다. (예: 빈손으로 오기 뭐해서 가져왔어요.)").build(),
+
     *rule()
     .tag_form(Tag.일반부사, "잘못")
     .tag_form(Tag.동사, "되").if_spaced()
@@ -2382,7 +2417,7 @@ _VA = [
 
     *rule()
     .NOT(tag(Tag.관형사)).context()
-    .forms({"꼼짝", "쓸데", "문제", "빈틈", "온데간데", "꾸밈", "스스럼", "부질", "재미", "소용", "틀림", "쓸데", "끊임", "다름", "염치", "빈틈", "정신", "다름", "변함", "끄떡", "문제", "어처구니", "인정사정", "어이"})
+    .forms({"꼼짝", "쓸데", "문제", "빈틈", "온데간데", "꾸밈", "스스럼", "부질", "재미", "소용", "틀림", "쓸데", "끊임", "다름", "염치", "빈틈", "정신", "다름", "변함", "끄떡", "문제", "어처구니", "인정사정", "어이", "유례"})
     .OR(tag_form(Tag.형용사, "없"), tag_form(Tag.일반부사, "없이")).if_spaced()
     .msg("'{form[0]}없다'로 붙여 써야 합니다.").build(),
 
@@ -2677,12 +2712,6 @@ _JX = [
     .tag_form(Tag.연결어미, "게")
     .tag_form(Tag.보조사, "나마").if_spaced()
     .msg("'~게나마'로 붙여 써야 합니다.").build(),
-    
-    *rule()
-    .tag_form(Tag.보조사, "야")
-    .tag_form(Tag.일반명사, "말").if_spaced()
-    .tag_form(Tag.부사격조사, "로")
-    .msg("'~야말로'로 붙여 써야 합니다.").build(),
 
     *rule()
     .id("JX_깨나_붙여쓰기")
@@ -2812,6 +2841,20 @@ _EC = [
     .tag_form(Tag.일반명사, "들").if_spaced()
     .NOT(tags(TagGroup.조사)).context()
     .msg('\'~다고 할지라도\'의 의미인 경우, \'merge(({dform[0]}, {dtag[0]}), ("은들", "연결어미"))\'로 붙여 써야 합니다.').build(),
+
+    *rule()
+    .id("EC_라 한들_붙여쓰기")
+    .tag_form(Tag.긍정지정사, "이").context()
+    .tag_form(Tag.연결어미, "라").context()
+    .tag_form(Tag.관형사, "한")
+    .tag_form(Tag.일반명사, "들").if_spaced()
+    .msg("'~다고 할지라도'의 의미인 경우, '~한들'로 붙여 써야 합니다.").build(),
+
+    *rule()
+    .id("EC_수록_붙여쓰기")
+    .tag_form(Tag.관형사형전성어미, "ᆯ")
+    .form("수록").if_spaced()
+    .msg("'ᆯ수록'은 어미이므로 앞 말에 붙여 써야 합니다. (예: 하면 할수록)").build(),
 ]
 
 _ETN = [
@@ -2945,13 +2988,7 @@ _NEED_ML_JUDGE = [
     .id("따라_붙여쓰기")
     .tag_form(Tag.동사, "따르").if_spaced()
     .tag_form(Tag.연결어미, "어")
-    .msg("'따라'를 앞 말에 붙여 써야 합니다.").build(),
-    
-    *rule()
-    .id("수록_붙여쓰기")
-    .tag_form(Tag.관형사형전성어미, "ᆯ")
-    .form("수록").if_spaced()
-    .msg("'ᆯ수록'은 어미이므로 앞 말에 붙여 써야 합니다. (예: 하면 할수록)").build(),
+    .msg("'따라'를 앞 말에 붙여 써야 합니다.").build(),    
     
     *rule()
     .id("저세상_붙여쓰기")
@@ -2992,12 +3029,6 @@ _NEED_ML_JUDGE = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.동사, "들어오").if_not_spaced()
     .msg("'흘러들어 오다'로 띄어 써야 합니다.").build(),
-    
-    *rule()
-    .id("뭐 하다_띄어쓰기")
-    .tag_form(Tag.대명사, "뭐")
-    .tag_form(Tag.동사, "하").if_not_spaced()
-    .msg("'뭐 하다'로 띄어 써야 합니다.").build(),
 ]
 
 SPACING_ERRORS = [

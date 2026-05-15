@@ -692,7 +692,7 @@ _MIF = [
     *rule()
     .tag_form(Tag.동사, "본따")
     .tags({Tag.연결어미, Tag.관형사형전성어미, Tag.선어말어미})
-    .msg('\'merge(("본뜨", "동사"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.') # fixme - merge 메서드 오동작 중. 토크나이저 쪽 문제로 보임
+    .msg('\'본뜨다\'의 활용형은 \'본merge(("뜨", "동사"), ({dform[1]}, {dtag[1]}))\'batchim("으로", "로") 써야 합니다.') # fixme - merge 메서드 오동작 중. 토크나이저 쪽 문제로 보임
     .build(),
 
     *rule()
@@ -933,6 +933,12 @@ _MIF = [
     .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), NOT(form("보")))
     .tag_form(Tag.종결어미, "군")
     .msg('동사에는 \'는군\'이 결합하므로, \'merge(({dform[0]}, {dtag[0]}), ("는군", "종결어미"))\'으로 써야 합니다.').build(),
+
+    *rule()
+    .id("MIF_돕다")
+    .tag_form(Tag.동사, "도우")
+    .any()
+    .msg('\'돕다\'의 활용형은 \'merge(("돕", "동사규칙활용"), ({dform[1]}, {dtag[1]}))\'batchim("으로", "로") 사용해야 합니다.').build(),
 ]
 
 JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
@@ -961,6 +967,42 @@ _JOSA = [
     .AND(tags(JOSA_TARGETS), any_batchim())
     .tag_form(Tag.목적격조사, "를")
     .msg('받침 있는 명사에는 \'을\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("을", "목적격조사"))\'의 오타가 아닌가요?').build(),
+
+    *rule()
+    .id("JOSA_은")
+    .AND(tags(JOSA_TARGETS), no_batchim())
+    .tag_form(Tag.보조사, "은")
+    .msg('받침 없는 명사에는 \'는\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("는", "보조사"))\'의 오타가 아닌가요?').build(),
+
+    *rule()
+    .id("JOSA_는")
+    .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.보조사, "는")
+    .msg('받침 있는 명사에는 \'은\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("은", "보조사"))\'의 오타가 아닌가요?').build(),
+
+    *rule()
+    .id("JOSA_이")
+    .AND(tags(JOSA_TARGETS), no_batchim())
+    .tag_form(Tag.주격조사, "이")
+    .msg('받침 없는 명사에는 \'가\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("이", "주격조사"))\'의 오타가 아닌가요?').build(),
+
+    *rule()
+    .id("JOSA_가")
+    .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.주격조사, "가")
+    .msg('받침 있는 명사에는 \'이\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("이", "주격조사"))\'의 오타가 아닌가요?').build(),
+
+    *rule()
+    .id("JOSA_과")
+    .AND(tags(JOSA_TARGETS), no_batchim())
+    .tag_form(Tag.접속조사, "과")
+    .msg('받침 없는 명사에는 \'와\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("이", "접속조사"))\'의 오타가 아닌가요?').build(),
+
+    *rule()
+    .id("JOSA_와")
+    .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.접속조사, "와")
+    .msg('받침 있는 명사에는 \'과\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("과", "접속조사"))\'의 오타가 아닌가요?').build(),
 ]
 
 _SHIFT_MISS = [
