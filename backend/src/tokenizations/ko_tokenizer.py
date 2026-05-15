@@ -21,7 +21,7 @@ class KoTokenizer(Kiwi):
     
     def __init__(self):
         if not getattr(self, '_initialized', False):
-            super().__init__()
+            super().__init__(model_type='cong-global')
             
             self._debug = False
             self._make_dictionary()
