@@ -1,24 +1,28 @@
 ﻿import warnings
 from pathlib import Path
-import json
-
-import pandas as pd
 import csv
 
 from src.models.interface import Tag
-from src.models.constants import DEFAULT_EXCEL_COL_NAME, DEFAULT_TERMBASE_COL_NAME
+from src.models.constants import DEFAULT_TERMBASE_COL_NAME
 
 warnings.filterwarnings('ignore', message='Data Validation extension is not supported')
 
 def make_dictionary_list(dictionary_file_name: Path) -> list[tuple[str, Tag, int]]:
-	df = pd.read_csv(dictionary_file_name, dtype=str)
-	if df["word"].isna().any() or (df["word"] == "").any():
-		raise ValueError("word column has empty values")
-	if df["category"].isna().any() or (df["category"] == "").any():
-		raise ValueError("category column has empty values")
-	df["score"] = df["score"].fillna("0").replace("", "0")
+	result = []
+	with open(dictionary_file_name, encoding='utf-8', newline='') as f:
+		reader = csv.DictReader(f)
+		for i, row in enumerate(reader, start=2):
+			word = row.get("word", "")
+			category = row.get("category", "")
+			score = row.get("score", "") or "0"
 
-	return [(row.word, Tag[row.category], int(row.score)) for row in df.itertuples(index=False)] # type: ignore
+			if word is None or word == "":
+				raise ValueError("word column has empty values")
+			if category is None or category == "":
+				raise ValueError("category column has empty values")
+
+			result.append((word, Tag[category], int(score)))
+	return result
 
 def make_pre_analyzed_dict_list(dictionary_file_name: Path) -> list[tuple[str, list[tuple[str, Tag]], float]]:
 	result = []
@@ -44,8 +48,13 @@ def make_pre_analyzed_dict_list(dictionary_file_name: Path) -> list[tuple[str, l
 def make_termbase_list(termbase_file_name: Path, col_names: list[str] = None) -> list[str]:
 	if col_names is None:
 		col_names = [DEFAULT_TERMBASE_COL_NAME]
-	df = pd.read_csv(termbase_file_name, usecols=col_names, dtype=str)
-	return [i for i in df[DEFAULT_TERMBASE_COL_NAME]]
+	result = []
+	with open(termbase_file_name, encoding='utf-8', newline='') as f:
+		reader = csv.DictReader(f)
+		for row in reader:
+			value = row.get(DEFAULT_TERMBASE_COL_NAME, "")
+			result.append(value if value is not None else "")
+	return result
 
 def get_all_file_paths(folder_name: str, extension: str = None) -> list[Path]:
 	if extension is None:
@@ -54,28 +63,9 @@ def get_all_file_paths(folder_name: str, extension: str = None) -> list[Path]:
 		target_path = Path(folder_name).rglob(f"*.{extension}")
 	return [i.absolute() for i in target_path if i.is_file() and not i.name.startswith("~$")]
 
-def read_excel_file(file_path: str, col_names: list[str] = None, drop_na: bool = False) -> pd.DataFrame:
-	if col_names is None:
-		col_names = [DEFAULT_EXCEL_COL_NAME]
-	df = pd.read_excel(file_path, usecols=col_names, dtype=str)
-	if drop_na:
-		df = df.dropna()
-	return df
-
-def read_txt_file(file_path: str, drop_na: bool = False) -> pd.DataFrame:
+def read_txt_lines(file_path: str, drop_empty: bool = False) -> list[str]:
     with open(file_path, 'r', encoding='utf-8') as f:
         lines = f.read().splitlines()
-    df = pd.DataFrame(lines, columns=['text'])
-    if drop_na:
-        df = df.dropna()
-    return df
-
-def read_json_file(file_path: str, drop_na: bool = False) -> pd.DataFrame:
-    with open(file_path, 'r', encoding='utf-8') as f:
-        raw_data = json.load(f)
-    
-    data = raw_data.values()
-    df = pd.DataFrame(data, columns=['text'])
-    if drop_na:
-        df = df.dropna()
-    return df
+    if drop_empty:
+        lines = [l for l in lines if l.strip()]
+    return lines

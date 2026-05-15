@@ -37,8 +37,9 @@ import src.configs.spell_checker_config_warning as _spell_warning_cfg
 import src.configs.spell_checker_config as _spell_cfg
 import src.configs.raw_string_searcher_config as _raw_cfg
 from src.reporters.html_reporter import highlight_text, get_error_type_name
-from src.utils.file_io import read_txt_file, get_all_file_paths
-from bktree import BKTree
+from src.utils.file_io import get_all_file_paths
+from src.utils.pandas_io import read_txt_file
+from assets.bktree import BKTree
 from jamo import h2j
 
 TAG_REPLACE_REGEX = re.compile(r"\<[^>]+\>")
