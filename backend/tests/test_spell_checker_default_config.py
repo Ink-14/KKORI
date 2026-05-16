@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pytest
 
 from helpers import assert_error, assert_no_errors, check_error_type
-from src.configs.spell_checker_config import SPELL_CHECK_RULES
+from src.engines.configs.spell_checker_config import SPELL_CHECK_RULES
 from src.models.interface import SpellErrorType
 
 @dataclass

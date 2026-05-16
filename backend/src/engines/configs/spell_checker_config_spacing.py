@@ -1,4 +1,4 @@
-﻿from src.configs.spell_checker_config_builder import *
+﻿from src.engines.configs.spell_checker_config_builder import *
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 NUMBER_DETERMINERS = {"첫", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "백", "천", "만", "억"}

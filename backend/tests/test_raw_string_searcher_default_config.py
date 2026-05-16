@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pytest
 
 from helpers import assert_error_raw_text, assert_no_errors_raw_text, check_error_type
-from src.configs.raw_string_searcher_config import RAW_STRING_RULES
+from src.engines.configs.raw_string_searcher_config import RAW_STRING_RULES
 from src.models.interface import SpellErrorType
 
 @dataclass

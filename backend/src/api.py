@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -9,8 +9,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from src.configs.raw_string_searcher_config import RAW_STRING_RULES
-from src.configs.spell_checker_config import SPELL_CHECK_RULES
+from src.engines.configs.raw_string_searcher_config import RAW_STRING_RULES
+from src.engines.configs.spell_checker_config import SPELL_CHECK_RULES
 from src.engines.raw_searcher import RawStringSearcher
 from src.engines.spell_checker import SpellChecker
 from src.models.interface import SpellError, Tag

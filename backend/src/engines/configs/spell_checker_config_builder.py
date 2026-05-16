@@ -5,7 +5,7 @@ import warnings
 
 from src.models.spell_checker_classes import *
 from src.models.interface import SpellErrorType, Tag, RuleId
-from src.configs.spell_checker_config_builder_parser import MessageTokenizer, MessageParser, TagNode, TextNode, MethodNode, QuotedNode, MESSAGE_METHODS
+from src.engines.configs.spell_checker_config_builder_parser import MessageTokenizer, MessageParser, TagNode, TextNode, MethodNode, QuotedNode, MESSAGE_METHODS
 
 ErrorMessage: TypeAlias = str
 RuleSteps: TypeAlias = list[tuple[Condition, SpacingRule, bool, bool]]

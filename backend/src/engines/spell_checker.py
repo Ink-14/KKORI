@@ -29,7 +29,7 @@ from src.models.spell_checker_classes import (
     TagSetCondition, FormSetCondition,
     AndCondition, OrCondition, NotCondition,
 )
-from src.configs.spell_checker_config_builder import KoSpellRules, CompiledMessage
+from src.engines.configs.spell_checker_config_builder import KoSpellRules, CompiledMessage
 
 @dataclass(frozen=True, slots=True)
 class RuleMetaData:

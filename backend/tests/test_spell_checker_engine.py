@@ -5,8 +5,8 @@ import pytest
 
 from src.models.interface import Tag, SpellError, SpellErrorType
 from src.engines.spell_checker import SpellChecker
-from src.configs.spell_checker_config import SPELL_CHECK_RULES
-from src.configs.spell_checker_config_builder import *
+from src.engines.configs.spell_checker_config import SPELL_CHECK_RULES
+from src.engines.configs.spell_checker_config_builder import *
 from src.utils.hangul import get_jongseong, is_jamo
 
 # ── 헬퍼 ──
