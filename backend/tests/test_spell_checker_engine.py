@@ -97,6 +97,53 @@ class TestSpacing:
         assert all(e.error_message != "spaced 오류" for e in errors)
 
 
+# ── BOS spacing ──
+
+BOS_SPACING_RULES = [
+    *rule()
+    .form("A")
+    .if_spaced()
+    .form("B")
+    .msg("spaced at bos")
+    .build(),
+
+    *rule()
+    .form("A")
+    .if_not_spaced()
+    .form("B")
+    .msg("attached at bos")
+    .build(),
+]
+
+class TestBosSpacing:
+    """첫 토큰(BOS)에서 SPACED/ATTACHED 규칙이 잘못 매칭되지 않는지 검증"""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.checker = SpellChecker()
+        self.checker.add_rule_from_list(BOS_SPACING_RULES)
+
+    def test_spaced_rule_does_not_match_at_bos(self):
+        tokens = build_tokens(("A", Tag.일반명사), " ", ("B", Tag.일반명사))
+        errors = list(self.checker.check(tokens))
+        assert all(e.error_message != "spaced at bos" for e in errors)
+
+    def test_attached_rule_does_not_match_at_bos(self):
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사))
+        errors = list(self.checker.check(tokens))
+        assert all(e.error_message != "attached at bos" for e in errors)
+
+    def test_spaced_rule_matches_mid_sentence(self):
+        tokens = build_tokens(("X", Tag.일반명사), " ", ("A", Tag.일반명사), " ", ("B", Tag.일반명사))
+        errors = list(self.checker.check(tokens))
+        assert_found(errors, "spaced at bos", 2, 5)
+
+    def test_attached_rule_matches_mid_sentence(self):
+        tokens = build_tokens(("X", Tag.일반명사), ("A", Tag.일반명사), ("B", Tag.일반명사))
+        errors = list(self.checker.check(tokens))
+        assert_found(errors, "attached at bos", 1, 3)
+
+
 # ── 옵셔널 전이 ──
 
 OPTIONAL_RULES = [

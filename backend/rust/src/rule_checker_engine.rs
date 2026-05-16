@@ -531,6 +531,8 @@ impl RuleChecker {
     }
 
     fn check_inner(&self, tokens: &[EnrichedToken]) -> Vec<(u32, u32, u32)> {
+        #[derive(PartialEq)]
+        enum SpacingState { Bos, Spaced, Attached }
         if tokens.is_empty() { return Vec::new(); }
 
         let mut errors: Vec<(u32, u32, u32)> = Vec::new();
@@ -541,7 +543,13 @@ impl RuleChecker {
         let mut yielded_outputs: FxHashSet<(usize, usize)> = FxHashSet::default();
 
         for (i, token) in tokens.iter().enumerate() {
-            let has_space = i > 0 && token.start > tokens[i - 1].end;
+            let spacing_state = if i == 0 {
+                SpacingState::Bos
+            } else if token.start > tokens[i - 1].end {
+                SpacingState::Spaced
+            } else {
+                SpacingState::Attached
+            };
 
             expanded_cursors.clear();
 
@@ -605,9 +613,9 @@ impl RuleChecker {
                 // 2-C: spacing 필터 + next_cursors 업데이트
                 for &trans_idx in &candidates {
                     let trans = &self.transitions[trans_idx];
-                    match trans.spacing_rule {
-                        SpacingRule::SPACED   if !has_space => continue,
-                        SpacingRule::ATTACHED if  has_space => continue,
+                    match (&trans.spacing_rule, &spacing_state) {
+                        (SpacingRule::SPACED,   SpacingState::Bos | SpacingState::Attached) => continue,
+                        (SpacingRule::ATTACHED, SpacingState::Bos | SpacingState::Spaced)   => continue,
                         _ => {}
                     }
 
