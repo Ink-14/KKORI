@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { getApiBase } from '../lib/api'
 import './checker.css'
 
 type SpellErrorResponse = {
@@ -24,7 +25,8 @@ function Checker() {
   const tooltipRef = useRef<HTMLDivElement>(null)
 
   async function handleCheck() {
-    const res = await fetch(`${__API_BASE__}/check`, {
+    const base = await getApiBase()
+    const res = await fetch(`${base}/check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: inputText }),

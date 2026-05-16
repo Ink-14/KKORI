@@ -1,22 +1,45 @@
+import type { Plugin } from 'vite'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const isProd = process.env.NODE_ENV === 'production'
+function htmlEntryPlugin(entry: string): Plugin {
+  return {
+    name: 'html-entry',
+    transformIndexHtml(html) {
+      return html.replace('/src/main.tsx', entry)
+    },
+  }
+}
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  base: isProd ? '/korean_spell_checker/' : '/',
-  define: {
-    __API_BASE__: isProd
-      ? JSON.stringify('https://koreanspellchecker-production.up.railway.app')
-      : JSON.stringify(''),
-  },
-  server: {
-    proxy: {
-      '/raw-check': 'http://127.0.0.1:8765',
-      '/nfa-check': 'http://127.0.0.1:8765',
-      '/check': 'http://127.0.0.1:8765',
+export default defineConfig(({ mode }) => {
+  const isWeb = mode === 'web'
+  const isDesktop = mode === 'desktop'
+
+  return {
+    plugins: [
+      react(),
+      htmlEntryPlugin(isDesktop ? '/src/main.desktop.tsx' : '/src/main.web.tsx'),
+    ],
+    base: isWeb ? '/korean_spell_checker/' : '/',
+    define: {
+      __API_BASE__: isWeb
+        ? JSON.stringify('https://koreanspellchecker-production.up.railway.app')
+        : JSON.stringify(''),
+    },
+    build: {
+      rollupOptions: {
+        input: 'index.html',
+      }
+    },
+    server: {
+      proxy: {
+        '/raw-check': 'http://127.0.0.1:8765',
+        '/nfa-check': 'http://127.0.0.1:8765',
+        '/check': 'http://127.0.0.1:8765',
+        '/add-words': 'http://127.0.0.1:8765',
+        '/words': 'http://127.0.0.1:8765',
+      }
     }
   }
 })

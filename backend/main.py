@@ -1,45 +1,57 @@
-﻿import sys
+import socket
+import threading
+import time
+from pathlib import Path
 
-from _core import RawStringSearcher
-from src.tokenizations.ko_tokenizer import KoTokenizer
-from src.engines.spell_checker import SpellChecker
-from src.configs.spell_checker_config import SPELL_CHECK_RULES
-from src.configs.raw_string_searcher_config import RAW_STRING_RULES
-from src.models.interface import SpellError
+import uvicorn
+import webview
 
-print("초기화 실행 중")
-tokenizer = KoTokenizer()
-_ = tokenizer.tokenize("")
-spell_check = SpellChecker(True)
-raw_string_check = RawStringSearcher()
+from src.api import app
 
-spell_check.add_rule_from_list(SPELL_CHECK_RULES)
 
-for words, err_type in RAW_STRING_RULES:
-    for word_group, msg in words:
-        for word in word_group:
-            raw_string_check.add_word(word, msg, "RAW")
-            
-print("초기화 완료")
+def _find_free_port(start: int = 8765) -> int:
+    port = start
+    while True:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(("127.0.0.1", port)) != 0:
+                return port
+        port += 1
+
+
+def _wait_for_server(port: int, timeout: float = 10.0) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(("127.0.0.1", port)) == 0:
+                return
+        time.sleep(0.05)
+    raise TimeoutError(f"서버가 {timeout}초 내에 시작되지 않았습니다 (port={port})")
+
+
+def _run_server(port: int) -> None:
+    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
+
 
 if __name__ == "__main__":
-    try:
-        while True:
-            u_input = input(" 》 검사할 텍스트를 입력하세요.\n")
-            res = [SpellError(error_type=r[0], error_message=r[1], start_index=r[2], end_index=r[3]) for r in raw_string_check.search(u_input)]
-            res.extend(spell_check.check(tokenizer.tokenize(u_input)))
+    dist_dir = Path(__file__).parent.parent / "frontend" / "dist"
+    if not (dist_dir / "index.html").exists():
+        raise FileNotFoundError(
+            f"프론트엔드 빌드 결과물이 없습니다: {dist_dir / 'index.html'}\n"
+            "frontend 디렉토리에서 'npm run build:desktop'을 먼저 실행하세요."
+        )
 
-            if res:
-                print("\n------------------ 결과")
-                for i, r in enumerate(res):
-                    print(f"오류 {i+1}")
-                    print(f"error type: {r.error_type}")
-                    print(f"error message: {r.error_message}")
-                    if r.debug_path:
-                        print(f"debug path: {r.debug_path}")
-                    print("")
-            else:
-                print("\n결과가 없습니다.\n")
-            
-    except:
-        sys.exit()
+    port = _find_free_port()
+
+    server_thread = threading.Thread(target=_run_server, args=(port,), daemon=True)
+    server_thread.start()
+    _wait_for_server(port)
+
+    window = webview.create_window(
+        title="한국어 맞춤법 검사기",
+        url=f"http://127.0.0.1:{port}/",
+        width=1000,
+        height=700,
+        min_size=(600, 400),
+        text_select=True,
+    )
+    webview.start()

@@ -1,0 +1,50 @@
+.desktop-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.desktop-tabs {
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 1.5px solid #e2e8f0;
+  background: #fff;
+  padding: 0 24px;
+  gap: 4px;
+}
+
+.desktop-tab {
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  background: none;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1.5px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.desktop-tab:hover {
+  color: #1e293b;
+}
+
+.desktop-tab--active {
+  color: #6366f1;
+  border-bottom-color: #6366f1;
+  font-weight: 600;
+}
+
+.desktop-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none; /* Firefox */
+}
+
+.desktop-content::-webkit-scrollbar {
+  display: none; /* Chrome/WebKit (pywebview) */
+}

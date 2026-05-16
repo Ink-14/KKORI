@@ -32,3 +32,6 @@ Cargo.lock
 *.pyd
 _core*.so
 _core*.pyd
+
+# [사용자 데이터]
+data/
