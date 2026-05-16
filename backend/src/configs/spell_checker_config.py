@@ -1,6 +1,6 @@
-﻿from src.configs.spell_checker_config_builder import *
+﻿from src.engines.configs.spell_checker_config_builder import *
 from src.models.interface import Tag, TagGroup, SpellErrorType
-from src.configs import spell_checker_config_meaning, spell_checker_config_spacing, spell_checker_config_specific, spell_checker_config_spelling, spell_checker_config_warning
+from src.engines.configs import spell_checker_config_meaning, spell_checker_config_spacing, spell_checker_config_specific, spell_checker_config_spelling, spell_checker_config_warning
 
 # 규칙 작성 예시
 def rule() -> RuleBuilder:
