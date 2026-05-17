@@ -607,10 +607,16 @@ _REP = [
     .msg("'그대로, 전부'의 의미인 경우 '{dform[0]}째'가 올바른 표현입니다.").build(),
 
     *rule()
-    .id("EP_엇")
+    .id("REP_엇")
     .tags(TagGroup.용언)
     .tag_form(Tag.선어말어미, "엇")
     .msg('\'merge(({dform[0]}, {dtag[0]}), ("었", "선어말어미"))\'의 오타가 아닌가요?').build(),
+    
+    *rule()
+    .id("REP_멋쩍다")
+    .tag_form(Tag.동사, "멎")
+    .tag_form(Tag.형용사파생접미사, "쩍").if_not_spaced()
+    .msg("'멋쩍다'가 올바른 표기입니다.").build(),
 ]
 
 # ᆯ 규칙 활용 관련
@@ -939,6 +945,18 @@ _MIF = [
     .tag_form(Tag.동사, "도우")
     .any()
     .msg('\'돕다\'의 활용형은 \'merge(("돕", "동사규칙활용"), ({dform[1]}, {dtag[1]}))\'batchim("으로", "로") 사용해야 합니다.').build(),
+    
+    *rule()
+    .id("MIF_말이야")
+    .tag_form(Tag.보조용언, "말")
+    .tag_form(Tag.연결어미, "야").if_not_spaced()
+    .msg("'말이야'를 '말야'로 줄여 쓸 수 없습니다.").build(),
+    
+    *rule()
+    .id("MIF_려면")
+    .tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.동사파생접미사})
+    .tag_form(Tag.연결어미, "ᆯ려면")
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("려면", "연결어미"))\'이 올바른 표현입니다.').build(),
 ]
 
 JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}

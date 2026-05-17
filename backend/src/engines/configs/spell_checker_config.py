@@ -89,15 +89,23 @@ ML_TRAINED = [
     .AND(tag(Tag.의존명사), forms({"거"})).if_not_spaced()
     .tag_form(Tag.목적격조사, "ᆯ")
     .msg("'걸'을 앞 말과 띄어 써야 합니다.").build(),
-]
-
-ML_LABELINGS = [
+    
     *rule()
     .id("는데_띄어쓰기")
     .tag_form(Tag.관형사형전성어미, "는")
     .tag_form(Tag.의존명사, "데").if_not_spaced()
     .NOT(AND(tag(Tag.보조사), forms({"다", "다가"}))).context()
     .msg("'는 데'로 띄어 써야 합니다.").build(),
+    
+    *rule()
+    .id("같이_붙여쓰기")
+    .tags(TagGroup.체언)
+    .tag(Tag.닫는부호).opt()
+    .tag_form(Tag.일반부사, "같이").if_spaced()
+    .msg("~처럼의 의미일 때는 '같이'를 붙여 써야 합니다.").build(),
+]
+
+ML_LABELINGS = [
 ]
 
 SPELL_CHECK_RULES: list[KoSpellRules] = [
