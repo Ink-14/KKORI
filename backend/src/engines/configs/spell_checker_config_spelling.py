@@ -724,8 +724,8 @@ _MIF = [
     .build(),
     
     *rule()
-    .tag(Tag.일반명사)
-    .tag_form(Tag.일반명사, "년도")
+    .tag(Tag.일반명사).context()
+    .tag_form(Tag.의존명사, "년도").if_spaced()
     .msg("'연도'가 올바른 표현입니다.")
     .build(),
     
@@ -957,6 +957,12 @@ _MIF = [
     .tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.동사파생접미사})
     .tag_form(Tag.연결어미, "ᆯ려면")
     .msg('\'merge(({dform[0]}, {dtag[0]}), ("려면", "연결어미"))\'이 올바른 표현입니다.').build(),
+    
+    *rule()
+    .id("MIF_만들려고")
+    .tag_form(Tag.동사, "만드")
+    .AND(tag(Tag.연결어미), forms({"려고", "려면"}))
+    .msg("'만들{form[1]}'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
 ]
 
 JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}

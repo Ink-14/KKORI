@@ -1,6 +1,6 @@
 ﻿from src.engines.configs.spell_checker_config_builder import *
 from src.models.interface import Tag, TagGroup, SpellErrorType
-from src.engines.configs import spell_checker_config_meaning, spell_checker_config_spacing, spell_checker_config_specific, spell_checker_config_spelling, spell_checker_config_warning
+from src.engines.configs import spell_checker_config_meaning, spell_checker_config_spacing, spell_checker_config_specific, spell_checker_config_spelling, spell_checker_config_warning, spell_checker_config_complex
 
 # 규칙 작성 예시
 def rule() -> RuleBuilder:
@@ -16,7 +16,10 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    
+    *rule()
+    .id("의존명사_조사_띄어쓰기")
+    .tag_form(Tag.동사, "만드")
+    .msg("만들다").build(),
 ]
 
 def rule() -> RuleBuilder:
@@ -113,6 +116,7 @@ SPELL_CHECK_RULES: list[KoSpellRules] = [
     *spell_checker_config_spacing.SPACING_ERRORS,
     *spell_checker_config_spelling.SPELL_MISS_ERRORS,
     *spell_checker_config_meaning.MEANING_CONFLICT_ERRORS,
+    *spell_checker_config_specific.KIWI_EXCEPTION_ERRORS,
+    *spell_checker_config_complex.COMPLEX_ERRORS
     # *spell_checker_config_warning.WARNINGS,
-    *spell_checker_config_specific.KIWI_EXCEPTION_ERRORS
  ]

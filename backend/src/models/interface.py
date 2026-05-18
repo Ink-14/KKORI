@@ -18,6 +18,7 @@ class SpellErrorType(Enum):
     SPELLING = auto()
     SPECIFIC = auto()
     LOANWORD = auto()
+    COMPLEX = auto()
 
     WARNING = auto()
     NEED_ML_JUDGE = auto()
