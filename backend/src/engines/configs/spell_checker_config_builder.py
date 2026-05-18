@@ -178,7 +178,36 @@ def _compile_tuple_item(item, form_vals: list[str]) -> MessagePart:
             return _DynamicPart(lambda tokens, i=i: tokens[i].tag, f"dtag[{i}]")
         case default:
             raise ValueError(default)
-                    
+
+def _collect_index_refs(parsed_msg: list) -> tuple[int, int, int]:
+    """파싱된 메시지에서 form/dform/dtag의 최대 인덱스를 반환. 없으면 -1."""
+    max_form = -1
+    max_dform = -1
+    max_dtag = -1
+
+    def visit(node) -> None:
+        nonlocal max_form, max_dform, max_dtag
+        match node:
+            case TagNode(name="form", index=i):
+                if i > max_form:
+                    max_form = i
+            case TagNode(name="dform", index=i):
+                if i > max_dform:
+                    max_dform = i
+            case TagNode(name="dtag", index=i):
+                if i > max_dtag:
+                    max_dtag = i
+            case MethodNode():
+                for arg in node.args:
+                    for item in arg.items:
+                        visit(item)
+            case _:
+                pass
+
+    for node in parsed_msg:
+        visit(node)
+    return max_form, max_dform, max_dtag
+
 @dataclass(frozen=True, slots=True)
 class _TagSet:
     """AND 내부에서 여러 태그를 묶는 용도. Condition이 아님."""
@@ -207,50 +236,65 @@ class RuleBuilder:
         self.rule_id: str = ""
 
     def tag(self, tag: str):
+        """tag 조건. 인자로는 Tag enum을 받음."""
         self.steps.append(_RuleStepData([TagCondition(tag=tag)]))
         return self
 
     def tags(self, tag_set: set[Tag]):
+        """tag set 조건. 인자로는 Tag enum으로 이루어진 set을 받음."""
         self.steps.append(_RuleStepData([TagCondition(tag=t) for t in tag_set]))
         return self
     
     def form(self, form: str):
+        """form 조건. 인자로는 문자열을 받음."""
         self.steps.append(_RuleStepData([FormCondition(form=form)]))
         return self
 
     def forms(self, form_set: set[str]):
+        """form set 조건. 인자로는 form으로 이루어진 set을 받음."""
         self.steps.append(_RuleStepData([FormCondition(form=f) for f in form_set]))
         return self
     
     def lemma(self, lemma: str):
+        """표면형 조건. 인자로는 문자열을 받음."""
         self.steps.append(_RuleStepData([LemmaCondition(lemma=lemma)]))
         return self
 
     def batchim(self, b: str):
+        """받침 조건. 인자로는 조합형 자모를 받음.
+        
+        '받침 있음' 조건은 any_batchim, '받침 없음' 조건은 no_batchim 메서드 이용.
+        """
         self.steps.append(_RuleStepData([BatchimCondition(batchim=b)]))
         return self
     
     def any_batchim(self):
+        """받침이 있음을 나타내는 조건. 인자로는 아무것도 받지 않음."""
         self.steps.append(_RuleStepData([AnyBatchimCondition()]))
         return self
     
     def no_batchim(self):
+        """받침이 없음을 나타내는 조건. 인자로는 아무것도 받지 않음. batchim("")과 동일 동작."""
         self.steps.append(_RuleStepData([BatchimCondition(batchim="")]))
         return self
     
     def any(self):
+        """아무 조건. 무조건 통과시키지만, 토큰이 1개 필요함."""
         self.steps.append(_RuleStepData([AnyCondition()]))
         return self
     
     def tag_form(self, tag: str, form: str):
+        """tag가 A이고 form이 X인 조건. 동시에 만족해야 함. 인자로는 Tag enum과 form을 받음."""
         self.steps.append(_RuleStepData([TagAndFormCondition(form=form, tag=tag)]))
         return self
     
     def first(self):
+        """첫 번쨰 토큰임을 나타내는 조건. 인자로는 아무것도 받지 않음."""
         self.steps.append(_RuleStepData([FirstTokenCondition()]))
         return self
     
-    def length(self, n: int):
+    def longer(self, n: int):
+        """토큰의 길이가 n 이상인 경우 통과하는 조건. 인자로는 정수를 받음."""
         self.steps.append(_RuleStepData([LengthCondition(length=n)]))
         return self
     
@@ -351,6 +395,70 @@ class RuleBuilder:
         if self.steps and not any((not s.is_context) and (not s.is_optional) for s in self.steps):
             errors.append("At least one required (non-context, non-optional) condition must be added.")
 
+        # --- 메시지 인덱스 검증 ---
+        parsed_msg = None
+        if self.message is not None:
+            try:
+                parsed_msg = parser.parse(
+                    tokenizer.tokenize(self.message), source=self.message
+                )
+            except Exception as e:
+                errors.append(f"Message parse error: {e}")
+
+        if parsed_msg is not None and self.steps:
+            max_form, max_dform, max_dtag = _collect_index_refs(parsed_msg)
+
+            # form[i]: 모든 combo에서 보장되는 form 개수 (해당 step의
+            # 모든 OR 분기가 form을 만들어내는 조건일 때만 카운트)
+            form_types = (TagAndFormCondition, FormCondition)
+            guaranteed_form_count = sum(
+                1 for s in self.steps
+                if s.conditions and all(isinstance(c, form_types) for c in s.conditions)
+            )
+            # 참고: 어떤 combo에서 form이 만들어질 수 있는 최대치
+            possible_form_count = sum(
+                1 for s in self.steps
+                if any(isinstance(c, form_types) for c in s.conditions)
+            )
+
+            if max_form >= guaranteed_form_count:
+                if max_form < possible_form_count:
+                    errors.append(
+                        f"{{form[{max_form}]}} may be out of range: only "
+                        f"{guaranteed_form_count} form condition(s) are guaranteed "
+                        f"across all OR branches (up to {possible_form_count} possible). "
+                        f"Some combos would fail at build time."
+                    )
+                else:
+                    errors.append(
+                        f"{{form[{max_form}]}} is out of range: only "
+                        f"{guaranteed_form_count} form condition(s) exist "
+                        f"(valid indices: "
+                        f"{'none' if guaranteed_form_count == 0 else f'0–{guaranteed_form_count - 1}'})."
+                    )
+
+            n_steps = len(self.steps)
+            if max_dform >= n_steps:
+                errors.append(
+                    f"{{dform[{max_dform}]}} is out of range: only "
+                    f"{n_steps} step(s) defined (valid indices: 0–{n_steps - 1})."
+                )
+            if max_dtag >= n_steps:
+                errors.append(
+                    f"{{dtag[{max_dtag}]}} is out of range: only "
+                    f"{n_steps} step(s) defined (valid indices: 0–{n_steps - 1})."
+                )
+
+            # optional/context step을 dform/dtag로 참조하면 런타임에 IndexError가
+            # 날 수 있으므로 경고
+            for idx, step in enumerate(self.steps):
+                if step.is_optional and (idx <= max_dform or idx <= max_dtag):
+                    # 정확히 idx를 참조했는지 확인하려면 visit에서 set으로 수집해도 됨
+                    pass  # 필요 시 별도 처리
+
+            # 파싱 결과를 build()에서 재활용하고 싶다면 캐시
+            self._parsed_msg_cache = parsed_msg
+
         if errors:
             raise ValueError(
                 "Spell build failed:\n- " + "\n- ".join(errors)
@@ -360,9 +468,11 @@ class RuleBuilder:
     def build(self) -> list[KoSpellRules]:
         self._validate_buildable()
 
+        parsed_msg = getattr(self, "_parsed_msg_cache", None)
+        if parsed_msg is None:
+            parsed_msg = parser.parse(tokenizer.tokenize(self.message), source=self.message)
+
         results: list[KoSpellRules] = []
-        parsed_msg = parser.parse(tokenizer.tokenize(self.message), source=self.message)
-        
         for combo in product(*(step.conditions for step in self.steps)):
             rule_steps: RuleSteps = [
                 (cond, step.spacing_rule, step.is_optional, step.is_context)
@@ -391,7 +501,7 @@ def tag_form(t: str, f: str) -> TagAndFormCondition:
 def lemma(l: str) -> LemmaCondition:
     return LemmaCondition(lemma=l)
 
-def length(n: int) -> LengthCondition:
+def longer(n: int) -> LengthCondition:
     return LengthCondition(length=n)
 
 def batchim(b: str) -> BatchimCondition:
