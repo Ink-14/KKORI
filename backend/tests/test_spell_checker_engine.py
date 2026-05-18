@@ -1,5 +1,4 @@
 ﻿import time
-from dataclasses import dataclass
 
 import pytest
 
@@ -7,38 +6,9 @@ from src.models.interface import Tag, SpellError, SpellErrorType
 from src.engines.spell_checker import SpellChecker
 from src.engines.configs.spell_checker_config import SPELL_CHECK_RULES
 from src.engines.configs.spell_checker_config_builder import *
-from src.utils.hangul import get_jongseong, is_jamo
+from tests.helpers import build_tokens
 
 # ── 헬퍼 ──
-
-@dataclass
-class DummyToken:
-    form: str
-    tag: str
-    start: int
-    end: int
-    lemma: str = ""
-
-    @property
-    def len(self) -> int:
-        return self.end - self.start
-
-    @property
-    def batchim(self) -> str:
-        last = self.form[-1]
-        return last if is_jamo(last) else get_jongseong(last)
-
-def build_tokens(*args) -> list[DummyToken]:
-    tokens = []
-    pos = 0
-    for arg in args:
-        if arg == " ":
-            pos += 1
-            continue
-        form, tag = arg
-        tokens.append(DummyToken(form=form, tag=tag, start=pos, end=pos + len(form)))
-        pos += len(form)
-    return tokens
 
 def assert_found(errors: list[SpellError], msg: str, start: int, end: int):
     assert any(
@@ -402,12 +372,12 @@ COMPLEX_CONDITION = [
     
     *rule()
     .OR(tag(Tag.일반명사), tag(Tag.숫자))
-    .AND(tag(Tag.숫자), length(1))
+    .AND(tag(Tag.숫자), longer(1))
     .msg("OR-AND 조건 검사")
     .build(),
     
     *rule()
-    .AND(first(), batchim("ᆸ"), length(1))
+    .AND(first(), batchim("ᆸ"), longer(1))
     .AND(NOT(tag(Tag.일반명사)), form("0"))
     .msg("AND-NOT 조건 검사")
     .build(),
@@ -415,7 +385,7 @@ COMPLEX_CONDITION = [
     *rule()
     .AND(NOT(batchim("ᆯ")), any_batchim())
     .OR(form("0"), tag(Tag.대명사))
-    .AND(length(4), tag(Tag.일반명사))
+    .AND(longer(4), tag(Tag.일반명사))
     .msg("첫 토큰 NOT 조건 검사")
     .build(),
     

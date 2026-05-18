@@ -48,10 +48,35 @@ def get_jungseong(char: str) -> str:
 def get_jongseong(char: str) -> str:
     return JONG_LIST[(convert_to_hangul_charpoint(char) % JONGSEONG_IDX_POINT)]
 
-def get_compatible_batchim(char) -> str:
-    return BATCHIM_LIST[(convert_to_hangul_charpoint(char) % JONGSEONG_IDX_POINT)]
+def get_compatible_batchim(char: str) -> str:
+    """받침을 조합형 자모로 반환해 주는 함수.
+
+    한글 아닐 경우에는 문자열 '0', 한글일 경우에는 받침을 반환.
+
+    Args:
+        char (str): 받침을 판별할 글자. 1글자만 입력되어야 함.
+
+    Returns:
+        str: 완성형 한글일 경우 조합형 자모로 이루어진 받침 문자, 그 이외에는 문자열 '0'.
+    """
+    charpoint = ord(char)
+    if HANGUL_COMP_START <= charpoint <= HANGUL_COMP_END:
+        return BATCHIM_LIST[(charpoint - HANGUL_COMP_START) % JONGSEONG_IDX_POINT]
+    else:
+        return '0'
 
 def get_compatible_batchim_int(char: str) -> int:
+    """받침의 종류를 정수로 반환하는 함수.
+    
+    0: 한글 아님, 1: 받침 없음.
+    이후는 받침 테이블에 따라 29번까지의 숫자를 반환.
+
+    Args:
+        char (str): 받침을 판별할 글자. 1글자만 입력되어야 함.
+
+    Returns:
+        int: 받침 종류에 따른 숫자.
+    """
     charpoint = ord(char)
     if HANGUL_COMP_START <= charpoint <= HANGUL_COMP_END:
         return (charpoint - HANGUL_COMP_START) % JONGSEONG_IDX_POINT + 1 # 0번은 '한글 아님'으로 예약

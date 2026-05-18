@@ -1,6 +1,9 @@
-﻿from src.engines.spell_checker import SpellChecker
+﻿from dataclasses import dataclass
+
+from src.engines.spell_checker import SpellChecker
 from src.models.interface import SpellError
 from src.tokenizations.ko_tokenizer import KoTokenizer
+from src.utils.hangul import get_compatible_batchim
 from src.models.interface import Tag, SpellErrorType
 
 def tokenize_and_check(checker: SpellChecker, tokenizer: KoTokenizer, text: str) -> list[SpellError]:
@@ -27,3 +30,32 @@ def check_error_type(errors: list[SpellError], error_type: SpellErrorType):
             return
     error_types = list({e.error_type.name for e in errors})
     assert f"Expected {error_type} Error, but got: {", ".join(error_types)}"
+
+@dataclass
+class DummyToken:
+    form: str
+    tag: str
+    start: int
+    end: int
+    lemma: str = ""
+
+    @property
+    def len(self) -> int:
+        return self.end - self.start
+
+    @property
+    def batchim(self) -> str:
+        last = self.form[-1]
+        return get_compatible_batchim(last)
+
+def build_tokens(*args) -> list[DummyToken]:
+    tokens = []
+    pos = 0
+    for arg in args:
+        if arg == " ":
+            pos += 1
+            continue
+        form, tag = arg
+        tokens.append(DummyToken(form=form, tag=tag, start=pos, end=pos + len(form)))
+        pos += len(form)
+    return tokens
