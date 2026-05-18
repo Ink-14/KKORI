@@ -5,6 +5,8 @@ import pickle
 import re
 import sys
 import threading
+import traceback
+import logging
 from datetime import datetime
 
 if sys.stdout is None:
@@ -355,6 +357,29 @@ HTML = """
   .debug-path-text {
     white-space: pre-line; font-family: monospace;
     font-size: 11px; color: var(--muted); line-height: 1.5;
+  }
+
+  /* ── debug expand row ── */
+  .debug-row > td {
+    background: #f8fafc;
+    padding: 10px 14px;
+  }
+  .debug-content {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .folder-toolbar {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .folder-toolbar .count {
+    font-size: 12px; color: var(--muted);
   }
 </style>
 </head>
@@ -855,7 +880,7 @@ function renderFolderResults(results) {
     return;
   }
   const cols = ['#', 'File', 'Error Type', 'Original Text (Detected)', 'Msg', 'Debug'];
-  const widths = ['4%', '12%', '12%', '35%', '30%', '7%'];
+  const widths = ['4%', '12%', '12%', '37%', '30%', '5%'];
 
   const colgroup = '<colgroup>'
     + widths.map(w => '<col style="width:' + w + ';">').join('')
@@ -869,20 +894,29 @@ function renderFolderResults(results) {
     + '</tr>';
 
   const tbody = results.map((r, i) => {
-    return '<tr>'
+    const mainRow = '<tr data-row-idx="' + i + '">'
       + '<td>' + (i + 1) + '</td>'
       + '<td style="word-break:break-all;">' + escapeHtml(r.file) + '</td>'
       + '<td class="err-type" style="white-space:pre-line;">' + escapeHtml(r.error_type) + '</td>'
       + '<td style="white-space:pre-wrap; line-height:1.7;">' + r.highlighted + '</td>'
       + '<td style="white-space:pre-line; word-break:break-word;">' + escapeHtml(r.msg) + '</td>'
-      + '<td data-debug-idx="' + i + '">'
-      +   '<button class="debug-btn" onclick="loadDebugPath(this, ' + i + ')">보기</button>'
+      + '<td style="text-align:center;">'
+      +   '<button class="debug-btn" data-debug-btn-idx="' + i + '" '
+      +   'onclick="toggleDebug(' + i + ')">▼</button>'
       + '</td>'
       + '</tr>';
+    const debugRow = '<tr class="debug-row" id="debug-row-' + i + '" style="display:none;">'
+      + '<td colspan="6"><div class="debug-content" data-loaded="0"></div></td>'
+      + '</tr>';
+    return mainRow + debugRow;
   }).join('');
 
   area.innerHTML =
-    '<table class="error-table folder-result-table" style="table-layout:fixed; width:100%;">'
+    '<div class="folder-toolbar">'
+    + '<button class="btn-success" onclick="saveFolderHtml()">HTML로 저장</button>'
+    + '<span class="count">전체 ' + results.length + '건</span>'
+    + '</div>'
+    + '<table class="error-table folder-result-table" style="table-layout:fixed; width:100%;">'
     + colgroup
     + '<thead>' + th + '</thead><tbody>' + tbody + '</tbody></table>';
 }
@@ -891,15 +925,25 @@ function sortFolderTable(n) {
   const table = document.querySelector('.folder-result-table');
   if (!table) return;
   const tbody = table.tBodies[0];
-  const rows = Array.from(tbody.rows);
+  const allRows = Array.from(tbody.rows);
+
+  // main + debug row를 페어로 묶어서 정렬
+  const pairs = [];
+  for (let i = 0; i < allRows.length; i++) {
+    if (allRows[i].classList.contains('debug-row')) continue;
+    const main = allRows[i];
+    const next = allRows[i + 1];
+    const debugRow = (next && next.classList.contains('debug-row')) ? next : null;
+    pairs.push({ main, debugRow });
+  }
 
   const prevCol = table.dataset.sortCol;
   const prevDir = table.dataset.sortDir || 'asc';
   const dir = (String(prevCol) === String(n) && prevDir === 'asc') ? 'desc' : 'asc';
 
-  rows.sort((a, b) => {
-    let av = a.cells[n].innerText || a.cells[n].textContent;
-    let bv = b.cells[n].innerText || b.cells[n].textContent;
+  pairs.sort((a, b) => {
+    let av = a.main.cells[n].innerText || a.main.cells[n].textContent;
+    let bv = b.main.cells[n].innerText || b.main.cells[n].textContent;
     if (n === 0) {
       av = parseInt(av) || 0;
       bv = parseInt(bv) || 0;
@@ -910,31 +954,61 @@ function sortFolderTable(n) {
   });
 
   const frag = document.createDocumentFragment();
-  rows.forEach(r => frag.appendChild(r));
+  pairs.forEach(p => {
+    frag.appendChild(p.main);
+    if (p.debugRow) frag.appendChild(p.debugRow);
+  });
   tbody.appendChild(frag);
 
   table.dataset.sortCol = n;
   table.dataset.sortDir = dir;
 
-  // 화살표 갱신
   table.querySelectorAll('th .sort-arrow').forEach((s, i) => {
     s.textContent = (i === n) ? (dir === 'asc' ? '▲' : '▼') : '';
   });
 }
 
-async function loadDebugPath(btn, idx) {
-  btn.disabled = true;
-  const orig = btn.textContent;
-  btn.textContent = '…';
-  const r = await pywebview.api.get_debug_path(idx);
-  const td = btn.parentElement;
-  if (r.error) {
-    td.innerHTML = '<span style="color:#ef4444; font-size:11px;">'
-      + escapeHtml(r.error) + '</span>';
+async function toggleDebug(idx) {
+  const debugRow = document.getElementById('debug-row-' + idx);
+  const btn = document.querySelector('[data-debug-btn-idx="' + idx + '"]');
+  if (!debugRow || !btn) return;
+
+  if (debugRow.style.display === 'none') {
+    // 열기
+    debugRow.style.display = '';
+    btn.textContent = '▲';
+    const content = debugRow.querySelector('.debug-content');
+    if (content.dataset.loaded === '0') {
+      content.textContent = '로딩 중…';
+      const r = await pywebview.api.get_debug_path(idx);
+      if (r.error) {
+        content.innerHTML = '<span style="color:#ef4444;">' + escapeHtml(r.error) + '</span>';
+      } else {
+        content.textContent = r.debug_path || '(없음)';
+      }
+      content.dataset.loaded = '1';
+    }
+  } else {
+    // 닫기
+    debugRow.style.display = 'none';
+    btn.textContent = '▼';
+  }
+}
+
+async function saveFolderHtml() {
+  setFolderStatus('HTML 저장 위치 선택…');
+  const saveRes = await pywebview.api.pick_html_save_file();
+  if (saveRes.cancelled || saveRes.error) {
+    setFolderStatus(saveRes.error ? '오류: ' + saveRes.error : '취소됨');
     return;
   }
-  td.innerHTML = '<div class="debug-path-text">'
-    + escapeHtml(r.debug_path || '(없음)') + '</div>';
+  setFolderStatus('Debug 정보 수집 후 HTML 저장 중… (시간이 걸릴 수 있습니다)');
+  const res = await pywebview.api.save_folder_html(saveRes.path);
+  if (res.error) {
+    setFolderStatus('저장 오류: ' + res.error);
+    return;
+  }
+  setFolderStatus('HTML 저장 완료: ' + res.path);
 }
 
 /* ── 라벨링 단축키 (방향키) 설정 ── */
@@ -967,9 +1041,15 @@ document.addEventListener('keydown', function(e) {
 </html>
 """
 
-
 _dict_pkl = os.path.join(_project, "assets", "dict.pkl")
 
+_log_path = os.path.join(_project, "folder_check_error.log")
+logging.basicConfig(
+    filename=_log_path,
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    encoding="utf-8",
+)
 
 class Api:
     def __init__(self):
@@ -1196,6 +1276,23 @@ class Api:
         path = result if isinstance(result, str) else result[0]
         return {"path": path}
 
+    def pick_html_save_file(self) -> dict:
+        tstamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if not self._window:
+            return {"error": "window not ready"}
+        try:
+            result = self._window.create_file_dialog(
+                webview.SAVE_DIALOG,
+                save_filename=f"folder_results_{tstamp}.html",
+                file_types=("HTML files (*.html)", "All files (*.*)")
+            )
+        except Exception as e:
+            return {"error": str(e)}
+        if not result:
+            return {"cancelled": True}
+        path = result if isinstance(result, str) else result[0]
+        return {"path": path}
+
     def _collect_paragraphs(self, file_path) -> list[str]:
         df = read_txt_file(file_path)
         paragraphs: list[str] = []
@@ -1361,7 +1458,9 @@ class Api:
             else:
                 state["stage"] = "done"
         except Exception as e:
-            state["error"] = str(e)
+            tb = traceback.format_exc()
+            logging.exception("folder check failed")
+            state["error"] = f"{type(e).__name__}: {e}\n\n{tb}"
             state["stage"] = "done"
         finally:
             state["running"] = False
@@ -1519,6 +1618,219 @@ class Api:
           return {"debug_path": debug_path}
       except Exception as e:
           return {"error": str(e)}
+
+    def save_folder_html(self, save_path: str) -> dict:
+        if err := self._ensure_ready():
+            return err
+        state = self._folder_state
+        if not state or not state.get("results"):
+            return {"error": "저장할 결과가 없습니다."}
+
+        results = state["results"]
+        rule_name = state.get("rule_name")
+
+        # debug spell checker 준비
+        if rule_name:
+            try:
+                if (self._folder_debug_spell is None
+                        or self._folder_debug_rule_name != rule_name):
+                    self._folder_debug_spell = self._build_folder_spell_checker(
+                        rule_name, debug=True
+                    )
+                    self._folder_debug_rule_name = rule_name
+            except Exception as e:
+                return {"error": f"debug 빌드 실패: {e}"}
+
+        # 모든 row에 대해 debug_path 계산
+        debug_paths: list[str] = []
+        for item in results:
+            paragraph = item.get("paragraph")
+            if not paragraph or not self._folder_debug_spell:
+                debug_paths.append("")
+                continue
+            try:
+                tokens = self._tkn.tokenize(paragraph)
+                errors = list(self._folder_debug_spell.check(tokens))
+                debug_paths.append("\n".join(
+                    f"[{get_error_type_name(e)}] {e.error_message} :: {e.debug_path or ''}"
+                    for e in errors
+                ))
+            except Exception as e:
+                debug_paths.append(f"(debug 실패: {e})")
+
+        try:
+            html_str = self._build_results_html(results, debug_paths)
+            with open(save_path, "w", encoding="utf-8") as f:
+                f.write(html_str)
+            return {"ok": True, "path": save_path}
+        except Exception as e:
+            return {"error": str(e)}
+
+    def _build_results_html(self, results: list, debug_paths: list[str]) -> str:
+      import html as _html
+
+      rows_html = []
+      for i, (r, dbg) in enumerate(zip(results, debug_paths)):
+          row = (
+              "<tr>"
+              f"<td>{i+1}</td>"
+              f"<td class='file'>{_html.escape(r['file'])}</td>"
+              f"<td class='err-type'>{_html.escape(r['error_type'])}</td>"
+              f"<td class='highlighted-cell'>{r['highlighted']}</td>"
+              f"<td>{_html.escape(r['msg'])}</td>"
+              f"<td><div class='debug-content'>"
+              f"{_html.escape(dbg) if dbg else '(없음)'}"
+              f"</div></td>"
+              "</tr>"
+          )
+          rows_html.append(row)
+
+      body_rows = "\n".join(rows_html)
+      timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+      headers = ["#", "File", "Error Type", "Original Text (Detected)", "Msg", "Debug"]
+      th_html = "".join(
+          f'<th onclick="sortTable({i})">{_html.escape(h)}'
+          f'<span class="sort-arrow"></span></th>'
+          for i, h in enumerate(headers)
+      )
+
+      return f"""<!DOCTYPE html>
+  <html lang="ko">
+  <head>
+  <meta charset="UTF-8">
+  <title>폴더 검사 결과 - {timestamp}</title>
+  <style>
+    * {{ box-sizing: border-box; }}
+    body {{
+      font-family: 'Malgun Gothic', system-ui, -apple-system, sans-serif;
+      font-size: 13px; background: #f1f5f9; color: #0f172a;
+      margin: 0; padding: 20px;
+    }}
+    h1 {{ font-size: 18px; margin: 0 0 6px; }}
+    .meta {{ color: #64748b; font-size: 12px; margin-bottom: 16px; }}
+    table {{
+      width: 100%; border-collapse: collapse;
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      table-layout: fixed; border-radius: 8px; overflow: hidden;
+    }}
+    th {{
+      background: #ef4444; color: #fff;
+      padding: 9px 12px; text-align: left;
+      font-size: 12px; font-weight: 500; letter-spacing: 0.03em;
+      cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }}
+    th:hover {{ background: #dc2626; }}
+    th .sort-arrow {{
+      display: inline-block; margin-left: 4px;
+      opacity: 0.85; font-size: 10px;
+    }}
+    td {{
+      padding: 8px 12px; border-bottom: 1px solid #e2e8f0;
+      font-size: 12px; vertical-align: top;
+      word-break: break-word; white-space: pre-wrap; line-height: 1.6;
+    }}
+    tr:last-child td {{ border-bottom: none; }}
+    .err-type {{ font-weight: 600; color: #ef4444; white-space: pre-line; }}
+    .file {{ word-break: break-all; }}
+    .highlighted-cell {{ line-height: 1.7; }}
+    .error-highlight {{
+      text-decoration: underline;
+      text-decoration-color: #ef4444;
+      text-decoration-style: wavy;
+      text-decoration-thickness: 1.5px;
+      color: #dc2626; font-weight: 600;
+      background: rgba(239,68,68,0.09);
+      border-radius: 3px; padding: 0 1px;
+    }}
+    .debug-content {{
+      font-family: 'Consolas', monospace;
+      font-size: 11px; color: #64748b;
+      line-height: 1.5; max-height: 300px;
+      overflow-y: auto; white-space: pre-wrap;
+    }}
+    col.c0 {{ width: 4%; }}
+    col.c1 {{ width: 10%; }}
+    col.c2 {{ width: 10%; }}
+    col.c3 {{ width: 28%; }}
+    col.c4 {{ width: 22%; }}
+    col.c5 {{ width: 26%; }}
+  </style>
+  </head>
+  <body>
+  <h1>폴더 검사 결과</h1>
+  <div class="meta">생성 시각: {timestamp} · 전체 {len(results)}건</div>
+  <table id="results-table">
+  <colgroup>
+    <col class="c0"><col class="c1"><col class="c2">
+    <col class="c3"><col class="c4"><col class="c5">
+  </colgroup>
+  <thead>
+  <tr>{th_html}</tr>
+  </thead>
+  <tbody>
+  {body_rows}
+  </tbody>
+  </table>
+
+  <script>
+  (function() {{
+    var table = document.getElementById('results-table');
+    var arrows = table.querySelectorAll('th .sort-arrow');
+
+    window.sortTable = function(n) {{
+      var tbody = table.tBodies[0];
+      var rows = Array.prototype.slice.call(tbody.rows);
+
+      var prevCol = table.getAttribute('data-sort-col');
+      var prevDir = table.getAttribute('data-sort-dir') || 'asc';
+      var dir = (String(prevCol) === String(n) && prevDir === 'asc') ? 'desc' : 'asc';
+
+      // 정렬 키를 한 번만 추출해서 캐싱 (textContent 반복 호출 방지)
+      var isNumeric = (n === 0);
+      var keyed = new Array(rows.length);
+      for (var i = 0; i < rows.length; i++) {{
+        var raw = rows[i].cells[n].textContent;
+        keyed[i] = {{
+          row: rows[i],
+          key: isNumeric ? (parseInt(raw, 10) || 0) : raw
+        }};
+      }}
+
+      // 내장 sort (Timsort 계열) — 절대 버블정렬 쓰지 말 것
+      if (isNumeric) {{
+        keyed.sort(function(a, b) {{
+          return dir === 'asc' ? a.key - b.key : b.key - a.key;
+        }});
+      }} else {{
+        var collator = new Intl.Collator('ko', {{ numeric: true, sensitivity: 'base' }});
+        keyed.sort(function(a, b) {{
+          var cmp = collator.compare(a.key, b.key);
+          return dir === 'asc' ? cmp : -cmp;
+        }});
+      }}
+
+      // DocumentFragment로 한 번에 DOM 삽입 (렌더링 1회)
+      var frag = document.createDocumentFragment();
+      for (var j = 0; j < keyed.length; j++) {{
+        frag.appendChild(keyed[j].row);
+      }}
+      tbody.appendChild(frag);
+
+      table.setAttribute('data-sort-col', n);
+      table.setAttribute('data-sort-dir', dir);
+
+      for (var k = 0; k < arrows.length; k++) {{
+        arrows[k].textContent = (k === n) ? (dir === 'asc' ? '▲' : '▼') : '';
+      }}
+    }};
+  }})();
+  </script>
+  </body>
+  </html>
+  """
+
 
 if __name__ == "__main__":
     api = Api()
