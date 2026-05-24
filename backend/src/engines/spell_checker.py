@@ -77,6 +77,7 @@ class SpellChecker:
         self._debug: bool = debug
 
         self._registry: list[RuleMetaData] = []
+        self._total_steps: int = 0
 
     def _add_rule(self, rules: KoSpellRules) -> None:
         if self._builder is None:
@@ -92,6 +93,7 @@ class SpellChecker:
         for cond, spacing, is_optional, is_context in steps:
             if self._debug:
                 path.append(f"{cond}, {spacing}, {is_optional}, {is_context}")
+                self._total_steps += 1
             rust_steps.append(
                 (_to_rust_condition(cond), spacing.value, is_optional, is_context)
             )
@@ -136,7 +138,7 @@ class SpellChecker:
             meta = self._registry[match_id]
             yield SpellError(
                 error_type=meta.error_type,
-                error_message=meta.msg.render(tokens[start_index : end_index + 1]),
+                error_message=str(match_id) + ": " + meta.msg.render(tokens[start_index : end_index + 1]) if self._debug else meta.msg.render(tokens[start_index : end_index + 1]),
                 start_index=tokens[start_index].start,
                 end_index=tokens[end_index].end,
                 rule_id=meta.rule_id,
@@ -163,7 +165,7 @@ class SpellChecker:
                 meta = self._registry[match_id]
                 errors.append(SpellError(
                     error_type=meta.error_type,
-                    error_message=meta.msg.render(tokens[start_index : end_index + 1]),
+                    error_message=str(match_id) + ": " + meta.msg.render(tokens[start_index : end_index + 1]) if self._debug else meta.msg.render(tokens[start_index : end_index + 1]),
                     start_index=tokens[start_index].start,
                     end_index=tokens[end_index].end,
                     rule_id=meta.rule_id,
