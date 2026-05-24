@@ -535,9 +535,10 @@ function renderTokenTable(tokens, detailed) {
   }
   let headers, rows;
   if (detailed) {
-    headers = ['#', 'form', 'tag', 'raw_form', 'lemma', 'word_position', 'spaced'];
+    headers = ['#', 'form', 'tag', 'raw_form', 'lemma', 'oov', 'spaced'];
     rows = tokens.map(t => [
-      t.i, t.form, t.tag, t.raw_form, t.lemma, t.word_position,
+      t.i, t.form, t.tag, t.raw_form, t.lemma,
+      t.oov ? '<span class="spaced">OOV</span>' : '' ,
       t.spaced ? '<span class="spaced">공백 있음</span>' : ''
     ]);
   } else {
@@ -1097,7 +1098,7 @@ class Api:
         if err := self._ensure_ready():
             return err
         try:
-            raw = self._tkn.tokenize(text)
+            raw = self._tkn.tokenize(text=text)
             if not raw:
                 return {"tokens": []}
             tokens = []
@@ -1110,7 +1111,7 @@ class Api:
                     "base_form": getattr(token, "base_form", token.form),
                     "raw_form": getattr(token, "raw_form", ""),
                     "lemma": getattr(token, "lemma", ""),
-                    "word_position": getattr(token, "word_position", ""),
+                    "oov": getattr(token, "oov", False),
                     "spaced": spaced,
                 })
             return {"tokens": tokens}
@@ -1122,7 +1123,7 @@ class Api:
             return err
         try:
             self._tkn = KoTokenizer.reset()
-            self._tkn.tokenize("")
+            self._tkn.tokenize(text="")
             return {"ok": True}
         except Exception as e:
             return {"error": str(e)}
@@ -1216,7 +1217,7 @@ class Api:
             return {"highlighted": "", "errors": []}
         try:
             errors = list(self._raw.search(text))
-            errors.extend(self._spell.check(self._tkn.tokenize(text)))
+            errors.extend(self._spell.check(self._tkn.tokenize(text=text)))
 
             highlighted = highlight_text(text, errors)
             error_list = [
@@ -1252,7 +1253,7 @@ class Api:
         if not self._window:
             return {"error": "window not ready"}
         try:
-            result = self._window.create_file_dialog(webview.FOLDER_DIALOG)
+            result = self._window.create_file_dialog(webview.FileDialog.FOLDER)
         except Exception as e:
             return {"error": str(e)}
         if not result:
@@ -1265,7 +1266,7 @@ class Api:
             return {"error": "window not ready"}
         try:
             result = self._window.create_file_dialog(
-                webview.SAVE_DIALOG,
+                webview.FileDialog.SAVE,
                 save_filename=f"labels_{tstamp}.tsv",
                 file_types=("TSV files (*.tsv)", "All files (*.*)")
             )
@@ -1282,7 +1283,7 @@ class Api:
             return {"error": "window not ready"}
         try:
             result = self._window.create_file_dialog(
-                webview.SAVE_DIALOG,
+                webview.FileDialog.SAVE,
                 save_filename=f"folder_results_{tstamp}.html",
                 file_types=("HTML files (*.html)", "All files (*.*)")
             )
@@ -1381,7 +1382,7 @@ class Api:
             state["total"] = len(files)
             state["stage"] = "checking"
 
-            spell = self._build_folder_spell_checker(rule_name, debug=False)
+            spell = self._build_folder_spell_checker(rule_name, debug=True)
             raw = None
             if state.get("use_raw"):
                 importlib.reload(_raw_cfg)
@@ -1405,18 +1406,34 @@ class Api:
                 if not paragraphs:
                     continue
 
-                all_tokens = self._tkn.tokenize(paragraphs)
+                all_tokens = self._tkn.tokenize(text=paragraphs)
 
+                filtered_pairs = []  # (paragraph, tokens)
                 for paragraph, tokens in zip(paragraphs, all_tokens):
                     if state["aborted"]:
                         break
-                    
-                    # 중복 문장 필터링
                     if paragraph in seen_paragraphs:
                         continue
                     seen_paragraphs.add(paragraph)
+                    filtered_pairs.append((paragraph, tokens))
 
-                    errors = list(spell.check(tokens))
+                if not filtered_pairs:
+                    continue
+
+                # 2) 청크 단위 배치 spell check (Rust 측 병렬 처리)
+                CHUNK = 1000
+                filtered_tokens = [tokens for _, tokens in filtered_pairs]
+                all_spell_errors = []
+                for i in range(0, len(filtered_tokens), CHUNK):
+                    chunk = filtered_tokens[i : i + CHUNK]
+                    all_spell_errors.extend(spell.check_batch(chunk))
+
+                # 3) 결과 조립 (순차)
+                for (paragraph, tokens), spell_errors in zip(filtered_pairs, all_spell_errors):
+                    if state["aborted"]:
+                        break
+
+                    errors = list(spell_errors)
                     if raw is not None:
                         errors.extend(raw.search(paragraph))
 
@@ -1424,26 +1441,19 @@ class Api:
                         continue
 
                     if labeling_mode:
-                      # 오류 1개당 1개의 라벨링 항목으로 쪼개기
-                      for e in errors:
-                          # UI에는 현재 타겟 에러만 하이라이트
-                          highlighted = highlight_text(paragraph, [e])
-                          
-                          start = e.start_index
-                          end = e.end_index
-                          
-                          state["label_queue"].append({
-                              "paragraph": paragraph,
-                              "highlighted": highlighted,
-                              "start": start,
-                              "end": end,
-                              "rule_id": e.rule_id if e.rule_id else "-",
-                          })
+                        for e in errors:
+                            highlighted = highlight_text(paragraph, [e])
+                            state["label_queue"].append({
+                                "paragraph": paragraph,
+                                "highlighted": highlighted,
+                                "start": e.start_index,
+                                "end": e.end_index,
+                                "rule_id": e.rule_id if e.rule_id else "-",
+                            })
                     else:
                         highlighted = highlight_text(paragraph, errors)
                         error_types = "\n".join({get_error_type_name(e) for e in errors})
                         msg = "\n".join(e.error_message for e in errors)
-                        debug_path = "\n".join((e.debug_path or "") for e in errors)
                         state["results"].append({
                             "file": state["current_file"],
                             "paragraph": paragraph,
@@ -1609,7 +1619,7 @@ class Api:
               return {"error": f"debug 빌드 실패: {e}"}
 
       try:
-          tokens = self._tkn.tokenize(paragraph)
+          tokens = self._tkn.tokenize(text=paragraph)
           errors = list(self._folder_debug_spell.check(tokens))
           debug_path = "\n".join(
               f"[{get_error_type_name(e)}] {e.error_message} :: {e.debug_path or ''}"
@@ -1649,7 +1659,7 @@ class Api:
                 debug_paths.append("")
                 continue
             try:
-                tokens = self._tkn.tokenize(paragraph)
+                tokens = self._tkn.tokenize(text=paragraph)
                 errors = list(self._folder_debug_spell.check(tokens))
                 debug_paths.append("\n".join(
                     f"[{get_error_type_name(e)}] {e.error_message} :: {e.debug_path or ''}"
@@ -1838,7 +1848,7 @@ if __name__ == "__main__":
     def init_all():
         try:
             api._tkn = KoTokenizer()
-            api._tkn.tokenize("")
+            api._tkn.tokenize(text="")
             api._build_spell_checkers()
             api._ready = True
         except Exception as e:
