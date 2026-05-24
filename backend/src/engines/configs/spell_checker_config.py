@@ -16,16 +16,12 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule()
-    .id("의존명사_조사_띄어쓰기")
-    .tag_form(Tag.동사, "만드")
-    .msg("만들다").build(),
 ]
 
 def rule() -> RuleBuilder:
     return RuleBuilder(SpellErrorType.NEED_ML_JUDGE)
 
-ML_READY = [    
+ML_READY = [
     *rule()
     .id("던_든_오타")
     .tag_form(Tag.관형사형전성어미, "던")

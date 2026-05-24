@@ -64,7 +64,7 @@ _CERTAINS: list[KoSpellRules] = [
     *rule()
     .AND(any_batchim(), NOT(batchim("ᆫ")))
     .tag_form(Tag.명사파생접미사, "율")
-    .msg("ᆫ받침 이외의 받침 있는 명사에는 '률'을 사용해야 합니다.")
+    .msg("ㄴ받침 이외의 받침 있는 명사에는 '률'을 사용해야 합니다.")
     .build(),
 
     *rule()
@@ -72,7 +72,28 @@ _CERTAINS: list[KoSpellRules] = [
     .tag_form(Tag.관형사형전성어미, "ᆫ")
     .msg("'~스러운'을 '스런'으로 줄여 쓸 수 없습니다.")
     .build(),
+
+    *rule()
+    .tag_form(Tag.형용사규칙활용, "즐겁")
+    .tag_form(Tag.관형사형전성어미, "ᆫ")
+    .msg("'즐거운'이 올바른 표현입니다.")
+    .build(),
     
+    *rule()
+    .tag_form(Tag.형용사, "서툴")
+    .AND(tags({Tag.연결어미, Tag.종결어미}), forms({"어요", "어서", "어도", "어"}))
+    .msg('\'merge((\"서투르\", \"동사\"), ({form[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
+
+    *rule()
+    .tag_form(Tag.동사, "머물")
+    .AND(tags({Tag.연결어미, Tag.종결어미}), forms({"어요", "어서", "어도", "어"}))
+    .msg('\'merge((\"머무르\", \"동사\"), ({form[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
+
+    *rule()
+    .tag_form(Tag.형용사, "서둘")
+    .AND(tags({Tag.연결어미, Tag.종결어미}), forms({"어요", "어서", "어도", "어"}))
+    .msg('\'merge((\"서두르\", \"동사\"), ({form[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
+
     *rule()
     .tag_form(Tag.관형격조사, "의")
     .tag_form(Tag.관형격조사, "의")
@@ -239,8 +260,11 @@ _ADD = [
     .build(),
 
     *rule()
+    .tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.동사파생접미사, Tag.보조용언})
     .tag_form(Tag.연결어미, "ᆯ려고")
-    .msg("'~려고'가 올바른 표현입니다.")
+    .NOT(tag_form(Tag.보조용언, "하")).context()
+    .NOT(tag_form(Tag.연결어미, "어야")).context()
+    .msg("'merge(({dform[0]}, {dtag[0]}), (\"려고\", \"연결어미\"))'가 올바른 표현입니다.")
     .build(),
 
     *rule()
@@ -388,6 +412,11 @@ _ADD = [
     .tag_form(Tag.종결어미, "렴")
     .msg("'말렴'이 올바른 표현입니다.")
     .build(),
+
+    *rule()
+    .tag_form(Tag.일반명사, "윗")
+    .tag_form(Tag.일반명사, "어른")
+    .msg("'웃어른'이 올바른 표현입니다.").build(),
 ]
 
 _REP = [
@@ -418,13 +447,11 @@ _REP = [
     .build(),
 
     *rule()
-    .AND(tag(Tag.일반명사), forms({"정답", "답"}))
-    .any()
-    .opt()
-    .any()
-    .opt()
+    .AND(tag(Tag.일반명사), forms({"정답", "답", "문제", "퀴즈"})).context()
+    .any().opt().context()
+    .any().opt().context()
     .tag_form(Tag.동사, "맞추")
-    .msg("정답/답을 '맞히다'가 올바른 표현입니다.")
+    .msg("문제에 대한 정답을 지칭하는 경우, '맞히다'가 올바른 표현입니다.")
     .build(),
 
     *rule()
@@ -617,6 +644,11 @@ _REP = [
     .tag_form(Tag.동사, "멎")
     .tag_form(Tag.형용사파생접미사, "쩍").if_not_spaced()
     .msg("'멋쩍다'가 올바른 표기입니다.").build(),
+
+    *rule()
+    .id("REP_메꾸다")
+    .tag_form(Tag.동사, "매꾸")
+    .msg("'메꾸다'가 올바른 표현입니다.").build(),
 ]
 
 # ᆯ 규칙 활용 관련
@@ -682,9 +714,10 @@ _MIF = [
     .build(),
 
     *rule()
+    .tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.동사파생접미사})
     .tag_form(Tag.연결어미, "ᆯ래")
     .tag_form(Tag.보조사, "야")
-    .msg("'~려야'가 올바른 표현입니다. 예: '하려야 할 수가 없다.'")
+    .msg("'merge(({dform[0]}, {dtag[0]}), (\"려야\", \"연결어미\"))'가 올바른 표현입니다.")
     .build(),
 
     # 뭘 표현하려고 했는지 모르겠음. 오탐이 너무 많아서 주석 처리
@@ -778,7 +811,7 @@ _MIF = [
     
     *rule()
     .tag_form(Tag.동사, "돋구")
-    .msg("'돋우다'의 오기가 아닌가요?")
+    .msg("'안경의 도수를 높이다'가 아닌 경우에는 '돋우다'로 써야 합니다. (예시: 입맛을 돋우는 향기)")
     .build(),
     
     *rule()
@@ -891,10 +924,10 @@ _MIF = [
     .msg("'며칠'이 올바른 표현입니다.")
     .build(),
 
-    *rule()
-    .tag_form(Tag.동사, "날으")
-    .msg("'날다'는 '나셨다', '날면'으로 써야 합니다.")
-    .build(),
+    # *rule()
+    # .tag_form(Tag.동사, "날으")
+    # .msg("'날다'는 '나셨다', '날면'으로 써야 합니다.")
+    # .build(),
     
     *rule()
     .tags({Tag.형용사, Tag.형용사불규칙활용})
@@ -930,13 +963,13 @@ _MIF = [
 
     *rule()
     .id("MIF_동사_는구나")
-    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), NOT(form("보")))
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), forms({"모르", "모자라"}))
     .tag_form(Tag.종결어미, "구나")
     .msg('동사에는 \'는구나\'가 결합하므로, \'merge(({dform[0]}, {dtag[0]}), ("는구나", "종결어미"))\'로 써야 합니다.').build(),
     
     *rule()
     .id("MIF_동사_는군")
-    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), NOT(form("보")))
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), forms({"모르", "모자라"}))
     .tag_form(Tag.종결어미, "군")
     .msg('동사에는 \'는군\'이 결합하므로, \'merge(({dform[0]}, {dtag[0]}), ("는군", "종결어미"))\'으로 써야 합니다.').build(),
 
@@ -963,6 +996,18 @@ _MIF = [
     .tag_form(Tag.동사, "만드")
     .AND(tag(Tag.연결어미), forms({"려고", "려면"}))
     .msg("'만들{form[1]}'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("MIF_게끔")
+    .tag_form(Tag.연결어미, "겠끔")
+    .msg("'~게끔'이 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("MIF_만듦")
+    .tag_form(Tag.동사, "만들")
+    .tag_form(Tag.관형사형전성어미, "ᆯ")
+    .tag_form(Tag.종결어미, "음")
+    .msg("'만들다'의 명사형은 '만듦'이 올바른 표기입니다.").build(),
 ]
 
 JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
@@ -1027,6 +1072,18 @@ _JOSA = [
     .AND(tags(JOSA_TARGETS), any_batchim())
     .tag_form(Tag.접속조사, "와")
     .msg('받침 있는 명사에는 \'과\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("과", "접속조사"))\'의 오타가 아닌가요?').build(),
+
+    *rule()
+    .id("JOSA_과와_중복")
+    .tag_form(Tag.부사격조사, "과")
+    .tag_form(Tag.부사격조사, "와")
+    .msg("조사가 중복으로 사용된 것 같습니다.").build(),
+
+    *rule()
+    .id("JOSA_와과_중복")
+    .tag_form(Tag.부사격조사, "와")
+    .tag_form(Tag.부사격조사, "과")
+    .msg("조사가 중복으로 사용된 것 같습니다.").build(),
 ]
 
 _SHIFT_MISS = [
@@ -1095,6 +1152,16 @@ _LOANWORDS = [
     .id("LOANWORD_레포트")
     .tag_form(Tag.일반명사, "레포트")
     .msg("'리포트'가 올바른 표기입니다.").build(),
+
+    *rule()
+    .id("LOANWORD_프러포즈")
+    .tag_form(Tag.일반명사, "프로포즈")
+    .msg("'프러포즈'가 올바른 표기입니다.").build(),
+
+    *rule()
+    .id("LOANWORD_칼럼")
+    .tag_form(Tag.일반명사, "컬럼")
+    .msg("'칼럼'이 올바른 표기입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:
@@ -1157,6 +1224,13 @@ _NEED_ML_JUDGE = [
     .id("들르다_들리다_오타")
     .tag_form(Tag.동사, "들리")
     .msg("'지나가는 길에 방문하다'의 의미로는 '들르다'가 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("쥐여주다_오타")
+    .tag_form(Tag.동사, "쥐")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "주")
+    .msg("'쥐게 하다'의 의미로는 '쥐여 주다'가 올바른 표현입니다.").build(),
 ]
 
 SPELL_MISS_ERRORS = [

@@ -289,7 +289,7 @@ class RuleBuilder:
         return self
     
     def first(self):
-        """첫 번쨰 토큰임을 나타내는 조건. 인자로는 아무것도 받지 않음."""
+        """첫 번째 토큰임을 나타내는 조건. 인자로는 아무것도 받지 않음."""
         self.steps.append(_RuleStepData([FirstTokenCondition()]))
         return self
     
@@ -449,14 +449,12 @@ class RuleBuilder:
                     f"{n_steps} step(s) defined (valid indices: 0–{n_steps - 1})."
                 )
 
-            # optional/context step을 dform/dtag로 참조하면 런타임에 IndexError가
-            # 날 수 있으므로 경고
+            # optional/context step을 dform/dtag로 참조하면 런타임에 IndexError가 날 수 있으므로 경고
             for idx, step in enumerate(self.steps):
                 if step.is_optional and (idx <= max_dform or idx <= max_dtag):
                     # 정확히 idx를 참조했는지 확인하려면 visit에서 set으로 수집해도 됨
                     pass  # 필요 시 별도 처리
 
-            # 파싱 결과를 build()에서 재활용하고 싶다면 캐시
             self._parsed_msg_cache = parsed_msg
 
         if errors:
