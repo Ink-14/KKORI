@@ -558,7 +558,7 @@ class TestEnginePerformance:
 class TestEnginePerformanceWithDefaultConfig:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.checker = SpellChecker()
+        self.checker = SpellChecker(debug=True)
         self.checker.add_rule_from_list(SPELL_CHECK_RULES)
 
     def test_massive_token_stream_performance_with_default_config(self):
@@ -573,6 +573,8 @@ class TestEnginePerformanceWithDefaultConfig:
         elapsed = end_time - start_time
         
         print(f"{self.checker.stats()}")
+        print(f"규칙 개수: {len(self.checker._registry)}개")
+        print(f"규칙당 평균 조건 개수: {self.checker._total_steps / len(self.checker._registry)}개")
         print(f"[내장 규칙 성능 벤치마크] 토큰 {TOKEN_COUNT}개 처리 소요 시간: {elapsed:.4f}초")
         print(f"[내장 규칙 성능 벤치마크] 검출된 에러 개수: {len(errors)}개")
         
