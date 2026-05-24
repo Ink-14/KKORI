@@ -202,6 +202,7 @@ class KoToken(Protocol):
         end (int): 형태소가 끝나는 위치.
         len (int): 형태소의 길이.
         lemma (str): 형태소의 사전 표제형.
+        oov (bool): Out-Of-Vocabulary 단어 여부.
     """
     form: str
     tag: str
@@ -209,6 +210,7 @@ class KoToken(Protocol):
     end: int
     len: int
     lemma: str
+    oov: bool
 
 class InternalToken(KoToken, Protocol):
     """받침 정보가 추가된 토큰 인터페이스."""
