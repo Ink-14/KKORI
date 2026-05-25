@@ -46,12 +46,7 @@ class KoTokenizer(Kiwi):
             for word in make_termbase_list(file):
                 self.add_user_word(word, Tag.일반명사)        
 
-    def tokenize(self, text: str | list[str], *args, **kwargs):
-        if type(text) is str:
-            text = text.replace("\u200B", "")
-        else:
-            text = [t.replace("\u200B", "") for t in text]
-            
+    def tokenize(self, text: str | list[str], *args, **kwargs):            
         return super().tokenize(text, *args, **kwargs)
 
     @property

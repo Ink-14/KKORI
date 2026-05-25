@@ -113,6 +113,6 @@ SPELL_CHECK_RULES: list[KoSpellRules] = [
     *spell_checker_config_spelling.SPELL_MISS_ERRORS,
     *spell_checker_config_meaning.MEANING_CONFLICT_ERRORS,
     *spell_checker_config_specific.KIWI_EXCEPTION_ERRORS,
-    *spell_checker_config_complex.COMPLEX_ERRORS
+    *spell_checker_config_complex.COMPLEX_ERRORS,
     # *spell_checker_config_warning.WARNINGS,
  ]

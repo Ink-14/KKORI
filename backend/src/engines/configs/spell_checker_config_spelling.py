@@ -246,6 +246,13 @@ _OM = [
     .build(),
 
     *rule()
+    .id("OM_넣었다 빼다")
+    .tag_form(Tag.동사, "넣")
+    .tag_form(Tag.연결어미, "다")
+    .tag_form(Tag.동사, "빼").if_not_spaced()
+    .msg("'넣었다 빼다'가 올바른 표현입니다.").build(),
+
+    *rule()
     .tag(Tag.일반명사)
     .tag_form(Tag.연결어미, "으니")
     .msg("오타가 아닌가요?")
@@ -649,6 +656,11 @@ _REP = [
     .id("REP_메꾸다")
     .tag_form(Tag.동사, "매꾸")
     .msg("'메꾸다'가 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("REP_갖히다")
+    .tag_form(Tag.동사, "갖히")
+    .msg("'갇히다'가 올바른 표현입니다.").build(),
 ]
 
 # ᆯ 규칙 활용 관련
@@ -963,13 +975,13 @@ _MIF = [
 
     *rule()
     .id("MIF_동사_는구나")
-    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), forms({"모르", "모자라"}))
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), forms({"모르", "모자라", "좋아하", "닫"}))
     .tag_form(Tag.종결어미, "구나")
     .msg('동사에는 \'는구나\'가 결합하므로, \'merge(({dform[0]}, {dtag[0]}), ("는구나", "종결어미"))\'로 써야 합니다.').build(),
     
     *rule()
     .id("MIF_동사_는군")
-    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), forms({"모르", "모자라"}))
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), forms({"모르", "모자라", "좋아하", "닫"}))
     .tag_form(Tag.종결어미, "군")
     .msg('동사에는 \'는군\'이 결합하므로, \'merge(({dform[0]}, {dtag[0]}), ("는군", "종결어미"))\'으로 써야 합니다.').build(),
 

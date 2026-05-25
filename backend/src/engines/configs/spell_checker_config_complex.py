@@ -7,10 +7,10 @@ def rule() -> RuleBuilder:
 _SPELLING_SPACING = [
     *rule()
     .tag(Tag.일반명사)
-    .tag_form(Tag.의존명사, "년도").if_not_spaced()
+    .form("년도").if_not_spaced()
     .msg("'{dform[0]} 연도'가 올바른 표현입니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [
-    *_SPELLING_SPACING
+    *_SPELLING_SPACING,
 ]
