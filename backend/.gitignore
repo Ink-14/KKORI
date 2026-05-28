@@ -35,3 +35,4 @@ _core*.pyd
 
 # [사용자 데이터]
 data/
+.log

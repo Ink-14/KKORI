@@ -277,7 +277,9 @@ impl RuleCheckerBuilder {
         let mut result: FxHashSet<usize> = FxHashSet::default();
         let mut queue: VecDeque<usize> = VecDeque::new();
 
-        for &trans_idx in self.nodes[0].iter_all_transitions() {
+        let mut try_push = |trans_idx: usize,
+                            result: &mut FxHashSet<usize>,
+                            queue: &mut VecDeque<usize>| {
             let trans = &self.transitions[trans_idx];
             if matches!(&trans.condition, Condition::Not(_))
                 && trans.spacing_rule == SpacingRule::ANY
@@ -286,18 +288,14 @@ impl RuleCheckerBuilder {
             {
                 queue.push_back(trans.target_node);
             }
-        }
+        };
 
+        for &trans_idx in &self.nodes[0].fallback_transitions {
+            try_push(trans_idx, &mut result, &mut queue);
+        }
         while let Some(current) = queue.pop_front() {
-            for &trans_idx in self.nodes[current].iter_all_transitions() {
-                let trans = &self.transitions[trans_idx];
-                if matches!(&trans.condition, Condition::Not(_))
-                    && trans.spacing_rule == SpacingRule::ANY
-                    && trans.is_context
-                    && result.insert(trans.target_node)
-                {
-                    queue.push_back(trans.target_node);
-                }
+            for &trans_idx in &self.nodes[current].fallback_transitions {
+                try_push(trans_idx, &mut result, &mut queue);
             }
         }
 

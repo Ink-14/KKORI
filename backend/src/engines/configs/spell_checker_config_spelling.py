@@ -257,6 +257,12 @@ _OM = [
     .tag_form(Tag.연결어미, "으니")
     .msg("오타가 아닌가요?")
     .build(),
+    
+    *rule()
+    .id("OM_돼 가다")
+    .tag_form(Tag.연결어미, "되")
+    .tag_form(Tag.동사, "가").if_not_spaced()
+    .msg("'돼 가다'가 올바른 표현입니다.").build(),
 ]
 
 _ADD = [
@@ -661,6 +667,16 @@ _REP = [
     .id("REP_갖히다")
     .tag_form(Tag.동사, "갖히")
     .msg("'갇히다'가 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("REP_맴돌다")
+    .tag_form(Tag.동사, "멤돌")
+    .msg("'맴돌다'가 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("REP_건대")
+    .tag_form(Tag.연결어미, "건데")
+    .msg("'건대'가 올바른 표현입니다.").build(),
 ]
 
 # ᆯ 규칙 활용 관련
@@ -1020,6 +1036,12 @@ _MIF = [
     .tag_form(Tag.관형사형전성어미, "ᆯ")
     .tag_form(Tag.종결어미, "음")
     .msg("'만들다'의 명사형은 '만듦'이 올바른 표기입니다.").build(),
+
+    *rule()
+    .id("MIF_ㄹ+은")
+    .batchim("ᆯ")
+    .tag_form(Tag.관형사형전성어미, "은")
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("ᆫ", "관형사형전성어미"))\'이 올바른 표현입니다.').build(),
 ]
 
 JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
