@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => {
         : JSON.stringify(''),
     },
     build: {
+      outDir: isWeb ? 'dist/web' : 'dist/desktop',
       rollupOptions: {
         input: 'index.html',
       }
