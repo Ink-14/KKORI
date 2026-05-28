@@ -41,7 +41,7 @@ jobs:
 
       - name: Build
         working-directory: frontend
-        run: npm run build:web
+        run: npm run build:web && mv dist/web/index.web.html dist/web/index.html
         env:
           NODE_ENV: production
 

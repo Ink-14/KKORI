@@ -1,15 +1,5 @@
-import type { Plugin } from 'vite'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-
-function htmlEntryPlugin(entry: string): Plugin {
-  return {
-    name: 'html-entry',
-    transformIndexHtml(html) {
-      return html.replace('/src/main.tsx', entry)
-    },
-  }
-}
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -19,7 +9,6 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      htmlEntryPlugin(isDesktop ? '/src/main.desktop.tsx' : '/src/main.web.tsx'),
     ],
     base: isWeb ? '/korean_spell_checker/' : '/',
     define: {
@@ -30,7 +19,7 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: isWeb ? 'dist/web' : 'dist/desktop',
       rollupOptions: {
-        input: 'index.html',
+        input: isDesktop ? 'index.desktop.html' : 'index.web.html',
       }
     },
     server: {
