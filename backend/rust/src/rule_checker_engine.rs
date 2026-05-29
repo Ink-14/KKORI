@@ -277,9 +277,7 @@ impl RuleCheckerBuilder {
         let mut result: FxHashSet<usize> = FxHashSet::default();
         let mut queue: VecDeque<usize> = VecDeque::new();
 
-        let mut try_push = |trans_idx: usize,
-                            result: &mut FxHashSet<usize>,
-                            queue: &mut VecDeque<usize>| {
+        for &trans_idx in self.nodes[0].iter_all_transitions() {
             let trans = &self.transitions[trans_idx];
             if matches!(&trans.condition, Condition::Not(_))
                 && trans.spacing_rule == SpacingRule::ANY
@@ -288,14 +286,18 @@ impl RuleCheckerBuilder {
             {
                 queue.push_back(trans.target_node);
             }
-        };
-
-        for &trans_idx in &self.nodes[0].fallback_transitions {
-            try_push(trans_idx, &mut result, &mut queue);
         }
+
         while let Some(current) = queue.pop_front() {
-            for &trans_idx in &self.nodes[current].fallback_transitions {
-                try_push(trans_idx, &mut result, &mut queue);
+            for &trans_idx in self.nodes[current].iter_all_transitions() {
+                let trans = &self.transitions[trans_idx];
+                if matches!(&trans.condition, Condition::Not(_))
+                    && trans.spacing_rule == SpacingRule::ANY
+                    && trans.is_context
+                    && result.insert(trans.target_node)
+                {
+                    queue.push_back(trans.target_node);
+                }
             }
         }
 
@@ -529,6 +531,18 @@ impl RuleChecker {
     }
 
     fn check_inner(&self, tokens: &[EnrichedToken]) -> Vec<(u32, u32, u32)> {
+        // FA 시뮬레이션 기반 토큰 검사.
+
+        // 각 토큰마다 아래 4단계를 반복:
+        // 1) root에서 새 커서 시작
+        // 2) optional 전이로 도달 가능한 노드 확장 (epsilon closure, 사전 계산된 캐시 사용)
+        //   - i==0이면 BOS epsilon 사용 (NOT 전이까지 엡실론 처리)
+        // 3) 출력 가능한 노드에서 에러 수집
+        // 4) 현재 토큰과 매칭되는 전이를 따라 커서 전진
+
+        // 동일 노드에 여러 커서가 도달하면 가장 늦은 시작점만 유지 (최단 매치 우선).
+        // 루프 종료 후 남은 커서에 대해 EOF closure로 확장해 출력 수집.
+        
         #[derive(PartialEq)]
         enum SpacingState { Bos, Spaced, Attached }
         if tokens.is_empty() { return Vec::new(); }
@@ -662,6 +676,7 @@ impl RuleChecker {
         }
     }
 
+    // 더 짧은 것 선택, 길이 같으면 더 뒤에 있는 것
     fn update_shortest_match(
         storage: &mut FxHashMap<(usize, usize), (u32, u32, u32)>,
         node_idx: usize,
