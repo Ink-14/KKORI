@@ -8,6 +8,15 @@ import webview
 
 from src.api import app
 
+class Api:
+    def open_file_dialog(self) -> str | None:
+        result = webview.windows[0].create_file_dialog(
+            webview.FileDialog.OPEN,
+            allow_multiple=False,
+            file_types=("All files (*.*)", "SRT Files (*.srt)", "Text Files (*.txt)", "Excel Files (*.xlsx)", "CSV Files (*.csv)"),
+        )
+        return result[0] if result else None
+
 
 def _find_free_port(start: int = 8765) -> int:
     port = start
@@ -33,10 +42,10 @@ def _run_server(port: int) -> None:
 
 
 if __name__ == "__main__":
-    dist_dir = Path(__file__).parent.parent / "frontend" / "dist"
-    if not (dist_dir / "index.html").exists():
+    dist_dir = Path(__file__).parent.parent / "frontend" / "dist" / "desktop"
+    if not (dist_dir / "index.desktop.html").exists():
         raise FileNotFoundError(
-            f"프론트엔드 빌드 결과물이 없습니다: {dist_dir / 'index.html'}\n"
+            f"프론트엔드 빌드 결과물이 없습니다: {dist_dir / 'index.desktop.html'}\n"
             "frontend 디렉토리에서 'npm run build:desktop'을 먼저 실행하세요."
         )
 
@@ -53,5 +62,6 @@ if __name__ == "__main__":
         height=700,
         min_size=(600, 400),
         text_select=True,
+        js_api=Api(),
     )
     webview.start()

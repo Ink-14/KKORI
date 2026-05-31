@@ -14,6 +14,51 @@
   margin-bottom: 24px;
 }
 
+.wordadd-project-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.wordadd-project-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wordadd-project-select {
+  min-width: 120px;
+}
+
+.wordadd-project-input {
+  width: 160px;
+  flex: none;
+}
+
+.wordadd-btn--ghost {
+  background: transparent;
+  color: #6366f1;
+  border: 1.5px solid #e0e7ff;
+}
+
+.wordadd-btn--ghost:hover {
+  background: #e0e7ff;
+}
+
+.wordadd-btn--danger {
+  background: transparent;
+  color: #dc2626;
+  border: 1.5px solid #fee2e2;
+}
+
+.wordadd-btn--danger:hover {
+  background: #fee2e2;
+}
+
 .wordadd-input-row {
   display: flex;
   gap: 8px;
@@ -129,6 +174,11 @@
 .wordadd-badge--proper {
   background: #fce7f3;
   color: #9d174d;
+}
+
+.wordadd-badge--ending {
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .wordadd-remove-btn {

@@ -1,4 +1,5 @@
-﻿@echo off
+@echo off
 cd ../
 call venv\scripts\activate
-start "" venv\Scripts\python.exe main.py
+venv\Scripts\python.exe main.py
+pause

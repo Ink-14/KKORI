@@ -106,8 +106,6 @@ function Checker() {
   return (
     <div className="checker-wrap">
       <div className="checker-inner">
-        <h1>맞춤법 검사기</h1>
-
         <textarea
           className="checker-textarea"
           placeholder="검사할 텍스트를 입력하세요..."

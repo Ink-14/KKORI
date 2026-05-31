@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getApiBase } from '../lib/api'
-import { WORD_TAGS, DEFAULT_WORD_TAG, type WordTag } from '../constants/wordAdd'
+import { WORD_TAGS, DEFAULT_WORD_TAG, WORD_TAG_BADGE, type WordTag } from '../constants/wordAdd'
 import './wordAdd.css'
 
 type WordEntry = {
@@ -9,19 +9,76 @@ type WordEntry = {
 }
 
 function WordAdd() {
+  const [scope, setScope] = useState<string>('global')
+  const [projectNames, setProjectNames] = useState<string[]>([])
+  const [entries, setEntries] = useState<WordEntry[]>([])
   const [word, setWord] = useState('')
   const [tag, setTag] = useState<WordTag>(DEFAULT_WORD_TAG)
-  const [entries, setEntries] = useState<WordEntry[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [newProjectName, setNewProjectName] = useState('')
+  const [showNewInput, setShowNewInput] = useState(false)
 
   useEffect(() => {
-    getApiBase()
-      .then(base => fetch(`${base}/words`))
-      .then(res => res.ok ? res.json() : Promise.reject())
-      .then((data: WordEntry[]) => setEntries(data))
-      .catch(() => {})
+    async function init() {
+      const base = await getApiBase()
+      const projectData: { names: string[]; active: string | null } = await fetch(`${base}/projects`).then(r => r.json())
+      const initialScope = projectData.active ?? 'global'
+      setProjectNames(projectData.names)
+      setScope(initialScope)
+      const words: WordEntry[] = await fetch(`${base}/words?scope=${encodeURIComponent(initialScope)}`).then(r => r.json())
+      setEntries(words)
+    }
+    init().catch(() => {})
   }, [])
+
+  async function handleScopeChange(newScope: string) {
+    try {
+      const base = await getApiBase()
+      await fetch(`${base}/activate-project`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project: newScope === 'global' ? null : newScope }),
+      })
+      const words: WordEntry[] = await fetch(`${base}/words?scope=${encodeURIComponent(newScope)}`).then(r => r.json())
+      setScope(newScope)
+      setEntries(words)
+      setStatus('idle')
+    } catch {}
+  }
+
+  async function handleCreateProject() {
+    const name = newProjectName.trim()
+    if (!name) return
+    try {
+      const base = await getApiBase()
+      const res = await fetch(`${base}/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setErrorMsg(data.detail ?? '단어장 생성 실패')
+        setStatus('error')
+        return
+      }
+      setProjectNames(prev => [...prev, name])
+      setNewProjectName('')
+      setShowNewInput(false)
+      await handleScopeChange(name)
+    } catch {}
+  }
+
+  async function handleDeleteProject() {
+    if (scope === 'global') return
+    try {
+      const base = await getApiBase()
+      await fetch(`${base}/projects/${encodeURIComponent(scope)}`, { method: 'DELETE' })
+      setProjectNames(prev => prev.filter(n => n !== scope))
+      await handleScopeChange('global')
+    } catch {}
+  }
 
   function handleAdd() {
     const trimmed = word.trim()
@@ -44,10 +101,10 @@ function WordAdd() {
       const res = await fetch(`${base}/add-words`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ words: entries }),
+        body: JSON.stringify({ words: entries, scope }),
       })
       if (!res.ok) throw new Error(`서버 오류 (${res.status})`)
-      const saved: WordEntry[] = await fetch(`${base}/words`).then(r => r.json())
+      const saved: WordEntry[] = await fetch(`${base}/words?scope=${encodeURIComponent(scope)}`).then(r => r.json())
       setEntries(saved)
       setStatus('success')
     } catch (e) {
@@ -60,10 +117,74 @@ function WordAdd() {
     if (e.key === 'Enter') handleAdd()
   }
 
+  function handleNewProjectKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') handleCreateProject()
+    if (e.key === 'Escape') { setShowNewInput(false); setNewProjectName('') }
+  }
+
   return (
     <div className="wordadd-wrap">
       <div className="wordadd-inner">
-        <h1>단어 추가</h1>
+
+        <div className="wordadd-project-row">
+          <span className="wordadd-project-label">단어장</span>
+          <select
+            className="wordadd-select wordadd-project-select"
+            value={scope}
+            onChange={e => handleScopeChange(e.target.value)}
+          >
+            <option value="global">공통</option>
+            {projectNames.map(n => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+
+          {showNewInput ? (
+            <>
+              <input
+                className="wordadd-input wordadd-project-input"
+                value={newProjectName}
+                onChange={e => setNewProjectName(e.target.value)}
+                onKeyDown={handleNewProjectKeyDown}
+                placeholder="단어장 이름"
+                autoFocus
+              />
+              <button
+                className="wordadd-btn wordadd-btn--add"
+                onClick={handleCreateProject}
+                disabled={!newProjectName.trim()}
+                type="button"
+              >
+                확인
+              </button>
+              <button
+                className="wordadd-btn wordadd-btn--ghost"
+                onClick={() => { setShowNewInput(false); setNewProjectName('') }}
+                type="button"
+              >
+                취소
+              </button>
+            </>
+          ) : (
+            <button
+              className="wordadd-btn wordadd-btn--ghost"
+              onClick={() => setShowNewInput(true)}
+              type="button"
+            >
+              + 새 단어장
+            </button>
+          )}
+
+          {scope !== 'global' && !showNewInput && (
+            <button
+              className="wordadd-btn wordadd-btn--danger"
+              onClick={handleDeleteProject}
+              type="button"
+            >
+              삭제
+            </button>
+          )}
+        </div>
 
         <div className="wordadd-input-row">
           <input
@@ -98,7 +219,7 @@ function WordAdd() {
             {entries.map((entry, i) => (
               <li key={i} className="wordadd-list-item">
                 <span className="wordadd-word">{entry.word}</span>
-                <span className={`wordadd-badge wordadd-badge--${entry.tag === '고유명사' ? 'proper' : 'common'}`}>
+                <span className={`wordadd-badge wordadd-badge--${WORD_TAG_BADGE[entry.tag]}`}>
                   {entry.tag}
                 </span>
                 <button

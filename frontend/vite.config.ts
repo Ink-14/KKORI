@@ -9,6 +9,17 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
+      {
+        name: 'html-entry-rewrite',
+        configureServer(server) {
+          server.middlewares.use((req, _res, next) => {
+            if (req.url === '/' || req.url === '/index.html') {
+              req.url = isDesktop ? '/index.desktop.html' : '/index.web.html'
+            }
+            next()
+          })
+        }
+      }
     ],
     base: isWeb ? '/korean_spell_checker/' : '/',
     define: {
