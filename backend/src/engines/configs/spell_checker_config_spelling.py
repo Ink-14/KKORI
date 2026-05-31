@@ -257,12 +257,6 @@ _OM = [
     .tag_form(Tag.연결어미, "으니")
     .msg("오타가 아닌가요?")
     .build(),
-    
-    *rule()
-    .id("OM_돼 가다")
-    .tag_form(Tag.연결어미, "되")
-    .tag_form(Tag.동사, "가").if_not_spaced()
-    .msg("'돼 가다'가 올바른 표현입니다.").build(),
 ]
 
 _ADD = [
@@ -667,20 +661,30 @@ _REP = [
     .id("REP_갖히다")
     .tag_form(Tag.동사, "갖히")
     .msg("'갇히다'가 올바른 표현입니다.").build(),
-
+    
     *rule()
-    .id("REP_맴돌다")
-    .tag_form(Tag.동사, "멤돌")
-    .msg("'맴돌다'가 올바른 표현입니다.").build(),
-
+    .id("REP_켜다_1")
+    .AND(tag(Tag.일반명사), forms({"불", "조명", "전등", "옵션", "설정"}))
+    .tag_form(Tag.동사, "키")
+    .msg("'{dform[0]}batchim(\"을\", \"룰\") 켜다'가 올바른 표현입니다.").build(),
+    
     *rule()
-    .id("REP_건대")
-    .tag_form(Tag.연결어미, "건데")
-    .msg("'건대'가 올바른 표현입니다.").build(),
+    .id("REP_켜다_2")
+    .tag(Tag.일반명사)
+    .tag(Tag.목적격조사)
+    .tag_form(Tag.동사, "키")
+    .msg("'{dform[0]}batchim(\"을\", \"룰\") 켜다'가 올바른 표현입니다.").build(),
+    
+    *rule()
+    .id("REP_적합하다")
+    .tag_form(Tag.일반명사, "적")
+    .tag_form(Tag.일반명사, "함")
+    .tag_form(Tag.형용사파생접미사, "하").if_not_spaced()
+    .msg("'적합하다'의 오타가 아닌가요?").build(),
 ]
 
 # ᆯ 규칙 활용 관련
-_ᆯ동사들 = {"졸", "썰", "날", "빌", "불", "말", "살", "일", "팔", "깃들"}
+_ᆯ동사들 = {"졸", "썰", "날", "빌", "불", "말", "살", "일", "팔", "깃들", "깔"}
 _ᆯ형용사들 = {"거칠", "달", "녹슬", "드물"}
 
 _MIF = [
@@ -1036,12 +1040,6 @@ _MIF = [
     .tag_form(Tag.관형사형전성어미, "ᆯ")
     .tag_form(Tag.종결어미, "음")
     .msg("'만들다'의 명사형은 '만듦'이 올바른 표기입니다.").build(),
-
-    *rule()
-    .id("MIF_ㄹ+은")
-    .batchim("ᆯ")
-    .tag_form(Tag.관형사형전성어미, "은")
-    .msg('\'merge(({dform[0]}, {dtag[0]}), ("ᆫ", "관형사형전성어미"))\'이 올바른 표현입니다.').build(),
 ]
 
 JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
@@ -1196,6 +1194,11 @@ _LOANWORDS = [
     .id("LOANWORD_칼럼")
     .tag_form(Tag.일반명사, "컬럼")
     .msg("'칼럼'이 올바른 표기입니다.").build(),
+
+    *rule()
+    .id("LOANWORD_윈도우")
+    .tag_form(Tag.일반명사, "윈도우")
+    .msg("'윈도(window)'가 올바른 표현입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:

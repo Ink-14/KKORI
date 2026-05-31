@@ -149,10 +149,10 @@ class TestOptional:
 
 BOS_EPSILON = [
     *rule()
-    .NOT(form("BOS_NOT"))
+    .NOT(form("N"))
     .context()
-    .form("BOS_A")
-    .form("BOS_B")
+    .form("A")
+    .form("B")
     .msg("bos epsilon")
     .build(),
 
@@ -166,9 +166,9 @@ BOS_EPSILON = [
 
 EOF_EPSILON = [
     *rule()
-    .form("EOF_A")
-    .form("EOF_B")
-    .NOT(form("EOF_NOT"))
+    .form("1")
+    .form("2")
+    .NOT(form("3"))
     .context()
     .msg("eof epsilon")
     .build(),
@@ -182,12 +182,12 @@ class TestEpsilonTransition:
         self.checker.add_rule_from_list(EOF_EPSILON)
 
     def test_bos_epsilon(self):
-        tokens = build_tokens(("BOS_A", Tag.일반명사), ("BOS_B", Tag.일반명사), ("BOS_C", Tag.일반명사))
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사), ("C", Tag.일반명사))
         errors = list(self.checker.check(tokens))
-        assert_found(errors, "bos epsilon", 0, 10)
+        assert_found(errors, "bos epsilon", 0, 2)
 
     def test_bos_false_case(self):
-        tokens = build_tokens(("BOS_NOT", Tag.일반명사), ("BOS_A", Tag.일반명사), ("BOS_B", Tag.일반명사))
+        tokens = build_tokens(("N", Tag.일반명사), ("A", Tag.일반명사), ("B", Tag.일반명사))
         errors = list(self.checker.check(tokens))
         assert_empty(errors)
 
@@ -202,12 +202,12 @@ class TestEpsilonTransition:
         assert_empty(errors)
 
     def test_eof_epsilon(self):
-        tokens = build_tokens(("EOF_A", Tag.일반명사), ("EOF_B", Tag.일반명사))
+        tokens = build_tokens(("1", Tag.일반명사), ("2", Tag.일반명사))
         errors = list(self.checker.check(tokens))
-        assert_found(errors, "eof epsilon", 0, 10)
+        assert_found(errors, "eof epsilon", 0, 2)
         
     def test_eof_false_case(self):
-        tokens = build_tokens(("EOF_A", Tag.일반명사), ("EOF_B", Tag.일반명사), ("EOF_NOT", Tag.일반명사))
+        tokens = build_tokens(("1", Tag.일반명사), ("2", Tag.일반명사), ("3", Tag.일반명사))
         errors = list(self.checker.check(tokens))
         assert_empty(errors)    
         
