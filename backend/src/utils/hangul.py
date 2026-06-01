@@ -48,6 +48,13 @@ def get_jungseong(char: str) -> str:
 def get_jongseong(char: str) -> str:
     return JONG_LIST[(convert_to_hangul_charpoint(char) % JONGSEONG_IDX_POINT)]
 
+def is_compatible_jamo(char: str) -> bool:
+    """글자가 조합형 자모인지 판별하는 함수.
+    """
+    if char in BATCHIM_DICT.keys():
+        return True
+    return False
+
 def get_compatible_batchim(char: str) -> str:
     """받침을 조합형 자모로 반환해 주는 함수.
 
