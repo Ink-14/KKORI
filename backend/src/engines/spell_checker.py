@@ -20,7 +20,7 @@ from _core import (
     NotCondition as RustNotCondition,
     RuleCheckerStats
 )
-from src.models.interface import KoToken, SpellError, SpellErrorType
+from src.models.interface import KoToken, SpellError, SpellErrorType, DetailedMessage
 from src.models.spell_checker_classes import (
     Condition,
     TagCondition, FormCondition, TagAndFormCondition, LemmaCondition,
@@ -36,6 +36,7 @@ class RuleMetaData:
     error_type: SpellErrorType
     msg: CompiledMessage
     rule_id: str
+    detail: DetailedMessage
     debug_path: str | None = None
 
 def _to_rust_condition(cond: Condition) -> object:
@@ -83,7 +84,7 @@ class SpellChecker:
         if self._builder is None:
             raise RuntimeError("You cannot add rules after calling 'check' function.")
 
-        steps, msg, error_type, rule_id = rules
+        steps, msg, error_type, rule_id, detail = rules
         if not steps:
             return
 
@@ -100,7 +101,7 @@ class SpellChecker:
 
         uid = len(self._registry)
         debug_path = "  →  ".join(path) if self._debug else None
-        self._registry.append(RuleMetaData(error_type, msg, rule_id, debug_path))
+        self._registry.append(RuleMetaData(error_type, msg, rule_id, detail, debug_path))
 
         self._builder.add_rule(steps=rust_steps, match_id=uid)
         self._has_rules = True

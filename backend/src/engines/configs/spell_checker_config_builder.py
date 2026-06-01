@@ -4,12 +4,12 @@ from dataclasses import dataclass
 import warnings
 
 from src.models.spell_checker_classes import *
-from src.models.interface import SpellErrorType, Tag, RuleId
+from src.models.interface import SpellErrorType, Tag, RuleId, DetailedMessage
 from src.engines.configs.spell_checker_config_builder_parser import MessageTokenizer, MessageParser, TagNode, TextNode, MethodNode, QuotedNode, MESSAGE_METHODS
 
 ErrorMessage: TypeAlias = str
 RuleSteps: TypeAlias = list[tuple[Condition, SpacingRule, bool, bool]]
-KoSpellRules: TypeAlias = tuple[RuleSteps, "CompiledMessage", SpellErrorType, RuleId]
+KoSpellRules: TypeAlias = tuple[RuleSteps, "CompiledMessage", SpellErrorType, RuleId, DetailedMessage]
 AndParam: TypeAlias = "Condition | _TagSet | _FormSet"
 MessagePart: TypeAlias = str | Callable[[list], str]
 
@@ -234,8 +234,9 @@ class RuleBuilder:
         self.message: str | None = None
         self.error_type: SpellErrorType = error_type
         self.rule_id: str = ""
+        self.detailed_message: str | None = None
 
-    def tag(self, tag: str):
+    def tag(self, tag: Tag):
         """tag 조건. 인자로는 Tag enum을 받음."""
         self.steps.append(_RuleStepData([TagCondition(tag=tag)]))
         return self
@@ -283,7 +284,7 @@ class RuleBuilder:
         self.steps.append(_RuleStepData([AnyCondition()]))
         return self
     
-    def tag_form(self, tag: str, form: str):
+    def tag_form(self, tag: Tag, form: str):
         """tag가 A이고 form이 X인 조건. 동시에 만족해야 함. 인자로는 Tag enum과 form을 받음."""
         self.steps.append(_RuleStepData([TagAndFormCondition(form=form, tag=tag)]))
         return self
@@ -379,7 +380,21 @@ class RuleBuilder:
         return self
     
     def id(self, rule_id: str):
+        """규칙의 id를 설정하는 함수입니다.
+
+        Args:
+            rule_id (str): 규칙의 id로 사용할 문자열.
+        """
         self.rule_id = rule_id
+        return self
+    
+    def detail(self, detail: str):
+        """규칙의 상세 설명을 설정하는 함수입니다.
+
+        Args:
+            detail (str): 규칙의 상세 설명.
+        """
+        self.detailed_message = detail
         return self
 
     def _validate_buildable(self):
@@ -477,11 +492,11 @@ class RuleBuilder:
                 for cond, step in zip(combo, self.steps)
             ]
             compiled_msg = compile_message(parsed_msg, combo, source=self.message)
-            results.append((rule_steps, compiled_msg, self.error_type, self.rule_id))
+            results.append((rule_steps, compiled_msg, self.error_type, self.rule_id, self.detailed_message))
 
         return results
 
-def tag(t: str) -> TagCondition:
+def tag(t: Tag) -> TagCondition:
     return TagCondition(tag=t)
 
 def tags(ts: set[Tag]) -> _TagSet:
@@ -493,7 +508,7 @@ def form(f: str) -> FormCondition:
 def forms(fs: set[str]) -> _FormSet:
     return _FormSet(forms=fs)
 
-def tag_form(t: str, f: str) -> TagAndFormCondition:
+def tag_form(t: Tag, f: str) -> TagAndFormCondition:
     return TagAndFormCondition(form=f, tag=t)
 
 def lemma(l: str) -> LemmaCondition:

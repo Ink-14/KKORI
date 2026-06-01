@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 RuleId: TypeAlias = str
 DebugPath: TypeAlias = str
+DetailedMessage: TypeAlias = str
 
 class SpellErrorType(Enum):
     NOT_SET = auto()
