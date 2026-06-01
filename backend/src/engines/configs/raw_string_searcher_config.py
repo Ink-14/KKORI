@@ -29,7 +29,7 @@ def make_n_combined_errors(
     return (list(errors), msg)
 
 _SPELL_MISS_LIST: list[tuple[list[str], str]] = [
-    make_single_character_errors_from_str("겂겻겿궃궛깆껶꼇꺠꺴꺵꼐꽅궅굷늗됬됫돳됀댸덋덌딫돨됄됌딭듸딋딲떢떄뗴떘뚞맟몼삷샃섵섳슽싲싳싷쎃썌씃읇잏짞짦뷴벛봽빝뺴뼤뺼빾뺵뺶뻈젋졋쫒짗쨰쪠쩻쨋쪴쩄찣찠찿탘퍠핢햡햬헀햿횠횄헁", "오타를 확인해 주세요."),
+    make_single_character_errors_from_str("겂겻겿궃궛깆껶꼇꺠꺴꺵꼐꽅궅굷늗됬됫돳됀댸덋덌딫돨됄됌딭듸딋딲떢떄뗴떘뚞맟몼삷샃섵섳슽싲싳싷쎃썌씃읇잆잏짞짦뷴벛봽빝뺴뼤뺼빾뺵뺶뻈젋졋쫒짗쨰쪠쩻쨋쪴쩄찣찠찿탘퍠핢햡햬헀햿횠횄헁", "오타를 확인해 주세요."),
 
     make_n_combined_errors(["꺼림칙", "께름칙"], "'꺼림칙하다'가 올바른 표현입니다.", "꺼께", "름림", "직칙"),
     make_n_combined_errors(["짐작건대", "추측건대", "생각건대"], "'~건대'가 올바른 표현입니다.", "짐추생", "작측각", "컨건", "데대"),

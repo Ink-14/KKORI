@@ -1149,6 +1149,9 @@ _NOT_CERTAINS = [
     
 ]
 
+def rule() -> RuleBuilder:
+    return RuleBuilder(SpellErrorType.LOANWORD)
+
 _LOANWORDS = [
     *rule()
     .id("LOANWORD_브러쉬")
@@ -1199,6 +1202,11 @@ _LOANWORDS = [
     .id("LOANWORD_윈도우")
     .tag_form(Tag.일반명사, "윈도우")
     .msg("'윈도(window)'가 올바른 표현입니다.").build(),
+
+    *rule()
+    .id("LOANWORD_마쵸")
+    .tag_form(Tag.일반명사, "마쵸")
+    .msg("'마초(macho)'가 올바른 표현입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:

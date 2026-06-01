@@ -4,6 +4,8 @@ from src.models.interface import Tag, TagGroup, SpellErrorType
 NUMBER_DETERMINERS = {"첫", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "백", "천", "만", "억"}
 MONEY_DETERMINERS = {"골드", "엔", "원", "다이아"}
 되다_EXCEPTIONS = {"얼마", "말", "기회", "부자", "배", "숙부", "여행", "형", "언니", "누나", "엄마", "아빠", "삼촌", "이모", "고모", "남편", "아내", "이튿날", "정도", "축제", "여정", "시간", "때", "돈", "습관", "파뿌리", "상태", "말동무", "후반부", "습관", "아미타불", "나중", "팬", "한참", "달", "이상", "한참", "대명사", "쯤", "구슬", "꼴찌", "연휴", "하루", "며칠", "불기둥", "실세", "아이", "이득", "친구", "타임", "배우", "가량", "경기", "비서실장", "설상가상", "넘버원", "약", "새사람", "피범벅", "배심원"}
+받다_ALLOWS = {"감동", "검사", "견제", "경고", "경례", "계승", "공격", "과대평가", "교육", "구원", "구박", "내정", "냉대", "다운", "다운로드", "답변", "대우", "면제", "멸시", "발급", "발령", "발주", "방해", "배정", "벌", "보고", "보급", "보답", "보상", "보호", "부여", "분배", "분양", "비난", "비판", "사랑", "사면", "상처", "선고", "선택", "선물", "세례", "수여", "수령", "수리", "수업", "수혈", "신청", "승인", "신임", "습격", "악수", "양도", "억압", "열", "영향", "오해", "외면", "용서", "인계", "인도", "인정", "자극", "저주", "전달", "제공", "제안", "제재", "제한", "조명", "조사", "존경", "주목", "주문", "지원", "지적", "차별", "처벌", "초대", "축복", "축하", "충격", "치료", "치유", "칭송", "통보", "평가", "피해", "하달", "하사", "호평", "허락", "협박"}
+받다_DENYS = {"관심", "도움", "동정", "만점", "미움", "보살핌", "부케"}
 
 def rule() -> RuleBuilder: # type: ignore
     return RuleBuilder(SpellErrorType.SPACING)
@@ -45,7 +47,7 @@ def NNG_and_some(nng: str, some: str, tag: str, spacing_rule: SpacingRule, messa
             raise ValueError("you must set error message to function 'NNG_and_some' if spacing rule is SpacingRule.ANY.")
         return rule.msg(message).build()
     
-def VV_EC_VV(vv1: tuple[str, str], ec: str, vv2: tuple[str, str], spacing_rule: SpacingRule, message = None) -> list[KoSpellRules]:
+def VV_EC_VV(vv1: tuple[str, str], ec: str, vv2: tuple[str, str], spacing_rule: SpacingRule, message = None, detail = None) -> list[KoSpellRules]:
     vv1_form, vv1_tag = vv1
     vv2_form, vv2_tag = vv2
     rule = RuleBuilder(SpellErrorType.SPACING).tag_form(Tag[vv1_tag], vv1_form).tag_form(Tag.연결어미, ec).tag_form(Tag[vv2_tag], vv2_form)
@@ -54,13 +56,18 @@ def VV_EC_VV(vv1: tuple[str, str], ec: str, vv2: tuple[str, str], spacing_rule: 
     message2 = f"merge((\"{vv2_form}\", \"{vv2_tag}\"), (\"다\", \"연결어미\"))"
     
     if spacing_rule == SpacingRule.SPACED:
-        return rule.if_not_spaced().msg(f"'{message1} {message2}'로 띄어 써야 합니다.").build()
+        rule.if_not_spaced().msg(f"'{message1} {message2}'로 띄어 써야 합니다.")
     elif spacing_rule == SpacingRule.ATTACHED:
-        return rule.if_spaced().msg(f"'{message1}{message2}'로 붙여 써야 합니다.").build()
+        rule.if_spaced().msg(f"'{message1}{message2}'로 붙여 써야 합니다.")
     elif spacing_rule == SpacingRule.ANY:
         if message is None:
             raise ValueError("you must set error message to function 'NNG_and_some' if spacing rule is SpacingRule.ANY.")
-        return rule.msg(message).build()
+        rule.msg(message)
+
+    if detail:
+        rule.detail(detail)
+
+    return rule.build()
 
 GENERAL_SPACING_ERRORS: list[KoSpellRules] = [
     *rule()
@@ -176,6 +183,16 @@ GENERAL_SPACING_ERRORS: list[KoSpellRules] = [
     .tags({Tag.일반명사, Tag.고유명사}).if_not_spaced()
     .tag(Tag.주격조사).context()
     .msg("명사 '{dform[1]}'batchim(\"을\", \"를\") 앞 말과 띄어 써야 합니다.").build(),
+
+    *rule()
+    .AND(tag(Tag.목적격조사), forms({"을", "를"}))
+    .tags({Tag.동사, Tag.동사불규칙활용, Tag.동사규칙활용}).if_not_spaced()
+    .msg("조사 '{form[0]}'batchim(\"과\", \"와\") 동사 'merge(({dform[1]}, {dtag[1]}), (\"다\", \"종결어미\"))'를 띄어 써야 합니다.").build(),
+
+    *rule()
+    .tag(Tag.연결어미).context()
+    .tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}).if_not_spaced()
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("다", "종결어미"))\'를 앞 말과 띄어 써야 합니다.').build(),
 ]
 
 _SPACING_ERRORS = [
@@ -286,6 +303,13 @@ _SPACING_ERRORS = [
     *rule()
     .AND(NOT(tag_form(Tag.연결어미, "지")), NOT(tag(Tag.일반부사))).context()
     .AND(AND(AND(NOT(tag_form(Tag.연결어미, "지")), NOT(tag_form(Tag.목적격조사, "ᆯ"))), NOT(tags({Tag.일반부사, Tag.일반명사}))), NOT(tag_form(Tag.연결어미, "도"))).context()
+    .tag_form(Tag.일반부사, "못")
+    .tag_form(Tag.동사, "하").if_not_spaced()
+    .msg("'못 하다'로 띄어 써야 합니다.").build(),
+
+    *rule()
+    .id("VV_명사_못 하다_띄어쓰기")
+    .tag(Tag.일반명사).context()
     .tag_form(Tag.일반부사, "못")
     .tag_form(Tag.동사, "하").if_not_spaced()
     .msg("'못 하다'로 띄어 써야 합니다.").build(),
@@ -590,9 +614,10 @@ _NNB = [
     .msg("'여러 {form[1]}'batchim(\"으로\",\"로\") 띄어 써야 합니다.").build(),
     
     *rule()
-    .tag(Tag.명사파생접미사)
+    .id("NNB_명사_중_띄어쓰기")
+    .tags({Tag.명사파생접미사, Tag.일반명사})
     .tag_form(Tag.의존명사, "중").if_not_spaced()
-    .msg("'중'을 앞 말과 띄어 써야 합니다.").build(),
+    .msg("'{dform[0]} 중'으로 띄어 써야 합니다.").detail("'중(中)'은 의존명사이므로 일부 합성어를 제외하고는 앞 말과 띄어 써야 합니다.\n\n합성어로 등재된 단어: 그중, 밤중, 한밤중, 은연중, 부재중, 오밤중, 무언중").build(),
 
     *rule()
     .AND(tag(Tag.관형사), forms(NUMBER_DETERMINERS))
@@ -686,7 +711,7 @@ _NNB = [
     .msg("'것을'의 의미이므로, '걸'을 앞 말과 띄어 써야 합니다.").build(),
     
     *rule()
-    .tags({Tag.관형사형전성어미, Tag.관형사, Tag.관형격조사})
+    .tags({Tag.관형사형전성어미, Tag.관형사, Tag.관형격조사}).context()
     .AND(tag(Tag.의존명사), forms({"채", "만큼", "바", "적", "둥", "척", "리", "뻔", "터", "줄", "대로", "김", "등", "셈"})).if_not_spaced()
     .msg("'{form[0]}'batchim(\"을\",\"를\") 앞 말과 띄어 써야 합니다.").build(),
 
@@ -736,6 +761,12 @@ _NNB = [
     .tag_form(Tag.의존명사, "만").if_not_spaced()
     .tag_form(Tag.형용사파생접미사, "하").if_spaced()
     .msg("'OO할 만하다'로 띄어 써야 합니다.").build(),
+
+    *rule()
+    .id("만하다_붙여쓰기")
+    .tag_form(Tag.의존명사, "만")
+    .tag_form(Tag.동사, "하").if_spaced()
+    .msg("'만하다'로 붙여 써야 합니다.").build(),
     
     *rule()
     .tag(Tag.일반부사) # 아무튼, 하여튼
@@ -855,9 +886,17 @@ _NNG = [
     .msg("'{form[0]} {form[1]}'batchim(\"으로\",\"로\") 띄어 써야 합니다.").build(),
     
     *rule()
-    .AND(tag(Tag.일반명사), forms({"은연"}))
+    .id("NNB_일반명사_중_붙여쓰기")
+    .AND(tag(Tag.일반명사), forms({"은연", "부재", "오밤", "무언"}))
     .tag_form(Tag.의존명사, "중").if_spaced()
     .msg("'{form[0]}중'으로 붙여 써야 합니다.").build(),
+
+    *rule()
+    .id("NNB_한밤중_붙여쓰기")
+    .tag_form(Tag.체언접두사, "한")
+    .tag_form(Tag.일반명사, "밤")
+    .tag_form(Tag.의존명사, "중").if_spaced()
+    .msg("'한밤중'으로 붙여 써야 합니다.").build(),
     
     *rule()
     .NOT(tags({Tag.일반부사, Tag.관형사형전성어미})).context()
@@ -1474,6 +1513,7 @@ _NNG_NNG = [
     *NNG_and_NNG("자살", "사건", SpacingRule.SPACED),
     *NNG_and_NNG("타살", "사건", SpacingRule.SPACED),
     *NNG_and_NNG("비밀", "병기", SpacingRule.SPACED),
+    *NNG_and_NNG("개체", "수", SpacingRule.SPACED),
 ]
 
 _NR = [
@@ -1627,12 +1667,6 @@ _VV = [
     .tag_form(Tag.일반부사, "안")
     .tag_form(Tag.동사, "되").if_not_spaced()
     .msg("'안 되다'로 띄어 써야 합니다.").build(),
-
-    *rule()
-    .NOT(tag(Tag.관형사형전성어미)).context()
-    .forms({"축복", "축하", "평가", "주목", "허락"})
-    .tag_form(Tag.동사불규칙활용, "받").if_spaced()
-    .msg("'받다'를 붙여 써야 합니다.").build(),
     
     *rule()
     .tag_form(Tag.일반명사, "야심")
@@ -2266,6 +2300,7 @@ _NNG_VV = [
     *NNG_and_some("기승", "부리", "동사", SpacingRule.ATTACHED),
     *NNG_and_some("꺼드럭", "대", "동사", SpacingRule.ATTACHED),
     *NNG_and_some("꺼드럭", "거리", "동사", SpacingRule.ATTACHED),
+    *NNG_and_some("본", "받", "동사", SpacingRule.ATTACHED),
 
     # 띄어 써야 하는 것
     *NNG_and_some("물", "흐르", "동사", SpacingRule.SPACED),
@@ -2369,6 +2404,7 @@ _VV_EC_VV = [
     *VV_EC_VV(("싸", "동사"), "고", ("돌", "동사"), SpacingRule.ATTACHED),
     *VV_EC_VV(("돌리", "동사"), "어", ("주", "보조용언"), SpacingRule.ATTACHED),
     *VV_EC_VV(("돌리", "동사"), "어", ("드리", "보조용언"), SpacingRule.ATTACHED),
+    *VV_EC_VV(("지키", "동사"), "어", ("보", "보조용언"), SpacingRule.ATTACHED, None, "'주의깊게 보다'의 의미인 경우 붙여 써야 합니다. '보호해 보다'의 의미인 경우 띄어 써도, 붙여 써도 됩니다."),
     
     # 띄어 써야 하는 것
     *VV_EC_VV(("밀", "동사"), "어", ("넣", "동사"), SpacingRule.SPACED),
@@ -2498,7 +2534,7 @@ _VX = [
     .id("게 하다_띄어쓰기")
     .tag_form(Tag.연결어미, "게")
     .tag_form(Tag.보조용언, "하").if_not_spaced()
-    .msg("'~게 하다'로 띄어 써야 합니다.").build(),
+    .msg("'~게/케 하다'로 띄어 써야 합니다.").build(),
     
     *rule()
     .id("VX_려 들다_띄어쓰기")
@@ -2530,7 +2566,7 @@ _VA = [
 
     *rule()
     .NOT(tag(Tag.관형사)).context()
-    .forms({"꼼짝", "쓸데", "문제", "빈틈", "온데간데", "꾸밈", "스스럼", "부질", "재미", "소용", "틀림", "쓸데", "끊임", "다름", "염치", "빈틈", "정신", "다름", "변함", "끄떡", "문제", "어처구니", "인정사정", "어이", "유례", "끝"})
+    .forms({"꼼짝", "쓸데", "문제", "빈틈", "온데간데", "꾸밈", "스스럼", "부질", "재미", "소용", "틀림", "쓸데", "끊임", "다름", "염치", "빈틈", "정신", "다름", "변함", "끄떡", "문제", "어처구니", "인정사정", "어이", "유례", "끝", "터무니"})
     .OR(tag_form(Tag.형용사, "없"), tag_form(Tag.일반부사, "없이")).if_spaced()
     .msg("'{form[0]}없다'로 붙여 써야 합니다.").build(),
 
@@ -3096,6 +3132,13 @@ _XSV = [
     .tag(Tag.명사파생접미사).if_not_spaced()
     .tag_form(Tag.동사파생접미사, "하").if_spaced()
     .msg("'{dform[0]}{dform[1]}하다'로 붙여 써야 합니다.").build(),
+
+    *rule()
+    .id("XSV_받다_붙여쓰기")
+    .NOT(tag(Tag.관형사형전성어미)).context()
+    .AND(tag(Tag.일반명사), forms(받다_ALLOWS))
+    .tag_form(Tag.동사불규칙활용, "받").if_spaced()
+    .msg("'{dform[0]}받다'로 붙여 써야 합니다.").detail("물리적으로 전달받는 것이 아닌, 어떤 행위의 대상이 됨을 나타낼 때에는 '받다'를 앞 말에 붙여 써야 합니다.\n예를 들어 '평가받다'의 경우, '평가'라는 물건을 받는 것이 아닌 '평가를 당하다'의 의미이므로 '평가받다'로 붙여 씁니다.\n'받다'를 '하다'로 바꿔 써서 말이 된다면, 붙여 씁니다.\n※열받다는 예외적으로 붙여 씁니다.").build(),
 ]
 
 _SE = [
