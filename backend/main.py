@@ -6,7 +6,7 @@ from pathlib import Path
 import uvicorn
 import webview
 
-from src.api import app
+from src.api import create_app
 
 class Api:
     def open_file_dialog(self) -> str | None:
@@ -17,7 +17,6 @@ class Api:
         )
         return result[0] if result else None
 
-
 def _find_free_port(start: int = 8765) -> int:
     port = start
     while True:
@@ -25,7 +24,6 @@ def _find_free_port(start: int = 8765) -> int:
             if s.connect_ex(("127.0.0.1", port)) != 0:
                 return port
         port += 1
-
 
 def _wait_for_server(port: int, timeout: float = 10.0) -> None:
     deadline = time.monotonic() + timeout
@@ -36,10 +34,9 @@ def _wait_for_server(port: int, timeout: float = 10.0) -> None:
         time.sleep(0.05)
     raise TimeoutError(f"서버가 {timeout}초 내에 시작되지 않았습니다 (port={port})")
 
-
 def _run_server(port: int) -> None:
+    app = create_app(mode="desktop")
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
-
 
 if __name__ == "__main__":
     dist_dir = Path(__file__).parent.parent / "frontend" / "dist" / "desktop"

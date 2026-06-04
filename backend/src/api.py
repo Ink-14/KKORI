@@ -3,7 +3,7 @@ import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -35,6 +35,9 @@ _tokenizer_lock: asyncio.Lock | None = None
 _USER_WORDS_PATH = Path(__file__).parent.parent / "data" / "user_words.json"
 
 
+# ──────────────────────────────────────────────────────────────
+# 사용자 사전 데이터
+# ──────────────────────────────────────────────────────────────
 def _load_user_data() -> dict:
     if not _USER_WORDS_PATH.exists():
         return {"global": [], "projects": {}, "active_project": None}
@@ -60,6 +63,9 @@ def _get_active_words(data: dict) -> list[dict]:
     return words
 
 
+# ──────────────────────────────────────────────────────────────
+# lifespan: 엔진 초기화
+# ──────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _raw_searcher, _spell_checker, _tokenizer, _tokenizer_lock
@@ -78,18 +84,9 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://ink-14.github.io",
-    ],
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
-)
-
+# ──────────────────────────────────────────────────────────────
+# 모델
+# ──────────────────────────────────────────────────────────────
 class CheckRequest(BaseModel):
     text: str
 
@@ -149,39 +146,22 @@ class SegmentResult(BaseModel):
     errors: list[SpellErrorResponse]
 
 
-@app.post("/raw-check", response_model=list[SpellErrorResponse])
-def raw_check(body: CheckRequest) -> list[SpellErrorResponse]:
-    assert _raw_searcher is not None
-    results: list[SpellError] = _raw_searcher.search(body.text)
-    return [
-        SpellErrorResponse(
-            error_type=e.error_type.name,
-            error_message=e.error_message,
-            start_index=e.start_index,
-            end_index=e.end_index,
-            rule_id=e.rule_id,
-        )
-        for e in results
-    ]
+class SheetInfo(BaseModel):
+    name: str
+    columns: list[str]
 
-@app.post("/nfa-check", response_model=list[SpellErrorResponse])
-async def nfa_check(body: CheckRequest) -> list[SpellErrorResponse]:
-    assert _spell_checker is not None
-    assert _tokenizer is not None
-    assert _tokenizer_lock is not None
-    async with _tokenizer_lock:
-        tokens = _tokenizer.tokenize(body.text)
-    results = list(_spell_checker.check(tokens))
-    return [
-        SpellErrorResponse(
-            error_type=e.error_type.name,
-            error_message=e.error_message,
-            start_index=e.start_index,
-            end_index=e.end_index,
-            rule_id=e.rule_id,
-        )
-        for e in results
-    ]
+
+# ──────────────────────────────────────────────────────────────
+# 공통 헬퍼
+# ──────────────────────────────────────────────────────────────
+def _to_response(e: SpellError) -> SpellErrorResponse:
+    return SpellErrorResponse(
+        error_type=e.error_type.name,
+        error_message=e.error_message,
+        start_index=e.start_index,
+        end_index=e.end_index,
+        rule_id=e.rule_id,
+    )
 
 
 def _apply_user_words_to_tokenizer(words: list[dict], score: float = 0.0) -> None:
@@ -191,85 +171,50 @@ def _apply_user_words_to_tokenizer(words: list[dict], score: float = 0.0) -> Non
         _tokenizer.add_user_word(entry["word"], Tag[entry["tag"]], score)
 
 
-@app.get("/projects")
-def get_projects() -> dict:
-    data = _load_user_data()
-    return {"names": list(data.get("projects", {}).keys()), "active": data.get("active_project")}
+# ──────────────────────────────────────────────────────────────
+# 라우터 1: check (항상 노출)
+# ──────────────────────────────────────────────────────────────
+check_router = APIRouter(tags=["check"])
 
 
-@app.post("/projects", status_code=201)
-async def create_project(body: ProjectRequest):
+@check_router.post("/raw-check", response_model=list[SpellErrorResponse])
+def raw_check(body: CheckRequest) -> list[SpellErrorResponse]:
+    assert _raw_searcher is not None
+    results: list[SpellError] = _raw_searcher.search(body.text)
+    return [_to_response(e) for e in results]
+
+
+@check_router.post("/nfa-check", response_model=list[SpellErrorResponse])
+async def nfa_check(body: CheckRequest) -> list[SpellErrorResponse]:
+    assert _spell_checker is not None
+    assert _tokenizer is not None
     assert _tokenizer_lock is not None
     async with _tokenizer_lock:
-        data = _load_user_data()
-        if body.name in data.get("projects", {}):
-            raise HTTPException(status_code=409, detail="이미 존재하는 프로젝트입니다.")
-        data.setdefault("projects", {})[body.name] = []
-        _save_user_data(data)
-    return {"name": body.name}
+        tokens = _tokenizer.tokenize(body.text)
+    results = list(_spell_checker.check(tokens))
+    return [_to_response(e) for e in results]
 
 
-@app.delete("/projects/{name}")
-async def delete_project(name: str):
+@check_router.post("/check", response_model=list[SpellErrorResponse])
+async def check(body: CheckRequest) -> list[SpellErrorResponse]:
+    assert _raw_searcher is not None
+    assert _spell_checker is not None
+    assert _tokenizer is not None
     assert _tokenizer_lock is not None
+    raw_results: list[SpellError] = _raw_searcher.search(body.text)
     async with _tokenizer_lock:
-        data = _load_user_data()
-        if name not in data.get("projects", {}):
-            raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
-        del data["projects"][name]
-        if data.get("active_project") == name:
-            data["active_project"] = None
-            _apply_user_words_to_tokenizer(_get_active_words(data))
-        _save_user_data(data)
-    return {"deleted": name}
+        tokens = _tokenizer.tokenize(body.text)
+    nfa_results = list(_spell_checker.check(tokens))
+    return [_to_response(e) for e in [*raw_results, *nfa_results]]
 
 
-@app.post("/activate-project")
-async def activate_project(body: ActivateProjectRequest):
-    assert _tokenizer_lock is not None
-    async with _tokenizer_lock:
-        data = _load_user_data()
-        if body.project is not None and body.project not in data.get("projects", {}):
-            raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
-        data["active_project"] = body.project
-        _save_user_data(data)
-        _apply_user_words_to_tokenizer(_get_active_words(data))
-    return {"active": body.project}
+# ──────────────────────────────────────────────────────────────
+# 라우터 2: file (desktop 전용)
+# ──────────────────────────────────────────────────────────────
+file_router = APIRouter(tags=["file"])
 
 
-@app.get("/words")
-def get_words(scope: str = "global") -> list[dict]:
-    data = _load_user_data()
-    if scope == "global":
-        return data.get("global", [])
-    if scope not in data.get("projects", {}):
-        raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
-    return data["projects"][scope]
-
-
-@app.post("/add-words", status_code=200)
-async def add_words(body: AddWordsRequest):
-    assert _tokenizer_lock is not None
-    async with _tokenizer_lock:
-        data = _load_user_data()
-        updated = [e.model_dump() for e in body.words]
-        if body.scope == "global":
-            data["global"] = updated
-        else:
-            if body.scope not in data.get("projects", {}):
-                raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
-            data["projects"][body.scope] = updated
-        _save_user_data(data)
-        _apply_user_words_to_tokenizer(_get_active_words(data))
-    return {"saved": len(updated)}
-
-
-class SheetInfo(BaseModel):
-    name: str
-    columns: list[str]
-
-
-@app.post("/excel-info", response_model=list[SheetInfo])
+@file_router.post("/excel-info", response_model=list[SheetInfo])
 def excel_info(body: FileCheckRequest) -> list[SheetInfo]:
     import openpyxl
     file_path = Path(body.path)
@@ -286,7 +231,7 @@ def excel_info(body: FileCheckRequest) -> list[SheetInfo]:
     return result
 
 
-@app.post("/csv-info", response_model=list[str])
+@file_router.post("/csv-info", response_model=list[str])
 def csv_info(body: CsvInfoRequest) -> list[str]:
     import csv
     file_path = Path(body.path)
@@ -298,7 +243,7 @@ def csv_info(body: CsvInfoRequest) -> list[str]:
     return headers
 
 
-@app.post("/file-check", response_model=list[SegmentResult])
+@file_router.post("/file-check", response_model=list[SegmentResult])
 async def file_check(body: FileCheckRequest) -> list[SegmentResult]:
     assert _raw_searcher is not None
     assert _spell_checker is not None
@@ -333,45 +278,95 @@ async def file_check(body: FileCheckRequest) -> list[SegmentResult]:
             raw_errors: list[SpellError] = _raw_searcher.search(seg.text)
             tokens = _tokenizer.tokenize(seg.text)
             nfa_errors = list(_spell_checker.check(tokens))
-            errors = [
-                SpellErrorResponse(
-                    error_type=e.error_type.name,
-                    error_message=e.error_message,
-                    start_index=e.start_index,
-                    end_index=e.end_index,
-                    rule_id=e.rule_id,
-                )
-                for e in [*raw_errors, *nfa_errors]
-            ]
+            errors = [_to_response(e) for e in [*raw_errors, *nfa_errors]]
             results.append(SegmentResult(metadata=seg.metadata, text=seg.text, errors=errors))
 
     return results
 
 
-@app.post("/check", response_model=list[SpellErrorResponse])
-async def check(body: CheckRequest) -> list[SpellErrorResponse]:
-    assert _raw_searcher is not None
-    assert _spell_checker is not None
-    assert _tokenizer is not None
-    assert _tokenizer_lock is not None
-    raw_results: list[SpellError] = _raw_searcher.search(body.text)
-    async with _tokenizer_lock:
-        tokens = _tokenizer.tokenize(body.text)
-    nfa_results = list(_spell_checker.check(tokens))
-    return [
-        SpellErrorResponse(
-            error_type=e.error_type.name,
-            error_message=e.error_message,
-            start_index=e.start_index,
-            end_index=e.end_index,
-            rule_id=e.rule_id,
-        )
-        for e in [*raw_results, *nfa_results]
-    ]
+# ──────────────────────────────────────────────────────────────
+# 라우터 3: admin (desktop 전용)
+# ──────────────────────────────────────────────────────────────
+admin_router = APIRouter(tags=["admin"])
 
+
+@admin_router.get("/projects")
+def get_projects() -> dict:
+    data = _load_user_data()
+    return {"names": list(data.get("projects", {}).keys()), "active": data.get("active_project")}
+
+
+@admin_router.post("/projects", status_code=201)
+async def create_project(body: ProjectRequest):
+    assert _tokenizer_lock is not None
+    async with _tokenizer_lock:
+        data = _load_user_data()
+        if body.name in data.get("projects", {}):
+            raise HTTPException(status_code=409, detail="이미 존재하는 프로젝트입니다.")
+        data.setdefault("projects", {})[body.name] = []
+        _save_user_data(data)
+    return {"name": body.name}
+
+
+@admin_router.delete("/projects/{name}")
+async def delete_project(name: str):
+    assert _tokenizer_lock is not None
+    async with _tokenizer_lock:
+        data = _load_user_data()
+        if name not in data.get("projects", {}):
+            raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
+        del data["projects"][name]
+        if data.get("active_project") == name:
+            data["active_project"] = None
+            _apply_user_words_to_tokenizer(_get_active_words(data))
+        _save_user_data(data)
+    return {"deleted": name}
+
+
+@admin_router.post("/activate-project")
+async def activate_project(body: ActivateProjectRequest):
+    assert _tokenizer_lock is not None
+    async with _tokenizer_lock:
+        data = _load_user_data()
+        if body.project is not None and body.project not in data.get("projects", {}):
+            raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
+        data["active_project"] = body.project
+        _save_user_data(data)
+        _apply_user_words_to_tokenizer(_get_active_words(data))
+    return {"active": body.project}
+
+
+@admin_router.get("/words")
+def get_words(scope: str = "global") -> list[dict]:
+    data = _load_user_data()
+    if scope == "global":
+        return data.get("global", [])
+    if scope not in data.get("projects", {}):
+        raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
+    return data["projects"][scope]
+
+
+@admin_router.post("/add-words", status_code=200)
+async def add_words(body: AddWordsRequest):
+    assert _tokenizer_lock is not None
+    async with _tokenizer_lock:
+        data = _load_user_data()
+        updated = [e.model_dump() for e in body.words]
+        if body.scope == "global":
+            data["global"] = updated
+        else:
+            if body.scope not in data.get("projects", {}):
+                raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
+            data["projects"][body.scope] = updated
+        _save_user_data(data)
+        _apply_user_words_to_tokenizer(_get_active_words(data))
+    return {"saved": len(updated)}
 
 _FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist" / "desktop"
-if _FRONTEND_DIST.exists():
+
+def _mount_frontend(app: FastAPI) -> None:
+    if not _FRONTEND_DIST.exists():
+        return
     app.mount("/assets", StaticFiles(directory=_FRONTEND_DIST / "assets"), name="assets")
 
     @app.get("/")
@@ -384,3 +379,34 @@ if _FRONTEND_DIST.exists():
         if file.exists() and file.is_file():
             return FileResponse(file)
         return FileResponse(_FRONTEND_DIST / "index.desktop.html")
+
+
+def create_app(mode: str = "web") -> FastAPI:
+    """애플리케이션 팩토리.
+
+    mode="desktop": 전체 API(파일/사전 관리 포함) + 프론트 서빙.
+    mode="web"    : check 계열만 노출(데모용, 안전 기본값).
+    """
+    is_desktop = mode.lower() == "desktop"
+
+    app = FastAPI(lifespan=lifespan)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:5173",
+            "https://ink-14.github.io",
+        ],
+        allow_methods=["GET", "POST"],
+        allow_headers=["*"],
+    )
+
+    app.include_router(check_router)
+
+    # desktop 전용
+    if is_desktop:
+        app.include_router(file_router)
+        app.include_router(admin_router)
+        _mount_frontend(app)
+
+    return app
