@@ -552,7 +552,7 @@ def _optimize_and(params: tuple[AndParam, ...]) -> list[Condition]:
     기타 -> fallback으로 빠지는 AndCondition 생성
     
     """
-    tag_values: list[str] = []
+    tag_values: list[Tag] = []
     form_values: list[str] = []
     other_conds: list[Condition] = []
 
