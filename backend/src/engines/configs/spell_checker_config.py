@@ -1,4 +1,4 @@
-﻿from src.engines.configs.spell_checker_config_builder import *
+from src.engines.configs.spell_checker_config_builder import *
 from src.models.interface import Tag, TagGroup, SpellErrorType
 from src.engines.configs import spell_checker_config_meaning, spell_checker_config_spacing, spell_checker_config_specific, spell_checker_config_spelling, spell_checker_config_warning, spell_checker_config_complex, spell_checker_config_model
 
@@ -16,10 +16,6 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule()
-    .id("XSN_붙여쓰기")
-    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), batchim("ᆯ"))
-    .msg("{dform}")
 ]
 ML_LABELINGS = [
 ]
