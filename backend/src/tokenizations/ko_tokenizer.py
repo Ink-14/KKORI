@@ -44,7 +44,7 @@ class KoTokenizer(Kiwi):
         termbase_files = get_all_file_paths(self.DEFAULT_TERMBASE_PATH, "csv")
         for file in termbase_files:
             for word in make_termbase_list(file):
-                self.add_user_word(word, Tag.일반명사)        
+                self.add_user_word(word, Tag.일반명사)
 
     def tokenize(self, text: str | list[str], *args, **kwargs):            
         return super().tokenize(text, *args, **kwargs)

@@ -16,7 +16,12 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
+    *rule().id("VV_못_동사_띄어쓰기")
+    .tag_form(Tag.일반부사, "못")
+    .AND(tag(Tag.동사), NOT(forms({"하", "되"}))).if_not_spaced()
+    .msg("'못 merge(({dform[1]}, {dtag[1]}), (\"다\", \"종결어미\"))'로 띄어 써야 합니다.").build(),
 ]
+
 ML_LABELINGS = [
 ]
 

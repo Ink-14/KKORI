@@ -326,7 +326,8 @@ _ADD = [
 
     *rule()
     .tag_form(Tag.동사, "들이키")
-    .msg("(물 등을) '들이켜다'가 올바른 표현입니다.")
+    .NOT(tag_form(Tag.연결어미, "어")).context() # '들이켜 마시는 회복약이야!' 같은 경우에 오탐 발생
+    .msg("'들이켜다'가 올바른 표현입니다.")
     .build(),
 
     *rule()
@@ -750,68 +751,66 @@ _REP = [
     .tag_form(Tag.보조사, "마져")
     .msg("'마저'가 올바른 표현입니다.").build(),
 
-    *rule()
-    .id("REP_로서")
+    *rule().id("REP_로서")
     .tag_form(Tag.일반명사, "당시").context()
     .tag_form(Tag.부사격조사, "로써")
     .tag_form(Tag.보조사, "는")
     .msg("'로서는'이 올바른 표현입니다.").build(),
 
-    *rule()
-    .id("REP_우려먹다")
+    *rule().id("REP_우려먹다")
     .tag_form(Tag.동사, "울궈먹")
     .msg("'우려먹다'가 올바른 표현입니다.").build(),
-]
 
-# ᆯ 규칙 활용 관련
-_ᆯ동사들 = {"졸", "썰", "날", "빌", "불", "말", "살", "일", "팔", "깃들", "깔", "틀"}
-_ᆯ형용사들 = {"거칠", "달", "녹슬", "드물"}
+    *rule().id("REP_묻히다")
+    .tag_form(Tag.동사, "뭍히")
+    .msg("'묻히다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_파묻히다")
+    .tag_form(Tag.동사, "파뭍히")
+    .msg("'파묻히다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_배어 나오다")
+    .tag_form(Tag.동사, "베어나오")
+    .msg("'배어 나오다'가 올바른 표현입니다.").build(),
+]
 
 _MIF = [
     *rule()
-    .AND(tag(Tag.동사), forms(_ᆯ동사들))
+    .id("MIF_ㄹ용언_1")
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용}), batchim("ᆯ"))
     .tag_form(Tag.선어말어미, "으시")
-    .NOT(tag_form(Tag.선어말어미, "었"))
-    .msg("동사 활용이 잘못되었습니다. 'merge(({dform[0]}, {dtag[0]}), (\"다\", \"종결어미\"))'의 활용형은 'merge(({dform[0]}, {dtag[0]}), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 써야 합니다.")
+    .NOT(AND(tag(Tag.선어말어미), forms({"엇"})))
+    .msg("'merge(({dform[0]}, {dtag[0]}), ({dform[1]}, {dtag[1]}), ({dform[2]}, {dtag[2]}))'batchim(\"으로\", \"로\") 써야 합니다.")
     .build(),
 
     *rule()
-    .AND(tag(Tag.동사), forms(_ᆯ동사들))
+    .id("MIF_ㄹ용언_2_었")
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용}), batchim("ᆯ"))
     .tag_form(Tag.선어말어미, "으시")
     .tag_form(Tag.선어말어미, "었")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"으시\", \"선어말어미\"), (\"었\", \"선어말어미\"))'batchim(\"으로\", \"로\") 써야 합니다.")
     .build(),
 
     *rule()
-    .AND(tag(Tag.동사), forms(_ᆯ동사들))
-    .tag_form(Tag.관형사형전성어미, "은")
-    .msg("동사 활용이 잘못되었습니다. 'merge(({dform[0]}, {dtag[0]}), (\"다\", \"종결어미\"))'의 활용형은 'merge(({dform[0]}, \"동사\"), (\"ᆫ\", \"관형사형전성어미\"))'batchim(\"으로\", \"로\") 써야 합니다.")
-    .build(),
-
-    *rule()
-    .AND(tag(Tag.형용사), forms(_ᆯ형용사들))
+    .id("MIF_ㄹ용언_2_엇")
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용}), batchim("ᆯ"))
     .tag_form(Tag.선어말어미, "으시")
-    .any()
-    .context()
-    .msg("형용사 활용이 잘못되었습니다. 'merge(({dform[0]}, {dtag[0]}), (\"다\", \"종결어미\"))'의 활용형은 'merge(({dform[0]}, {dtag[0]}), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 써야 합니다.")
+    .tag_form(Tag.선어말어미, "엇")
+    .msg("'merge(({dform[0]}, {dtag[0]}), (\"으시\", \"선어말어미\"), (\"었\", \"선어말어미\"))'batchim(\"으로\", \"로\") 써야 합니다.")
     .build(),
 
     *rule()
-    .AND(tag(Tag.동사), forms(_ᆯ동사들))
-    .tag_form(Tag.연결어미, "으면")
-    .msg("동사 활용이 잘못되었습니다. 'merge(({dform[0]}, {dtag[0]}), (\"다\", \"종결어미\"))'의 활용형은 'merge(({dform[0]}, {dtag[0]}), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 써야 합니다.")
-    .build(),
-
-    *rule()
-    .AND(tag(Tag.형용사), forms(_ᆯ형용사들))
+    .id("MIF_ㄹ용언_3")
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용}), batchim("ᆯ"))
     .tag_form(Tag.관형사형전성어미, "은")
-    .msg("형용사 활용이 잘못되었습니다. 'merge(({dform[0]}, {dtag[0]}), (\"다\", \"종결어미\"))'의 활용형은 'merge(({dform[0]}, \"형용사\"), (\"ᆫ\", \"관형사형전성어미\"))'batchim(\"으로\", \"로\") 써야 합니다.")
+    .msg("'merge(({dform[0]}, \"동사\"), (\"ᆫ\", \"관형사형전성어미\"))'batchim(\"으로\", \"로\") 써야 합니다.")
     .build(),
-    
+
     *rule()
-    .AND(tag(Tag.형용사), forms(_ᆯ형용사들))
+    .id("MIF_ㄹ용언_4")
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용}), batchim("ᆯ"))
     .tag_form(Tag.연결어미, "으면")
-    .msg("형용사 활용이 잘못되었습니다. 'merge(({dform[0]}, {dtag[0]}), (\"다\", \"종결어미\"))'의 활용형은 'merge(({dform[0]}, {dtag[0]}), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 써야 합니다.")
+    .msg("'merge(({dform[0]}, {dtag[0]}), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 써야 합니다.")
     .build(),
 
     *rule()
