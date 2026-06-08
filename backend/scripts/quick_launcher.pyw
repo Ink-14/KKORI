@@ -1,4 +1,9 @@
-﻿import gzip
+﻿"""
+규칙 테스트용 디버깅 툴입니다.
+사용자용 메인 진입점은 main.py입니다!
+"""
+
+import gzip
 import importlib
 import os
 import pickle
@@ -607,20 +612,21 @@ function renderSpellResult(result) {
     errDiv.innerHTML = '<div class="no-errors">오류가 없습니다.</div>';
     return;
   }
-  const th = '<tr><th>#</th><th>Type</th><th>Message</th></tr>';
+  const th = '<tr><th>#</th><th>Type</th><th>Rule ID</th><th>Message</th></tr>';
   const tbody = result.errors.map((e, i) => {
     const path = e.debug_path
       ? '<div class="err-path">' + escapeHtml(e.debug_path) + '</div>' : '';
     return '<tr>'
       + '<td>' + (i + 1) + '</td>'
       + '<td class="err-type">' + e.type + '</td>'
+      + '<td style="font-family:monospace; color:var(--muted); white-space:nowrap;">'
+      +   escapeHtml(e.rule_id || '-') + '</td>'
       + '<td>' + e.msg + path + '</td>'
       + '</tr>';
   }).join('');
   errDiv.innerHTML =
     '<table class="error-table"><thead>' + th + '</thead><tbody>' + tbody + '</tbody></table>';
 }
-
 /* ════ 사전 검색 ════ */
 document.getElementById('dict-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') dictSearch();
@@ -1389,9 +1395,9 @@ class Api:
                 raw = RawStringSearcher()
                 raw.add_word_from_list(_raw_cfg.RAW_STRING_RULES)
 
-            seen_paragraphs = set()
-
             for fi, file in enumerate(files):
+                seen_hashes = set()
+
                 if state["aborted"]:
                     break
                 state["progress"] = fi
@@ -1406,21 +1412,25 @@ class Api:
                 if not paragraphs:
                     continue
 
-                all_tokens = self._tkn.tokenize(text=paragraphs)
-
-                filtered_pairs = []  # (paragraph, tokens)
-                for paragraph, tokens in zip(paragraphs, all_tokens):
+                # 1) 토크나이징 전에 먼저 중복 제거 (해시로 dedup)
+                unique_paragraphs = []
+                for paragraph in paragraphs:
                     if state["aborted"]:
                         break
-                    if paragraph in seen_paragraphs:
+                    h = hash(paragraph)
+                    if h in seen_hashes:
                         continue
-                    seen_paragraphs.add(paragraph)
-                    filtered_pairs.append((paragraph, tokens))
+                    seen_hashes.add(h)
+                    unique_paragraphs.append(paragraph)
 
-                if not filtered_pairs:
+                if not unique_paragraphs:
                     continue
 
-                # 2) 청크 단위 배치 spell check (Rust 측 병렬 처리)
+                # 2) 고유 문단만 토크나이징
+                unique_tokens = self._tkn.tokenize(text=unique_paragraphs)
+                filtered_pairs = list(zip(unique_paragraphs, unique_tokens))
+
+                # 3) 청크 단위 배치 spell check (Rust 측 병렬 처리)
                 CHUNK = 1000
                 filtered_tokens = [tokens for _, tokens in filtered_pairs]
                 all_spell_errors = []
@@ -1428,7 +1438,7 @@ class Api:
                     chunk = filtered_tokens[i : i + CHUNK]
                     all_spell_errors.extend(spell.check_batch(chunk))
 
-                # 3) 결과 조립 (순차)
+                # 4) 결과 조립 (순차)
                 for (paragraph, tokens), spell_errors in zip(filtered_pairs, all_spell_errors):
                     if state["aborted"]:
                         break
