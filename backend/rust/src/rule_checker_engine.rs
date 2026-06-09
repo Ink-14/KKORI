@@ -8,6 +8,8 @@ use rayon::prelude::*;
 use crate::engine_interface::{EnrichedToken, Condition, SpacingRule, TAG2IDX, BATCHIM2IDX};
 use crate::py_types::*;
 
+const ROOT: usize = 0;
+
 struct Transition {
     condition: Condition,
     target_node: usize,
@@ -277,7 +279,7 @@ impl RuleCheckerBuilder {
         let mut result: FxHashSet<usize> = FxHashSet::default();
         let mut queue: VecDeque<usize> = VecDeque::new();
 
-        for &trans_idx in self.nodes[0].iter_all_transitions() {
+        for &trans_idx in self.nodes[ROOT].iter_all_transitions() {
             let trans = &self.transitions[trans_idx];
             if matches!(&trans.condition, Condition::Not(_))
                 && trans.spacing_rule == SpacingRule::ANY
@@ -473,7 +475,7 @@ impl RuleChecker {
     }
 
     pub fn stats(&self) -> RuleCheckerStats {
-        let root = &self.nodes[0];
+        let root = &self.nodes[ROOT];
         RuleCheckerStats {
             total_nodes: self.nodes.len(),
             total_transitions: self.transitions.len(),
@@ -488,6 +490,12 @@ impl RuleChecker {
             root_fallback_transitions: root.fallback_transitions.len(),
         }
     }
+}
+
+#[derive(Clone, Copy)]
+struct Cursor {
+    start: Option<usize>,
+    end: usize,
 }
 
 impl RuleChecker {
@@ -531,12 +539,12 @@ impl RuleChecker {
     }
 
     fn check_inner(&self, tokens: &[EnrichedToken]) -> Vec<(u32, u32, u32)> {
-        // FA 시뮬레이션 기반 토큰 검사.
+        // NFA 시뮬레이션 기반 토큰 검사.
 
         // 각 토큰마다 아래 4단계를 반복:
         // 1) root에서 새 커서 시작
-        // 2) optional 전이로 도달 가능한 노드 확장 (epsilon closure, 사전 계산된 캐시 사용)
-        //   - i==0이면 BOS epsilon 사용 (NOT 전이까지 엡실론 처리)
+        // 2) optional 전이로 도달 가능한 노드 확장 (epsilon closure, 사전 계산된 vec 사용)
+        //    i == 0이면 BOS epsilon 사용 (NOT + context인 조건을 엡실론 전이)
         // 3) 출력 가능한 노드에서 에러 수집
         // 4) 현재 토큰과 매칭되는 전이를 따라 커서 전진
 
@@ -548,9 +556,9 @@ impl RuleChecker {
         if tokens.is_empty() { return Vec::new(); }
 
         let mut errors: Vec<(u32, u32, u32)> = Vec::new();
-        let mut active_cursors:   FxHashMap<usize, (Option<usize>, usize)> = FxHashMap::default();
-        let mut next_cursors:     FxHashMap<usize, (Option<usize>, usize)> = FxHashMap::default();
-        let mut expanded_cursors: FxHashMap<usize, (Option<usize>, usize)> = FxHashMap::default();
+        let mut active_cursors:   FxHashMap<usize, Cursor> = FxHashMap::default();
+        let mut next_cursors:     FxHashMap<usize, Cursor> = FxHashMap::default();
+        let mut expanded_cursors: FxHashMap<usize, Cursor> = FxHashMap::default();
         let mut candidates: Vec<usize> = Vec::new();
         let mut yielded_outputs: FxHashSet<(usize, usize)> = FxHashSet::default();
 
@@ -568,25 +576,25 @@ impl RuleChecker {
             // ── Phase 1: epsilon closure ──
             if i == 0 {
                 for &node_idx in &self.bos_epsilon {
-                    expanded_cursors.insert(node_idx, (None, 0));
+                    expanded_cursors.insert(node_idx, Cursor { start: None, end: 0 });
                 }
             }
 
-            active_cursors.insert(0, (None, i));
+            active_cursors.insert(ROOT, Cursor { start: None, end: i });
             Self::expand_cursors(&active_cursors, &self.optional_closure, &mut expanded_cursors);
 
             // ── Phase 2: 출력 수집 & 전이 탐색 ──
             next_cursors.clear();
             let mut current_step_errors: FxHashMap<(usize, usize), (u32, u32, u32)> = FxHashMap::default();
 
-            for (&node_idx, &(start_idx, end_idx)) in &expanded_cursors {
+            for (&node_idx, &cursor) in &expanded_cursors {
                 let node = &self.nodes[node_idx];
 
                 // 2-A: 출력 수집
-                if let Some(start_token_idx) = start_idx {
+                if let Some(start_token_idx) = cursor.start {
                     if start_token_idx < i && !yielded_outputs.contains(&(node_idx, start_token_idx)) {
                         yielded_outputs.insert((node_idx, start_token_idx));
-                        Self::collect_error(node, node_idx, start_token_idx, end_idx, &mut current_step_errors);
+                        Self::collect_error(node, node_idx, start_token_idx, cursor.end, &mut current_step_errors);
                     }
                 }
 
@@ -632,12 +640,12 @@ impl RuleChecker {
                     }
 
                     let target    = trans.target_node;
-                    let new_start = if start_idx.is_none() && !trans.is_context { Some(i) } else { start_idx };
-                    let new_end   = if !trans.is_context { i } else { end_idx };
+                    let new_start = if cursor.start.is_none() && !trans.is_context { Some(i) } else { cursor.start };
+                    let new_end   = if !trans.is_context { i } else { cursor.end };
 
-                    let entry = next_cursors.entry(target).or_insert((new_start, new_end));
-                    if Self::is_later_start(new_start, entry.0) {
-                        *entry = (new_start, new_end);
+                    let entry = next_cursors.entry(target).or_insert(Cursor { start: new_start, end: new_end });
+                    if Self::is_later_start(new_start, entry.start) {
+                        *entry = Cursor { start: new_start, end: new_end };
                     }
                 }
             }
@@ -650,15 +658,15 @@ impl RuleChecker {
         }
 
         // ── EOF epsilon ──
-        let mut final_expanded: FxHashMap<usize, (Option<usize>, usize)> = FxHashMap::default();
+        let mut final_expanded: FxHashMap<usize, Cursor> = FxHashMap::default();
         Self::expand_cursors(&active_cursors, &self.eof_closure, &mut final_expanded);
 
         let mut final_step_errors: FxHashMap<(usize, usize), (u32, u32, u32)> = FxHashMap::default();
-        for (node_idx, (start_idx, end_idx)) in final_expanded {
-            let Some(start_token_idx) = start_idx else { continue; };
+        for (node_idx, cursor) in final_expanded {
+            let Some(start_token_idx) = cursor.start else { continue; };
             if yielded_outputs.contains(&(node_idx, start_token_idx)) { continue; }
             let node = &self.nodes[node_idx];
-            Self::collect_error(node, node_idx, start_token_idx, end_idx, &mut final_step_errors);
+            Self::collect_error(node, node_idx, start_token_idx, cursor.end, &mut final_step_errors);
         }
 
         for (_, err) in final_step_errors {
@@ -713,15 +721,15 @@ impl RuleChecker {
     }
 
     fn expand_cursors(
-        source: &FxHashMap<usize, (Option<usize>, usize)>,
+        source: &FxHashMap<usize, Cursor>,
         closure: &[Vec<usize>],
-        target: &mut FxHashMap<usize, (Option<usize>, usize)>,
+        target: &mut FxHashMap<usize, Cursor>,
     ) {
-        for (&node_idx, &idxs) in source {
+        for (&node_idx, &cursor) in source {
             for &closure_node in &closure[node_idx] {
-                let entry = target.entry(closure_node).or_insert(idxs);
-                if Self::is_later_start(idxs.0, entry.0) {
-                    *entry = idxs;
+                let entry = target.entry(closure_node).or_insert(cursor);
+                if Self::is_later_start(cursor.start, entry.start) {
+                    *entry = cursor;
                 }
             }
         }
