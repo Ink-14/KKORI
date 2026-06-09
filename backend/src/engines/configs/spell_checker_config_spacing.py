@@ -296,14 +296,18 @@ _SPACING_ERRORS = [
     .detail("'못 하다'로 띄어 쓰는 경우는 행위가 불가능함을 나타낼 때 띄어 써야 합니다. '못하다'로 붙여 쓰는 경우는 가능하지만 잘하지는 못할 때 붙여 써야 합니다.\n\n예를 들어, '수영을 못 하다'는 수영을 아예 할 수 없는 경우를 지칭합니다. '수영을 못하다'는 할 수는 있으나 실력이 뛰어나지는 않을 때를 지칭합니다.")
     .build(),
 
-    *rule()
-    .id("VV_명사_못 하다_띄어쓰기")
+    *rule().id("VV_명사_못 하다_띄어쓰기")
     .tag(Tag.일반명사).context()
     .tag_form(Tag.일반부사, "못")
     .tag_form(Tag.동사, "하").if_not_spaced()
     .msg("'못 하다'로 띄어 써야 합니다.")
     .detail("'못 하다'로 띄어 쓰는 경우는 행위가 불가능함을 나타낼 때 띄어 써야 합니다. '못하다'로 붙여 쓰는 경우는 가능하지만 잘하지는 못할 때 붙여 써야 합니다.\n\n예를 들어, '수영을 못 하다'는 수영을 아예 할 수 없는 경우를 지칭합니다. '수영을 못하다'는 할 수는 있으나 실력이 뛰어나지는 않을 때를 지칭합니다.")
     .build(),
+
+    *rule().id("VV_못_동사_띄어쓰기")
+    .tag_form(Tag.일반부사, "못")
+    .AND(tag(Tag.동사), NOT(forms({"하", "되"}))).if_not_spaced()
+    .msg("'못 merge(({dform[1]}, {dtag[1]}), (\"다\", \"종결어미\"))'로 띄어 써야 합니다.").build(),
 
     *rule()
     .tag(Tag.일반명사)
@@ -799,13 +803,6 @@ _NNB = [
     .msg("'{dform[0]} 쪽'으로 띄어 써야 합니다.").build(),
 
     *rule()
-    .id("NNB_데다_띄어쓰기")
-    .tag(Tag.관형사형전성어미).context()
-    .tag_form(Tag.의존명사, "데").if_not_spaced()
-    .AND(tag(Tag.보조사), forms({"다", "다가"})).context()
-    .msg("'데'를 앞 말과 띄어 써야 합니다.").build(),
-
-    *rule()
     .id("NNB_데_1_띄어쓰기")
     .form("데").if_not_spaced()
     .tag_form(Tag.부사격조사, "에").context()
@@ -830,12 +827,31 @@ _NNB = [
     .tag_form(Tag.의존명사, "만").if_not_spaced()
     .msg("'{dform[0]}{dform[1]} 만'으로 띄어 써야 합니다.").build(),
 
-    *rule()
-    .id("NNB_관형사_만_띄어쓰기")
+    *rule().id("NNB_관형사_만_띄어쓰기")
     .forms(NUMBER_DETERMINERS | {"한"})
     .tag(Tag.의존명사)
     .tag_form(Tag.의존명사, "만").if_not_spaced()
     .msg("'{dform[0]} {dform[1]} 만'으로 띄어 써야 합니다.").build(),
+
+    *rule().id("NNB_데_JX_띄어쓰기")
+    .tag_form(Tag.의존명사, "데").if_not_spaced()
+    .AND(tag(Tag.보조사), forms({"까지", "는", "다가", "만", "ᆫ"})).context() # '도'가 오탐이 많아서 일단 제외
+    .msg("'데'를 앞 말과 띄어 써야 합니다.").build(),
+
+    *rule().id("NNB_데_JX다_띄어쓰기")
+    .tag_form(Tag.의존명사, "데").if_not_spaced()
+    .tag_form(Tag.보조사, "다").if_not_spaced().context()
+    .msg("'데'를 앞 말과 띄어 써야 합니다.").build(),
+
+    *rule().id("NNB_데_JKB_띄어쓰기")
+    .tag_form(Tag.의존명사, "데").if_not_spaced()
+    .AND(tag(Tag.부사격조사), forms({"서", "에"})).context()
+    .msg("'데'를 앞 말과 띄어 써야 합니다.").build(),
+
+    *rule().id("NNB_데_JKS_띄어쓰기")
+    .tag_form(Tag.의존명사, "데").if_not_spaced()
+    .tag(Tag.주격조사).context()
+    .msg("'데'를 앞 말과 띄어 써야 합니다.").build(),
 ]
 
 _NNG = [
@@ -1382,6 +1398,11 @@ _NNG_SINGLE_WORDS = [
     .tag_form(Tag.일반부사, "잠시")
     .tag_form(Tag.일반명사, "후").if_not_spaced()
     .msg("'잠시 후'로 띄어 써야 합니다.").build(),
+
+    *rule().id("NNG_SINGLE_면_띄어쓰기")
+    .tags({Tag.일반명사, Tag.명사파생접미사})
+    .tag_form(Tag.일반명사, "면").if_not_spaced()
+    .msg("'면'을 앞 말과 띄어 써야 합니다.").build()
 ]
 
 _NNG_NNG = [
@@ -1530,6 +1551,7 @@ _NNG_NNG = [
     *NNG_and_NNG("비밀", "병기", SpacingRule.SPACED),
     *NNG_and_NNG("개체", "수", SpacingRule.SPACED),
     *NNG_and_NNG("중간", "부분", SpacingRule.SPACED),
+    *NNG_and_NNG("진행", "과정", SpacingRule.SPACED),
 ]
 
 _NR = [
@@ -1703,9 +1725,9 @@ _VV = [
     .tag_form(Tag.동사, "하").if_spaced()
     .msg("'본체만체하다'로 붙여 써야 합니다.").build(),
     
-    *rule()
+    *rule().id("잘 못하다_붙여쓰기")
     .tag_form(Tag.일반부사, "잘")
-    .any().opt().context()
+    .any().opt()
     .tag_form(Tag.일반부사, "못")
     .tag_form(Tag.동사, "하").if_spaced()
     .msg("'잘 못하다'로 붙여 써야 합니다.").build(),
@@ -2450,27 +2472,31 @@ _VA = [
     .tag_form(Tag.동사, "나").if_spaced()
     .msg("'엄청나다'로 붙여 써야 합니다.").build(),
     
-    *rule()
-    .id("VA_귀신같다_붙여쓰기")
+    *rule().id("VA_귀신같다_붙여쓰기")
     .tag_form(Tag.일반명사, "귀신")
     .tag_form(Tag.형용사, "같").if_spaced()
     .msg("'능력이 뛰어나다'의 의미인 경우, '귀신같다'로 붙여 써야 합니다.").build(),
 
-    *rule()
-    .id("VA_보잘것없다_1_붙여쓰기")
+    *rule().id("VA_보잘것없다_1_붙여쓰기")
     .tag_form(Tag.동사, "보")
     .tag_form(Tag.관형사형전성어미, "잘")
     .tag_form(Tag.의존명사, "것").if_spaced()
     .tag_form(Tag.형용사, "없")
     .msg("'보잘것없다'로 붙여 써야 합니다.").build(),
     
-    *rule()
-    .id("VA_보잘것없다_2_붙여쓰기")
+    *rule().id("VA_보잘것없다_2_붙여쓰기")
     .tag_form(Tag.동사, "보")
     .tag_form(Tag.관형사형전성어미, "잘")
     .tag_form(Tag.의존명사, "것")
     .tag_form(Tag.형용사, "없").if_spaced()
     .msg("'보잘것없다'로 붙여 써야 합니다.").build(),
+
+    *rule().id("VA_못하다_붙여쓰기")
+    .tag_form(Tag.보조사, "만").context()
+    .tag_form(Tag.보조사, "도").context()
+    .tag_form(Tag.일반부사, "못")
+    .tag_form(Tag.동사, "하").if_spaced()
+    .msg("'~만도 못하다'로 붙여 써야 합니다.").build(),
 ]
 
 _NNG_VA = [
@@ -2580,18 +2606,13 @@ _MAG = [
     .tag_form(Tag.일반부사, "없이").if_spaced()
     .msg("'밤낮없이'로 붙여 써야 합니다.").build(),
 
-    *rule()
+    *rule().id("VA_하다 못해_붙여쓰기")
     .tag_form(Tag.동사, "하")
     .tag_form(Tag.연결어미, "다")
     .tag_form(Tag.일반부사, "못").if_spaced()
     .tag_form(Tag.동사파생접미사, "하")
     .tag_form(Tag.연결어미, "어")
     .msg("'하다못해'로 붙여 써야 합니다.").build(),
-
-    *rule().id("VV_못_동사_띄어쓰기")
-    .tag_form(Tag.일반부사, "못")
-    .AND(tag(Tag.동사), NOT(forms({"하", "되"}))).if_not_spaced()
-    .msg("'못 merge(({dform[1]}, {dtag[1]}), (\"다\", \"종결어미\"))'로 띄어 써야 합니다.").build(),
 
     *rule()
     .AND(tag(Tag.일반명사), forms({"맘", "마음"}))
@@ -2847,12 +2868,6 @@ _EC = [
     .tag_form(Tag.관형사, "한")
     .tag_form(Tag.일반명사, "들").if_spaced()
     .msg("'~다고 할지라도'의 의미인 경우, '~한들'로 붙여 써야 합니다.").build(),
-
-    *rule()
-    .id("EC_ㄹ수록_붙여쓰기")
-    .tag_form(Tag.관형사형전성어미, "ᆯ")
-    .form("수록").if_spaced()
-    .msg("'ㄹ수록'은 어미이므로 앞 말에 붙여 써야 합니다. (예: 하면 할수록)").build(),
 ]
 
 _ETN = [

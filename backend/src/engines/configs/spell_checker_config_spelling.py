@@ -772,6 +772,42 @@ _REP = [
     *rule().id("REP_배어 나오다")
     .tag_form(Tag.동사, "베어나오")
     .msg("'배어 나오다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_부서지다_1")
+    .tag_form(Tag.동사, "부수")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지").if_not_spaced()
+    .any()
+    .msg('\'merge(("부서지", "동사"), ({dform[3]}, {dtag[3]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
+
+    *rule().id("REP_부서지다_2")
+    .tag_form(Tag.동사, "부숴지")
+    .any()
+    .msg('\'merge(("부서지", "동사"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
+
+    *rule().id("REP_탑재")
+    .tag_form(Tag.일반명사, "탑제")
+    .msg("'탑재(搭載)'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_띄워")
+    .tag_form(Tag.일반부사, "동동").context()
+    .tag_form(Tag.동사, "띄")
+    .tag_form(Tag.연결어미, "어")
+    .msg("'띄워'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_기지개_켜다")
+    .tag_form(Tag.일반명사, "기지개").context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .AND(tag(Tag.동사), forms({"피", "펴"}))
+    .msg("기지개를 '켜다'가 올바른 표현입니다").build(),
+
+    *rule().id("REP_말려죽이다")
+    .tag_form(Tag.동사, "마르")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.동사, "죽이")
+    .msg("'말라죽다' 또는 '말려죽이다'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -1098,11 +1134,15 @@ _MIF = [
     .tag_form(Tag.연결어미, "야").if_not_spaced()
     .msg("'말이야'를 '말야'로 줄여 쓸 수 없습니다.").build(),
     
-    *rule()
-    .id("MIF_ㄹ려고")
+    *rule().id("MIF_ㄹ려고")
     .tags({Tag.동사, Tag.동사불규칙활용, Tag.동사규칙활용, Tag.동사파생접미사})
     .tag_form(Tag.연결어미, "ᆯ려고")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"려고\", \"연결어미\"))'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_을려고")
+    .tags({Tag.동사, Tag.동사불규칙활용, Tag.동사규칙활용, Tag.동사파생접미사})
+    .tag_form(Tag.연결어미, "을려고")
+    .msg("'merge(({dform[0]}, {dtag[0]}), (\"으려고\", \"연결어미\"))'가 올바른 표현입니다.").build(),
 
     *rule()
     .id("MIF_ㄹ려면")
@@ -1134,12 +1174,16 @@ _MIF = [
     .tag_form(Tag.연결어미, "겠끔")
     .msg("'~게끔'이 올바른 표현입니다.").build(),
 
-    *rule()
-    .id("MIF_만듦")
+    *rule().id("MIF_만듦")
     .tag_form(Tag.동사, "만들")
     .tag_form(Tag.관형사형전성어미, "ᆯ")
     .tag_form(Tag.종결어미, "음")
     .msg("'만들다'의 명사형은 '만듦'이 올바른 표기입니다.").build(),
+
+    *rule().id("MIF_개다")
+    .tag_form(Tag.동사, "개이")
+    .any()
+    .msg('\'merge(("개", "동사"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
 ]
 
 JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
@@ -1231,11 +1275,20 @@ _SHIFT_MISS = [
     .msg("'겠'의 오타가 아닌가요?")
     .build(),
     
-    *rule()
+    *rule().id("SHIFT_햇")
     .tag_form(Tag.동사, "하")
     .tag_form(Tag.선어말어미, "엇")
     .msg("'했'의 오타가 아닌가요?")
     .build(),
+
+    *rule().id("SHIFT_셧")
+    .tag_form(Tag.선어말어미, "시")
+    .tag_form(Tag.선어말어미, "엇")
+    .msg("'셨'의 오타가 아닌가요?").build(),
+
+    *rule().id("SHIFT_곘")
+    .tag_form(Tag.선어말어미, "곘")
+    .msg("'겠'의 오타가 아닌가요?").build(),
 ]
 
 _DEPENDS_ON_DICTIONARY = [
