@@ -1,4 +1,4 @@
-﻿from contextlib import contextmanager
+from contextlib import contextmanager
 from pathlib import Path
 
 from kiwipiepy import Kiwi
@@ -29,17 +29,16 @@ class KoTokenizer(Kiwi):
             self._initialized = True
 
     def _make_dictionary(self):
-        dictionary_files = get_all_file_paths(self.DEFAULT_DICTIONARY_PATH, "csv")
-        for file in dictionary_files:
-            if file.stem == self.DEFAULT_KO_DICT_FILE_NAME:
-                for words in make_dictionary_list(file):
-                    word, tag, score = words
-                    self.add_user_word(word=word, tag=tag, score=score)
-            elif file.stem == self.DEFAULT_PRE_ANALYZED_DICT_FILE_NAME:
-                for words in make_pre_analyzed_dict_list(file):
-                    word, form_tags, score = words
-                    self.add_pre_analyzed_word(word, form_tags, score)
-
+        ko_dict_file = self.DEFAULT_DICTIONARY_PATH / f"{self.DEFAULT_KO_DICT_FILE_NAME}.csv"
+        for words in make_dictionary_list(ko_dict_file):
+            word, tag, score = words
+            self.add_user_word(word=word, tag=tag, score=score)
+    
+        pre_analyzed_file = self.DEFAULT_DICTIONARY_PATH / f"{self.DEFAULT_PRE_ANALYZED_DICT_FILE_NAME}.csv"
+        for words in make_pre_analyzed_dict_list(pre_analyzed_file):
+            word, form_tags, score = words
+            self.add_pre_analyzed_word(word, form_tags, score)
+    
     def _add_termbase(self):
         termbase_files = get_all_file_paths(self.DEFAULT_TERMBASE_PATH, "csv")
         for file in termbase_files:
