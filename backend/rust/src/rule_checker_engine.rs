@@ -98,6 +98,34 @@ impl RuleNode {
         }
     }
 
+    fn shrink_to_fit(&mut self) {
+        for v in self.tag_transitions.values_mut() {
+            v.shrink_to_fit();
+        }
+        self.tag_transitions.shrink_to_fit();
+
+        for v in self.form_transitions.values_mut() {
+            v.shrink_to_fit();
+        }
+        self.form_transitions.shrink_to_fit();
+
+        for v in self.form_and_tag_transitions.values_mut() {
+            v.shrink_to_fit();
+        }
+        self.form_and_tag_transitions.shrink_to_fit();
+
+        if let Some(arr) = self.batchim_transitions.as_deref_mut() {
+            for slot in arr.iter_mut() {
+                if let Some(v) = slot {
+                    v.shrink_to_fit();
+                }
+            }
+        }
+
+        self.any_batchim_transitions.shrink_to_fit();
+        self.fallback_transitions.shrink_to_fit();
+    }
+
     fn iter_all_transitions(&self) -> impl Iterator<Item = &usize> {
         let batchim_iter = self.batchim_transitions
             .iter()
@@ -171,18 +199,40 @@ impl RuleCheckerBuilder {
     }
 
     pub fn build(&mut self) -> RuleChecker {
-        let optional_closure = self.compute_optional_closure();
-        let eof_closure      = self.compute_eof_closure();
-        let bos_epsilon      = self.compute_bos_epsilon();
+        let mut optional_closure = self.compute_optional_closure();
+        let mut eof_closure      = self.compute_eof_closure();
+        let mut bos_epsilon      = self.compute_bos_epsilon();
+
+        let mut nodes = std::mem::take(&mut self.nodes);
+        let mut transitions = std::mem::take(&mut self.transitions);
+        let mut form_dict = std::mem::take(&mut self.form_vec);
+        let mut lemma_dict = std::mem::take(&mut self.lemma_vec);
+
+        for node in &mut nodes {
+            node.shrink_to_fit();
+        }
+        nodes.shrink_to_fit();
+        transitions.shrink_to_fit();
+        for closure in &mut optional_closure {
+            closure.shrink_to_fit();
+        }
+        optional_closure.shrink_to_fit();
+        for closure in &mut eof_closure {
+            closure.shrink_to_fit();
+        }
+        eof_closure.shrink_to_fit();
+        bos_epsilon.shrink_to_fit();
+        form_dict.shrink_to_fit();
+        lemma_dict.shrink_to_fit();
 
         RuleChecker {
-            nodes:            std::mem::take(&mut self.nodes),
-            transitions:      std::mem::take(&mut self.transitions),
+            nodes,
+            transitions,
             optional_closure,
             eof_closure,
             bos_epsilon,
-            form_dict:  std::mem::take(&mut self.form_vec),
-            lemma_dict: std::mem::take(&mut self.lemma_vec),
+            form_dict,
+            lemma_dict,
         }
     }
 }
