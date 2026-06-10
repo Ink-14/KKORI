@@ -418,7 +418,7 @@ class TestMessage:
         assert msg.render(tokens) == "밥"
 
     def test_form_index_out_of_range_raises(self):
-        with pytest.raises(IndexError):
+        with pytest.raises(ValueError):
             rule().form("A").msg("{form[1]}").build()
 
     def test_form_placeholder_per_combo(self):
@@ -479,15 +479,16 @@ class TestBuildOutput:
         assert isinstance(rules, list)
         assert len(rules) >= 1
 
-    def test_each_rule_is_4_tuple(self):
+    def test_each_rule_is_5_tuple(self):
         rules = rule().form("A").msg("x").build()
         for r in rules:
-            assert len(r) == 4
-            steps, msg, err_type, rule_id = r
+            assert len(r) == 5
+            steps, msg, err_type, rule_id, detailed_msg = r
             assert isinstance(steps, list)
             assert isinstance(msg, CompiledMessage)
             assert isinstance(err_type, SpellErrorType)
             assert isinstance(rule_id, str)
+            assert detailed_msg is None or isinstance(detailed_msg, str)
 
     def test_each_step_is_4_tuple(self):
         rules = rule().form("A").form("B").msg("x").build()

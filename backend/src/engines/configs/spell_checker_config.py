@@ -16,9 +16,37 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("JX_까지_붙여쓰기")
-    .tag_form(Tag.보조사, "까지").if_spaced()
-    .msg("'까지'를 앞 말에 붙여 써야 합니다.").build(),
+    *rule().id("MIF_되~")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .AND(tag(Tag.연결어미), forms({"서"}))
+    .msg("'돼{form[1]}'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_되어")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.연결어미, "여")
+    .msg("'되어'가 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_되며")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.연결어미, "으며")
+    .msg("'되며'가 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_된")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.연결어미, "은")
+    .msg("'된'이 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_되+연결어미")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.연결어미, "어")
+    .tags(TagGroup.어미).if_not_spaced()
+    .msg("'merge((\"되\", {dtag[0]}), ({dform[2]}, {dtag[2]}))'의 오타가 아닌가요?").build(),
+    
+    *rule().id("MIF_되어 있다")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.선어말어미, "었").if_spaced()
+    .msg("'되어 있다'의 오타가 아닌가요?").build(),
 ]
 
 ML_LABELINGS = [

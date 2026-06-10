@@ -454,7 +454,7 @@ _ADD = [
     .msg("'말렴'이 올바른 표현입니다.")
     .build(),
 
-    *rule()
+    *rule().id("ADD_웃어른")
     .tag_form(Tag.일반명사, "윗")
     .tag_form(Tag.일반명사, "어른")
     .msg("'웃어른'이 올바른 표현입니다.").build(),
@@ -808,6 +808,24 @@ _REP = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.동사, "죽이")
     .msg("'말라죽다' 또는 '말려죽이다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_대명사_바라다")
+    .tags({Tag.고유명사, Tag.대명사, Tag.의존명사, Tag.명사파생접미사}).context()
+    .tag(Tag.주격조사).context()
+    .tag_form(Tag.동사, "바래")
+    .msg("'원하다'의 의미로는 '바라다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_~를_바라다")
+    .tag(Tag.목적격조사).context()
+    .tag_form(Tag.동사, "바래")
+    .tag_form(Tag.선어말어미, "었")
+    .msg("'원하다'의 의미로는 '바라다'가 올바른 표현입니다.").build(),
+    
+    *rule().id("REP_메다")
+    .AND(tag(Tag.일반명사), forms({"총대", "가방", "배낭"})).context()
+    .tags({Tag.주격조사, Tag.목적격조사, Tag.보조사}).opt().context()
+    .tag_form(Tag.동사, "매")
+    .msg("'{form[0]}batchim(\"을\", \"를\") 메다'가 올바른 표현입니다.").build(),    
 ]
 
 _MIF = [
@@ -1184,6 +1202,38 @@ _MIF = [
     .tag_form(Tag.동사, "개이")
     .any()
     .msg('\'merge(("개", "동사"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
+    
+    *rule().id("MIF_되~")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .AND(tag(Tag.연결어미), forms({"서"}))
+    .msg("'돼{form[1]}'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_되어")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.연결어미, "여")
+    .msg("'되어'가 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_되며")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.연결어미, "으며")
+    .msg("'되며'가 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_된")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.연결어미, "은")
+    .msg("'된'이 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_되+연결어미")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.연결어미, "어")
+    .tags(TagGroup.어미).if_not_spaced()
+    .msg("'merge((\"되\", {dtag[0]}), ({dform[2]}, {dtag[2]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_되어 있다")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.선어말어미, "었").if_spaced()
+    .msg("'되어 있다'의 오타가 아닌가요?").build(),
 ]
 
 JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
