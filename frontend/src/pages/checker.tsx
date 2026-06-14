@@ -75,22 +75,34 @@ function Checker() {
     if (!errs.length) return <span>{text}</span>
 
     const sorted = [...errs].sort((a, b) => a.start_index - b.start_index || a.end_index - b.end_index)
+    const groups: SpellErrorResponse[][] = []
+
+    for (const e of sorted) {
+      const last = groups[groups.length - 1]
+      if (last && e.start_index < last[last.length - 1].end_index) {
+        last.push(e)
+      } else {
+        groups.push([e])
+      }
+    }
+
     const parts: React.ReactNode[] = []
     let cursor = 0
 
-    for (const e of sorted) {
-      const start = e.start_index
-      const end = e.end_index
+    for (const group of groups) {
+      const start = group[0].start_index
+      const end = Math.max(...group.map(e => e.end_index))
       if (start < cursor) continue
       if (start >= text.length) break
 
       if (cursor < start) parts.push(<span key={cursor}>{text.slice(cursor, start)}</span>)
 
+      const tooltipText = group.map(e => `[${e.error_type}]\n${e.error_message}`).join('\n\n')
       parts.push(
         <span
           key={start}
           className="checker-error-word"
-          onMouseEnter={(ev) => showTooltip(ev, `[${e.error_type}]\n${e.error_message}`)}
+          onMouseEnter={(ev) => showTooltip(ev, tooltipText)}
           onMouseLeave={hideTooltip}
         >
           {text.slice(start, end)}

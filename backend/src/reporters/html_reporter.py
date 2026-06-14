@@ -34,20 +34,13 @@ def highlight_text(original_text: str, matches: list[SpellError]) -> str:
     주의:
     - match.start_index, match.end_index 는 original_text 기준 인덱스라고 가정합니다.
     - end_index 는 포함(inclusive) 인덱스라고 가정합니다.
-    - 겹치는 매치는 HTML 구조가 깨지는 것을 막기 위해 뒤쪽 겹침 항목을 건너뜁니다.
+    - 겹치는 매치는 하나의 하이라이트로 합쳐지며, tooltip 메시지도 함께 표시됩니다.
     """
     if not matches:
         return escape(original_text)
 
-    sorted_matches = sorted(
-        matches,
-        key=lambda x: (x.start_index, x.end_index)
-    )
-
-    result = []
-    cursor = 0
-
-    for match in sorted_matches:
+    valid_matches = []
+    for match in matches:
         start = getattr(match, "start_index", None)
         end = getattr(match, "end_index", None)
 
@@ -61,16 +54,35 @@ def highlight_text(original_text: str, matches: list[SpellError]) -> str:
         end -= 1
         end = min(end, len(original_text) - 1)
 
-        # 겹치는 구간은 스킵
-        if start < cursor:
-            continue
+        valid_matches.append((start, end, match))
 
+    if not valid_matches:
+        return escape(original_text)
+
+    valid_matches.sort(key=lambda x: (x[0], x[1]))
+
+    # 겹치는 매치를 그룹으로 합치기
+    groups = []
+    for start, end, match in valid_matches:
+        if groups and start <= groups[-1][1]:
+            group = groups[-1]
+            group[1] = max(group[1], end)
+            group[2].append(match)
+        else:
+            groups.append([start, end, [match]])
+
+    result = []
+    cursor = 0
+
+    for start, end, group_matches in groups:
         # 에러 전 일반 텍스트
         if cursor < start:
             result.append(escape(original_text[cursor:start]))
 
-        error_type_name = get_error_type_name(match)
-        tooltip_msg = f"[{error_type_name}] {getattr(match, 'error_message', '')}"
+        tooltip_msg = "\n\n".join(
+            f"[{get_error_type_name(m)}] {getattr(m, 'error_message', '')}"
+            for m in group_matches
+        )
         escaped_tooltip = escape(tooltip_msg, quote=True)
         highlighted_text = escape(original_text[start:end + 1])
 
