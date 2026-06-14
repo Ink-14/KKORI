@@ -147,12 +147,6 @@ _CERTAINS: list[KoSpellRules] = [
     
     *rule()
     .tag_form(Tag.동사, "되")
-    .OR(tag_form(Tag.동사, "있"), tag_form(Tag.연결어미, "서")).context()
-    .msg("'돼'가 올바른 표현입니다.")
-    .build(),
-    
-    *rule()
-    .tag_form(Tag.동사, "되")
     .tag_form(Tag.종결어미, "어")
     .tag_form(Tag.인용격조사, "라고")
     .msg("'되라고'의 오타가 아닌가요?")
@@ -673,12 +667,6 @@ _REP = [
     .tag(Tag.일반명사)
     .tag_form(Tag.명사파생접미사, "채")
     .msg("'그대로, 전부'의 의미인 경우 '{dform[0]}째'가 올바른 표현입니다.").build(),
-
-    *rule()
-    .id("REP_엇")
-    .tags(TagGroup.용언)
-    .tag_form(Tag.선어말어미, "엇")
-    .msg('\'merge(({dform[0]}, {dtag[0]}), ("었", "선어말어미"))\'의 오타가 아닌가요?').build(),
     
     *rule()
     .id("REP_멋쩍다")
@@ -820,12 +808,33 @@ _REP = [
     .tag_form(Tag.동사, "바래")
     .tag_form(Tag.선어말어미, "었")
     .msg("'원하다'의 의미로는 '바라다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_기를_바라다")
+    .tag(Tag.명사형전성어미).context()
+    .tag(Tag.목적격조사).context()
+    .tag_form(Tag.동사, "바래")
+    .msg("'원하다'의 의미로는 '바라다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_부사_바라다")
+    .AND(tag(Tag.일반부사), forms({"그토록"})).context()
+    .tag_form(Tag.동사, "바래")
+    .msg("'원하다'의 의미로는 '바라다'가 올바른 표현입니다.").build(),
+    
+    *rule().id("REP_하는 바람")
+    .tag_form(Tag.동사, "하").context()
+    .tag_form(Tag.관형사형전성어미, "는").context()
+    .tag_form(Tag.일반명사, "바램")
+    .msg("'원하다'의 의미로는 '바라다'가 올바른 표현입니다.").build(),
     
     *rule().id("REP_메다")
     .AND(tag(Tag.일반명사), forms({"총대", "가방", "배낭"})).context()
     .tags({Tag.주격조사, Tag.목적격조사, Tag.보조사}).opt().context()
     .tag_form(Tag.동사, "매")
-    .msg("'{form[0]}batchim(\"을\", \"를\") 메다'가 올바른 표현입니다.").build(),    
+    .msg("'{form[0]}batchim(\"을\", \"를\") 메다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_요새")
+    .tag_form(Tag.일반명사, "요세")
+    .msg("'요새'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -1223,17 +1232,37 @@ _MIF = [
     .tag_form(Tag.연결어미, "은")
     .msg("'된'이 올바른 표현입니다.").build(),
     
-    *rule().id("MIF_되+연결어미")
+    *rule().id("MIF_되+용언")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tags(TagGroup.용언).context()
+    .msg("'돼'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_돼+연결어미")
     .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
     .tag_form(Tag.연결어미, "어")
-    .tags(TagGroup.어미).if_not_spaced()
-    .msg("'merge((\"되\", {dtag[0]}), ({dform[2]}, {dtag[2]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
+    .AND(tags(TagGroup.어미), NOT(form("다면"))).if_not_spaced()
+    .msg("'merge((\"되\", {dtag[0]}), ({dform[2]}, {dtag[2]}))'의 오타가 아닌가요?").build(),
     
+    *rule().id("MIF_되_종결어미")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.종결어미, "요").if_not_spaced()
+    .msg("'merge((\"되\", {dtag[0]}), (\"어\", \"연결어미\"), ({dform[1]}, {dtag[1]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_되+어+다면")
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.연결어미, "다면").if_not_spaced()
+    .msg("'되었다면'의 오타가 아닌가요?").build(),
+
     *rule().id("MIF_되어 있다")
     .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.선어말어미, "었").if_spaced()
     .msg("'되어 있다'의 오타가 아닌가요?").build(),
+    
+    *rule().id("MIF_맴돌다")
+    .tag_form(Tag.동사, "멤돌")
+    .msg("'맴돌다'가 올바른 표현입니다.").build(),
 ]
 
 JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
@@ -1324,12 +1353,6 @@ _SHIFT_MISS = [
     .tag_form(Tag.선어말어미, "겟")
     .msg("'겠'의 오타가 아닌가요?")
     .build(),
-    
-    *rule().id("SHIFT_햇")
-    .tag_form(Tag.동사, "하")
-    .tag_form(Tag.선어말어미, "엇")
-    .msg("'했'의 오타가 아닌가요?")
-    .build(),
 
     *rule().id("SHIFT_셧")
     .tag_form(Tag.선어말어미, "시")
@@ -1339,6 +1362,11 @@ _SHIFT_MISS = [
     *rule().id("SHIFT_곘")
     .tag_form(Tag.선어말어미, "곘")
     .msg("'겠'의 오타가 아닌가요?").build(),
+    
+    *rule().id("SHIFT_엇")
+    .tags(TagGroup.용언)
+    .tag_form(Tag.선어말어미, "엇")
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("었", "선어말어미"))\'의 오타가 아닌가요?').build(),
 ]
 
 _DEPENDS_ON_DICTIONARY = [
