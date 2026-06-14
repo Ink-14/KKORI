@@ -150,8 +150,8 @@ impl RuleNode {
 pub struct RuleCheckerBuilder {
     nodes: Vec<RuleNode>,
     transitions: Vec<Transition>,
-    form_vec: FxHashMap<String, u32>,
-    lemma_vec: FxHashMap<String, u16>,
+    form_map: FxHashMap<String, u32>,
+    lemma_map: FxHashMap<String, u16>,
 }
 
 #[pymethods]
@@ -161,12 +161,12 @@ impl RuleCheckerBuilder {
         let mut builder = RuleCheckerBuilder {
             nodes: Vec::new(),
             transitions: Vec::new(),
-            form_vec: FxHashMap::default(),
-            lemma_vec: FxHashMap::default(),
+            form_map: FxHashMap::default(),
+            lemma_map: FxHashMap::default(),
         };
         builder.add_node();
-        builder.form_vec.insert("__UNK__".to_string(), 0u32);
-        builder.lemma_vec.insert("__UNK__".to_string(), 0u16);
+        builder.form_map.insert("__UNK__".to_string(), 0u32);
+        builder.lemma_map.insert("__UNK__".to_string(), 0u16);
         builder
     }
 
@@ -205,8 +205,8 @@ impl RuleCheckerBuilder {
 
         let mut nodes = std::mem::take(&mut self.nodes);
         let mut transitions = std::mem::take(&mut self.transitions);
-        let mut form_dict = std::mem::take(&mut self.form_vec);
-        let mut lemma_dict = std::mem::take(&mut self.lemma_vec);
+        let mut form_dict = std::mem::take(&mut self.form_map);
+        let mut lemma_dict = std::mem::take(&mut self.lemma_map);
 
         for node in &mut nodes {
             node.shrink_to_fit();
@@ -371,8 +371,8 @@ impl RuleCheckerBuilder {
 
         if let Ok(c) = obj.downcast::<FormCondition>() {
             let form = c.borrow().form.clone();
-            let next = self.form_vec.len() as u32;
-            let idx = *self.form_vec.entry(form).or_insert(next);
+            let next = self.form_map.len() as u32;
+            let idx = *self.form_map.entry(form).or_insert(next);
             return Ok(Condition::Form(idx));
         }
 
@@ -385,15 +385,15 @@ impl RuleCheckerBuilder {
                 ))?;
             let form = b.form.clone();
             drop(b);
-            let next = self.form_vec.len() as u32;
-            let form_idx = *self.form_vec.entry(form).or_insert(next);
+            let next = self.form_map.len() as u32;
+            let form_idx = *self.form_map.entry(form).or_insert(next);
             return Ok(Condition::FormTag((form_idx << 7) | tag_idx as u32));
         }
 
         if let Ok(c) = obj.downcast::<LemmaCondition>() {
             let lemma = c.borrow().lemma.clone();
-            let next = self.lemma_vec.len() as u16;
-            let idx = *self.lemma_vec.entry(lemma).or_insert(next);
+            let next = self.lemma_map.len() as u16;
+            let idx = *self.lemma_map.entry(lemma).or_insert(next);
             return Ok(Condition::Lemma(idx));
         }
 
@@ -434,8 +434,8 @@ impl RuleCheckerBuilder {
         if let Ok(c) = obj.downcast::<FormSetCondition>() {
             let forms = c.borrow().forms.iter()
                 .map(|f| {
-                    let next = self.form_vec.len() as u32;
-                    *self.form_vec.entry(f.clone()).or_insert(next)
+                    let next = self.form_map.len() as u32;
+                    *self.form_map.entry(f.clone()).or_insert(next)
                 })
                 .collect();
             return Ok(Condition::form_set(forms));
