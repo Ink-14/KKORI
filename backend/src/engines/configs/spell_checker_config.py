@@ -28,11 +28,9 @@ SAMPLE = [
 # ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("REP_하는 바람")
-    .tag_form(Tag.동사, "하").context()
-    .tag_form(Tag.관형사형전성어미, "는").context()
-    .tag_form(Tag.일반명사, "바램")
-    .msg("'원하다'의 의미로는 '바라다'가 올바른 표현입니다.").build(),
+    *rule().id("EC_면서_붙여쓰기")
+    .tag_form(Tag.연결어미, "면서").if_spaced()
+    .msg("'면서'를 앞 말에 붙여 써야 합니다.").build(),
 ]
 
 ML_LABELINGS = [
