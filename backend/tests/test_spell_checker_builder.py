@@ -18,7 +18,7 @@ from src.models.spell_checker_classes import (
     FormSetCondition,
     SpacingRule,
 )
-from src.engines.configs.spell_checker_config_builder import (
+from src.engines.configs.rule_builder import (
     RuleBuilder,
     CompiledMessage,
     tag,

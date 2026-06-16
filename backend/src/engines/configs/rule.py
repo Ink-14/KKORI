@@ -1,6 +1,6 @@
-from src.engines.configs.spell_checker_config_builder import *
+from src.engines.configs.rule_builder import *
 from src.models.interface import Tag, TagGroup, SpellErrorType
-from src.engines.configs import spell_checker_config_meaning, spell_checker_config_spacing, spell_checker_config_specific, spell_checker_config_spelling, spell_checker_config_warning, spell_checker_config_complex, spell_checker_config_model
+from src.engines.configs import rule_meaning, rule_spacing, rule_specific, rule_spelling, rule_warning, rule_complex, rule_model
 
 # 규칙 작성 예시
 def rule() -> RuleBuilder:
@@ -26,11 +26,11 @@ ML_LABELINGS = [
 ]
 
 SPELL_CHECK_RULES: list[KoSpellRules] = [
-    *spell_checker_config_spacing.GENERAL_SPACING_ERRORS,
-    *spell_checker_config_spacing.SPACING_ERRORS,
-    *spell_checker_config_spelling.SPELL_MISS_ERRORS,
-    *spell_checker_config_meaning.MEANING_CONFLICT_ERRORS,
-    *spell_checker_config_specific.KIWI_EXCEPTION_ERRORS,
-    *spell_checker_config_complex.COMPLEX_ERRORS,
-    # *spell_checker_config_warning.WARNINGS,
+    *rule_spacing.GENERAL_SPACING_ERRORS,
+    *rule_spacing.SPACING_ERRORS,
+    *rule_spelling.SPELL_MISS_ERRORS,
+    *rule_meaning.MEANING_CONFLICT_ERRORS,
+    *rule_specific.KIWI_EXCEPTION_ERRORS,
+    *rule_complex.COMPLEX_ERRORS,
+    # *rule_warning.WARNINGS,
  ]

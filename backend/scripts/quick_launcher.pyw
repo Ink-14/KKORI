@@ -36,12 +36,12 @@ from src.tokenizations.ko_tokenizer import KoTokenizer
 from src.models.interface import Tag
 from src.engines.spell_checker import SpellChecker
 from src.engines.raw_searcher import RawStringSearcher
-import src.engines.configs.spell_checker_config_meaning as _spell_meaning_cfg
-import src.engines.configs.spell_checker_config_spacing as _spell_spacing_cfg
-import src.engines.configs.spell_checker_config_specific as _spell_specific_cfg
-import src.engines.configs.spell_checker_config_spelling as _spell_spelling_cfg
-import src.engines.configs.spell_checker_config_warning as _spell_warning_cfg
-import src.engines.configs.spell_checker_config as _spell_cfg
+import src.engines.configs.rule_meaning as _spell_meaning_cfg
+import src.engines.configs.rule_spacing as _spell_spacing_cfg
+import src.engines.configs.rule_specific as _spell_specific_cfg
+import src.engines.configs.rule_spelling as _spell_spelling_cfg
+import src.engines.configs.rule_warning as _spell_warning_cfg
+import src.engines.configs.rule as _spell_cfg
 import src.engines.configs.raw_string_searcher_config as _raw_cfg
 from src.reporters.html_reporter import highlight_text, get_error_type_name
 from src.utils.file_io import get_all_file_paths

@@ -4,8 +4,8 @@ import pytest
 
 from src.models.interface import Tag, SpellError, SpellErrorType
 from src.engines.spell_checker import SpellChecker
-from src.engines.configs.spell_checker_config import SPELL_CHECK_RULES
-from src.engines.configs.spell_checker_config_builder import *
+from src.engines.configs.rule import SPELL_CHECK_RULES
+from src.engines.configs.rule_builder import *
 from tests.helpers import build_tokens
 
 # ── 헬퍼 ──

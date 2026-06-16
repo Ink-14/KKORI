@@ -1,5 +1,6 @@
-﻿from src.engines.configs.spell_checker_config_builder import *
+﻿from src.engines.configs.rule_builder import *
 from src.models.interface import Tag, TagGroup, SpellErrorType
+from src.engines.configs.rule_helper import word_3, NNG_and_NNG, NNG_and_some, VV_EC_VV
 
 NUMBER_DETERMINERS = {"한두", "첫", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "백", "천", "만", "억"}
 MONEY_DETERMINERS = {"골드", "엔", "원", "다이아"}
@@ -9,70 +10,6 @@ MONEY_DETERMINERS = {"골드", "엔", "원", "다이아"}
 
 def rule() -> RuleBuilder: # type: ignore
     return RuleBuilder(SpellErrorType.SPACING)
-
-def word_3(word1: str, tag1: Tag, word2: str, tag2: Tag, word3: str, tag3: Tag, spacing_rule: SpacingRule, message: str):
-    rule = RuleBuilder(SpellErrorType.SPACING).tag_form(tag1, word1).tag_form(tag2, word2).tag_form(tag3, word3)
-
-    if spacing_rule == SpacingRule.SPACED:
-        return rule.if_not_spaced().msg(f"'{message}'batchim(\"으로\",\"로\") 띄어 써야 합니다.").build()
-    elif spacing_rule == SpacingRule.ATTACHED:
-        return rule.if_spaced().msg(f"'{message}'batchim(\"으로\",\"로\") 붙여 써야 합니다.").build()
-    elif spacing_rule == SpacingRule.ANY:
-        raise ValueError("'Any' spacing rule is not allowed in word_3.")
-
-def NNG_and_NNG(nng1: str, nng2: str, spacing_rule: SpacingRule, message = None) -> list[KoSpellRules]:
-    rule = RuleBuilder(SpellErrorType.SPACING).tag_form(Tag.일반명사, nng1).tag_form(Tag.일반명사, nng2)
-    
-    if spacing_rule == SpacingRule.SPACED:
-        rule.if_not_spaced()
-        if message is None:
-            message = "'{form[0]} {form[1]}'batchim(\"으로\",\"로\") 띄어 써야 합니다."
-    elif spacing_rule == SpacingRule.ATTACHED:
-        rule.if_spaced()
-        if message is None:
-            message = "'{form[0]}{form[1]}'batchim(\"으로\",\"로\") 붙여 써야 합니다."
-    elif spacing_rule == SpacingRule.ANY:
-        if message is None:
-            raise ValueError("you must set error message to function 'NNG_and_NNG' if spacing rule is SpacingRule.ANY.")
-        
-    return rule.msg(message).build()
-    
-def NNG_and_some(nng: str, some: str, tag: str, spacing_rule: SpacingRule, message = None) -> list[KoSpellRules]:
-    rule = RuleBuilder(SpellErrorType.SPACING).id(f"NNG_SOME_{nng}{some}다").tag_form(Tag.일반명사, nng).tag_form(Tag[tag], some)
-    
-    message = f"merge((\"{some}\", \"{tag}\"), (\"다\", \"연결어미\"))"
-    if spacing_rule == SpacingRule.SPACED:
-        message = "{form[0]} " + message
-        return rule.if_not_spaced().msg(f"'{message}'로 띄어 써야 합니다.").build()
-    elif spacing_rule == SpacingRule.ATTACHED:
-        message = "{form[0]}" + message
-        return rule.if_spaced().msg(f"'{message}'로 붙여 써야 합니다.").build()
-    elif spacing_rule == SpacingRule.ANY:
-        if message is None:
-            raise ValueError("you must set error message to function 'NNG_and_some' if spacing rule is SpacingRule.ANY.")
-        return rule.msg(message).build()
-    
-def VV_EC_VV(vv1: tuple[str, str], ec: str, vv2: tuple[str, str], spacing_rule: SpacingRule, message = None, detail = None) -> list[KoSpellRules]:
-    vv1_form, vv1_tag = vv1
-    vv2_form, vv2_tag = vv2
-    rule = RuleBuilder(SpellErrorType.SPACING).tag_form(Tag[vv1_tag], vv1_form).tag_form(Tag.연결어미, ec).tag_form(Tag[vv2_tag], vv2_form)
-
-    message1 = f"merge((\"{vv1_form}\", \"{vv1_tag}\"), (\"{ec}\", \"연결어미\"))"
-    message2 = f"merge((\"{vv2_form}\", \"{vv2_tag}\"), (\"다\", \"연결어미\"))"
-    
-    if spacing_rule == SpacingRule.SPACED:
-        rule.if_not_spaced().msg(f"'{message1} {message2}'로 띄어 써야 합니다.")
-    elif spacing_rule == SpacingRule.ATTACHED:
-        rule.if_spaced().msg(f"'{message1}{message2}'로 붙여 써야 합니다.")
-    elif spacing_rule == SpacingRule.ANY:
-        if message is None:
-            raise ValueError("you must set error message to function 'NNG_and_some' if spacing rule is SpacingRule.ANY.")
-        rule.msg(message)
-
-    if detail:
-        rule.detail(detail)
-
-    return rule.build()
 
 GENERAL_SPACING_ERRORS: list[KoSpellRules] = [
     *rule()
@@ -3106,10 +3043,10 @@ _IDIOM = [
 ]
 
 _WORD_3 = [
-    *word_3("기분", Tag.일반명사, "전환", Tag.일반명사,"하", Tag.동사파생접미사, spacing_rule=SpacingRule.SPACED, message="기분 전환 하다"),
-    *word_3("특별", Tag.일반명사, "취급", Tag.일반명사,"하", Tag.동사파생접미사, spacing_rule=SpacingRule.SPACED, message="특별 취급 하다"),
-    *word_3("특별", Tag.일반명사, "대우", Tag.일반명사,"하", Tag.동사파생접미사, spacing_rule=SpacingRule.SPACED, message="특별 대우 하다"),
-    *word_3("근력", Tag.일반명사, "운동", Tag.일반명사,"하", Tag.동사파생접미사, spacing_rule=SpacingRule.SPACED, message="근력 운동 하다"),
+    *word_3("기분", Tag.일반명사, "전환", Tag.일반명사, "하", Tag.동사파생접미사, spacing_rule=SpacingRule.SPACED, message="기분 전환 하다"),
+    *word_3("특별", Tag.일반명사, "취급", Tag.일반명사, "하", Tag.동사파생접미사, spacing_rule=SpacingRule.SPACED, message="특별 취급 하다"),
+    *word_3("특별", Tag.일반명사, "대우", Tag.일반명사, "하", Tag.동사파생접미사, spacing_rule=SpacingRule.SPACED, message="특별 대우 하다"),
+    *word_3("근력", Tag.일반명사, "운동", Tag.일반명사, "하", Tag.동사파생접미사, spacing_rule=SpacingRule.SPACED, message="근력 운동 하다"),
 ]
 
 _LOANWORDS = [

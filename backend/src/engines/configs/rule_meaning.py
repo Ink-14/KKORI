@@ -1,4 +1,4 @@
-﻿from src.engines.configs.spell_checker_config_builder import *
+﻿from src.engines.configs.rule_builder import *
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 def rule() -> RuleBuilder:

@@ -19,7 +19,7 @@ def searcher():
 def configured_checker():
     """TSV 회귀 테스트용 (session scope, 규칙 1회만 빌드)"""
     from src.engines.spell_checker import SpellChecker
-    from src.engines.configs.spell_checker_config import SPELL_CHECK_RULES
+    from src.engines.configs.rule import SPELL_CHECK_RULES
     c = SpellChecker()
     c.add_rule_from_list(SPELL_CHECK_RULES)
     return c
