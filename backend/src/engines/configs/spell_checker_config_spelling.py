@@ -835,6 +835,32 @@ _REP = [
     *rule().id("REP_요새")
     .tag_form(Tag.일반명사, "요세")
     .msg("'요새'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_눈독 들이다")
+    .tag_form(Tag.일반명사, "눈독").context()
+    .tag_form(Tag.동사, "드리")
+    .msg("'눈독 들이다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_눌어붙다_1") # '붙다' 띄어 쓰라고 하는 오검출 방지용
+    .tag_form(Tag.동사, "눌러붙")
+    .msg("'눌어붙다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_눌어붙다_2")
+    .tag_form(Tag.동사, "누르")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.동사, "붙").if_spaced()
+    .msg("'눌어붙다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_힌다")
+    .tag_form(Tag.연결어미, "히")
+    .tag(Tag.종결어미)
+    .msg("'merge((\"하\", \"동사\"), ({dform[1]}, \"종결어미\"))'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_껍데기")
+    .forms({"달걀", "계란"}).context()
+    .any().opt().context()
+    .tag_form(Tag.일반명사, "껍질")
+    .msg("'{form[0]} 껍데기'가 올바른 표현입니다.").build(),
 ]
 
 _MIF = [
@@ -1439,10 +1465,13 @@ _LOANWORDS = [
     .tag_form(Tag.일반명사, "마쵸")
     .msg("'마초(macho)'가 올바른 표현입니다.").build(),
 
-    *rule()
-    .id("LOANWORD_미스터리")
+    *rule().id("LOANWORD_미스터리")
     .tag_form(Tag.일반명사, "미스테리")
     .msg("'미스터리'가 올바른 표현입니다.").build(),
+
+    *rule().id("LOANWORD_콜리플라워")
+    .tag_form(Tag.일반명사, "컬리플라워")
+    .msg("'콜리플라워'가 올바른 표현입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:

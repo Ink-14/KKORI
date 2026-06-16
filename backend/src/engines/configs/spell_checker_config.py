@@ -15,22 +15,11 @@ SAMPLE = [
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"지\", \"연결어미\")) 않은'이 올바른 표현입니다.").build(),
 ]
 
-# TEST_SPELL_CHECK_RULES = [
-#     *rule().id("NNB_데_동사")
-#     .tag_form(Tag.의존명사, "데").if_not_spaced()
-#     .tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용})
-#     .msg("{dtag[1]} / {dform[1]}").build(),
-
-#     *rule().id("NNB_데_명사")
-#     .tag_form(Tag.의존명사, "데").if_not_spaced()
-#     .tag(Tag.일반명사)
-#     .msg("{dtag[1]} / {dform[1]}").build(),   
-# ]
-
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("EC_면서_붙여쓰기")
-    .tag_form(Tag.연결어미, "면서").if_spaced()
-    .msg("'면서'를 앞 말에 붙여 써야 합니다.").build(),
+    *rule().id("REP_껍데기")
+    .forms({"달걀", "계란"}).context()
+    .tag_form(Tag.일반명사, "껍질")
+    .msg("'{form[0]} 껍데기'가 올바른 표현입니다.").build(),
 ]
 
 ML_LABELINGS = [
