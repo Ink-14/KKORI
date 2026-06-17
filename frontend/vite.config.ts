@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
         }
       }
     ],
-    base: isWeb ? '/korean_spell_checker/' : '/',
+    base: isWeb ? '/KKORI/' : '/',
     define: {
       __API_BASE__: isWeb
         ? JSON.stringify('https://koreanspellchecker-production.up.railway.app')

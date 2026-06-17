@@ -16,7 +16,6 @@ iniconfig==2.3.0
 jamo==0.4.1
 kiwipiepy==0.23.1
 kiwipiepy_model==0.23.0
-korean-spell-checker @ file:///./assets/korean_spell_checker-0.1.0-...whl
 maturin==1.13.1
 numpy==2.4.4
 openpyxl==3.1.5

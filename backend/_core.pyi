@@ -1,5 +1,5 @@
 from typing import Any
-from korean_spell_checker.models.interface import KoToken
+from src.models.interface import KoToken
 
 class RustRawStringSearcher:
     def __new__(cls) -> "RustRawStringSearcher": ...

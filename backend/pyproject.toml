@@ -3,13 +3,13 @@ requires = ["maturin>=1.0"]
 build-backend = "maturin"
 
 [project]
-name = "korean-spell-checker"
+name = "KKORI"
 version = "0.1.0"
 
 [tool.setuptools.packages.find]
 where = [".."]
-include = ["korean_spell_checker*"]
-exclude = ["korean_spell_checker.venv*", "korean_spell_checker.tests*"]
+include = ["KKORI*"]
+exclude = ["KKORIO.venv*", "KKORI.tests*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
