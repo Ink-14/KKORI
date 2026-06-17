@@ -142,6 +142,19 @@ impl RuleNode {
     }
 }
 
+#[derive(Clone, Copy)]
+struct RuleError {
+    match_id: u32,
+    start_token_idx: u32,
+    end_token_idx: u32,
+}
+
+impl From<RuleError> for (u32, u32, u32) {
+    fn from(e: RuleError) -> Self {
+        (e.match_id, e.start_token_idx, e.end_token_idx)
+    }
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // RuleCheckerBuilder
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -477,6 +490,12 @@ impl RuleCheckerBuilder {
 // RuleChecker
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+#[derive(Clone, Copy)]
+struct Cursor {
+    start: Option<usize>,
+    end: usize,
+}
+
 #[pyclass]
 pub struct RuleChecker {
     nodes: Vec<RuleNode>,
@@ -492,7 +511,8 @@ pub struct RuleChecker {
 impl RuleChecker {
     pub fn check(&self, py: Python, tokens: &Bound<'_, PyList>) -> PyResult<Vec<(u32, u32, u32)>> {
         let enriched = self.enrich_tokens(tokens)?;
-        Ok(py.allow_threads(|| self.check_inner(&enriched)))
+        let errors = py.allow_threads(|| self.check_inner(&enriched));
+        Ok(errors.into_iter().map(Into::into).collect())
     }
 
     pub fn check_batch(&self, py: Python, batch: Vec<Bound<'_, PyList>>) -> PyResult<Vec<Vec<(u32, u32, u32)>>> {
@@ -503,7 +523,12 @@ impl RuleChecker {
 
         Ok(py.allow_threads(|| {
             enriched_batch.par_iter()
-                .map(|enriched| self.check_inner(enriched))
+                .map(|enriched| {
+                    self.check_inner(enriched)
+                        .into_iter()
+                        .map(Into::into)
+                        .collect()
+                })
                 .collect()
         }))
     }
@@ -519,7 +544,12 @@ impl RuleChecker {
 
         Ok(py.allow_threads(|| {
             enriched_batch.par_iter()
-                .map(|enriched| self.check_inner(enriched))
+                .map(|enriched| {
+                    self.check_inner(enriched)
+                        .into_iter()
+                        .map(Into::into)
+                        .collect()
+                })
                 .collect()
         }))
     }
@@ -540,12 +570,6 @@ impl RuleChecker {
             root_fallback_transitions: root.fallback_transitions.len(),
         }
     }
-}
-
-#[derive(Clone, Copy)]
-struct Cursor {
-    start: Option<usize>,
-    end: usize,
 }
 
 impl RuleChecker {
@@ -588,13 +612,13 @@ impl RuleChecker {
         ((code - 0xAC00) % 28 + 1) as u8
     }
 
-    fn check_inner(&self, tokens: &[EnrichedToken]) -> Vec<(u32, u32, u32)> {
+    fn check_inner(&self, tokens: &[EnrichedToken]) -> Vec<RuleError> {
         // NFA 시뮬레이션 기반 토큰 검사.
 
         // 각 토큰마다 아래 4단계를 반복:
         // 1) root에서 새 커서 시작
         // 2) optional 전이로 도달 가능한 노드 확장 (epsilon closure, 사전 계산된 vec 사용)
-        //    i == 0이면 BOS epsilon 사용 (NOT + context인 조건을 엡실론 전이)
+        //    token_idx == 0이면 BOS epsilon 사용 (NOT + context인 조건을 엡실론 전이)
         // 3) 출력 가능한 노드에서 에러 수집
         // 4) 현재 토큰과 매칭되는 전이를 따라 커서 전진
 
@@ -605,17 +629,17 @@ impl RuleChecker {
         enum SpacingState { Bos, Spaced, Attached }
         if tokens.is_empty() { return Vec::new(); }
 
-        let mut errors: Vec<(u32, u32, u32)> = Vec::new();
+        let mut errors: Vec<RuleError> = Vec::new();
         let mut active_cursors:   FxHashMap<usize, Cursor> = FxHashMap::default();
         let mut next_cursors:     FxHashMap<usize, Cursor> = FxHashMap::default();
         let mut expanded_cursors: FxHashMap<usize, Cursor> = FxHashMap::default();
         let mut candidates: Vec<usize> = Vec::new();
         let mut yielded_outputs: FxHashSet<(usize, usize)> = FxHashSet::default();
 
-        for (i, token) in tokens.iter().enumerate() {
-            let spacing_state = if i == 0 {
+        for (token_idx, token) in tokens.iter().enumerate() {
+            let spacing_state = if token_idx == 0 {
                 SpacingState::Bos
-            } else if token.start > tokens[i - 1].end {
+            } else if token.start > tokens[token_idx - 1].end {
                 SpacingState::Spaced
             } else {
                 SpacingState::Attached
@@ -624,25 +648,25 @@ impl RuleChecker {
             expanded_cursors.clear();
 
             // ── Phase 1: epsilon closure ──
-            if i == 0 {
+            if token_idx == 0 {
                 for &node_idx in &self.bos_epsilon {
                     expanded_cursors.insert(node_idx, Cursor { start: None, end: 0 });
                 }
             }
 
-            active_cursors.insert(ROOT, Cursor { start: None, end: i });
+            active_cursors.insert(ROOT, Cursor { start: None, end: token_idx });
             Self::expand_cursors(&active_cursors, &self.optional_closure, &mut expanded_cursors);
 
             // ── Phase 2: 출력 수집 & 전이 탐색 ──
             next_cursors.clear();
-            let mut current_step_errors: FxHashMap<(usize, usize), (u32, u32, u32)> = FxHashMap::default();
+            let mut current_step_errors: FxHashMap<(usize, usize), RuleError> = FxHashMap::default();
 
             for (&node_idx, &cursor) in &expanded_cursors {
                 let node = &self.nodes[node_idx];
 
                 // 2-A: 출력 수집
                 if let Some(start_token_idx) = cursor.start {
-                    if start_token_idx < i && !yielded_outputs.contains(&(node_idx, start_token_idx)) {
+                    if start_token_idx < token_idx && !yielded_outputs.contains(&(node_idx, start_token_idx)) {
                         yielded_outputs.insert((node_idx, start_token_idx));
                         Self::collect_error(node, node_idx, start_token_idx, cursor.end, &mut current_step_errors);
                     }
@@ -690,8 +714,8 @@ impl RuleChecker {
                     }
 
                     let target    = trans.target_node;
-                    let new_start = if cursor.start.is_none() && !trans.is_context { Some(i) } else { cursor.start };
-                    let new_end   = if !trans.is_context { i } else { cursor.end };
+                    let new_start = if cursor.start.is_none() && !trans.is_context { Some(token_idx) } else { cursor.start };
+                    let new_end   = if !trans.is_context { token_idx } else { cursor.end };
 
                     let entry = next_cursors.entry(target).or_insert(Cursor { start: new_start, end: new_end });
                     if Self::is_later_start(new_start, entry.start) {
@@ -711,7 +735,7 @@ impl RuleChecker {
         let mut final_expanded: FxHashMap<usize, Cursor> = FxHashMap::default();
         Self::expand_cursors(&active_cursors, &self.eof_closure, &mut final_expanded);
 
-        let mut final_step_errors: FxHashMap<(usize, usize), (u32, u32, u32)> = FxHashMap::default();
+        let mut final_step_errors: FxHashMap<(usize, usize), RuleError> = FxHashMap::default();
         for (node_idx, cursor) in final_expanded {
             let Some(start_token_idx) = cursor.start else { continue; };
             if yielded_outputs.contains(&(node_idx, start_token_idx)) { continue; }
@@ -736,18 +760,18 @@ impl RuleChecker {
 
     // 더 짧은 것 선택, 길이 같으면 더 뒤에 있는 것
     fn update_shortest_match(
-        storage: &mut FxHashMap<(usize, usize), (u32, u32, u32)>,
+        storage: &mut FxHashMap<(usize, usize), RuleError>,
         node_idx: usize,
         start_token_idx: usize,
-        entry: (u32, u32, u32),
+        entry: RuleError,
     ) {
         let key = (node_idx, start_token_idx);
         match storage.get(&key) {
             None => { storage.insert(key, entry); }
             Some(existing) => {
-                let old_len = existing.2 - existing.1;
-                let new_len = entry.2 - entry.1;
-                if new_len < old_len || (new_len == old_len && entry.1 > existing.1) {
+                let old_len = existing.end_token_idx - existing.start_token_idx;
+                let new_len = entry.end_token_idx - entry.start_token_idx;
+                if new_len < old_len || (new_len == old_len && entry.start_token_idx > existing.start_token_idx) {
                     storage.insert(key, entry);
                 }
             }
@@ -759,14 +783,14 @@ impl RuleChecker {
         node_idx: usize,
         start_token_idx: usize,
         end_idx: usize,
-        storage: &mut FxHashMap<(usize, usize), (u32, u32, u32)>,
+        storage: &mut FxHashMap<(usize, usize), RuleError>,
     ) {
         let Some(match_id) = node.match_id else { return; };
-        let entry = (
+        let entry = RuleError {
             match_id,
-            start_token_idx as u32,
-            end_idx as u32,
-        );
+            start_token_idx: start_token_idx as u32,
+            end_token_idx: end_idx as u32,
+        };
         Self::update_shortest_match(storage, node_idx, start_token_idx, entry);
     }
 
