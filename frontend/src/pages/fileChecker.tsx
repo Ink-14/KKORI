@@ -321,7 +321,7 @@ function FileChecker() {
           {checked && (
             totalErrors === 0
               ? <span className="fc-no-error">✓ 맞춤법 오류가 없습니다.</span>
-              : <span className="fc-error-summary">{errorSegments.length}개 구간에서 총 {totalErrors}개 오류가 발견되었습니다.</span>
+              : <span className="fc-error-summary">{errorSegments.length}개 구간에서 총 {totalErrors}개의 오류가 발견되었습니다.</span>
           )}
           <div className="fc-btn-group">
             <button className="fc-btn fc-btn--clear" onClick={handleClear} disabled={!filePath}>지우기</button>
@@ -359,7 +359,7 @@ function FileChecker() {
         )}
 
         {checked && errorSegments.length === 0 && (
-          <div className="fc-clean">오류가 발견된 구간이 없습니다.</div>
+          <div className="fc-clean">✓ 맞춤법 오류가 없습니다.</div>
         )}
 
         {checked && errorSegments.length > 0 && (

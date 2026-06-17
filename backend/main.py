@@ -7,6 +7,7 @@ import uvicorn
 import webview
 
 from src.api import create_app
+from src.utils.paths import frontend_dist_path
 
 class Api:
     def open_file_dialog(self) -> str | None:
@@ -39,7 +40,7 @@ def _run_server(port: int) -> None:
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
 
 if __name__ == "__main__":
-    dist_dir = Path(__file__).parent.parent / "frontend" / "dist" / "desktop"
+    dist_dir = frontend_dist_path()
     if not (dist_dir / "index.desktop.html").exists():
         raise FileNotFoundError(
             f"프론트엔드 빌드 결과물이 없습니다: {dist_dir / 'index.desktop.html'}\n"
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     _wait_for_server(port)
 
     window = webview.create_window(
-        title="한국어 맞춤법 검사기",
+        title="꼬리 - 한국어 맞춤법 검사기",
         url=f"http://127.0.0.1:{port}/",
         width=1000,
         height=700,

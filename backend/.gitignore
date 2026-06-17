@@ -36,3 +36,7 @@ _core*.pyd
 # [사용자 데이터]
 data/
 *.log
+
+# [exe 빌드]
+build/
+dist/
