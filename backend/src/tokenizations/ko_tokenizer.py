@@ -5,11 +5,11 @@ from kiwipiepy import Kiwi
 
 from src.utils.file_io import get_all_file_paths, make_dictionary_list, make_termbase_list, make_pre_analyzed_dict_list
 from src.models.interface import Tag
+from src.utils.paths import backend_resource_path
 
 class KoTokenizer(Kiwi):
     _instance = None
-    DEFAULT_DICTIONARY_PATH = Path(__file__).parent
-    DEFAULT_TERMBASE_PATH = Path(__file__).parent.parent.parent / "termbase"
+    DEFAULT_DICTIONARY_PATH = backend_resource_path("src", "tokenizations")
 
     DEFAULT_KO_DICT_FILE_NAME = "ko_dictionary"
     DEFAULT_PRE_ANALYZED_DICT_FILE_NAME = "ko_preanalyzed"
@@ -25,7 +25,6 @@ class KoTokenizer(Kiwi):
             
             self._debug = False
             self._make_dictionary()
-            self._add_termbase()
             self._initialized = True
 
     def _make_dictionary(self):
@@ -38,12 +37,6 @@ class KoTokenizer(Kiwi):
         for words in make_pre_analyzed_dict_list(pre_analyzed_file):
             word, form_tags, score = words
             self.add_pre_analyzed_word(word, form_tags, score)
-    
-    def _add_termbase(self):
-        termbase_files = get_all_file_paths(self.DEFAULT_TERMBASE_PATH, "csv")
-        for file in termbase_files:
-            for word in make_termbase_list(file):
-                self.add_user_word(word, Tag.일반명사)
 
     def tokenize(self, text: str | list[str], *args, **kwargs):            
         return super().tokenize(text, *args, **kwargs)

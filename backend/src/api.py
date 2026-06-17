@@ -19,6 +19,7 @@ from src.parsers.excel_parser import ExcelParser
 from src.parsers.srt_parser import SrtParser
 from src.parsers.txt_parser import TxtParser
 from src.tokenizations.ko_tokenizer import KoTokenizer
+from src.utils.paths import backend_resource_path, frontend_dist_path, user_data_path
 
 _PARSERS = {
     ".srt": SrtParser,
@@ -32,7 +33,7 @@ _spell_checker: SpellChecker | None = None
 _tokenizer: KoTokenizer | None = None
 _tokenizer_lock: asyncio.Lock | None = None
 
-_USER_WORDS_PATH = Path(__file__).parent.parent / "data" / "user_words.json"
+_USER_WORDS_PATH = user_data_path("user_words.json")
 
 
 # ──────────────────────────────────────────────────────────────
@@ -362,7 +363,7 @@ async def add_words(body: AddWordsRequest):
         _apply_user_words_to_tokenizer(_get_active_words(data))
     return {"saved": len(updated)}
 
-_FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist" / "desktop"
+_FRONTEND_DIST = frontend_dist_path()
 
 def _mount_frontend(app: FastAPI) -> None:
     if not _FRONTEND_DIST.exists():
