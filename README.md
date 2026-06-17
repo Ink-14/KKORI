@@ -40,7 +40,7 @@ pyinstaller kkori.spec
 ```
 
 ## 라이선스
-Copyright (c) 2025 Ink-14
+Copyright (c) 2026 Ink-14
 
 이 소프트웨어의 실행 파일(exe)은 개인 및 상업적 목적으로 자유롭게 사용할 수 있습니다.
 
