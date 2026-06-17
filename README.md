@@ -10,15 +10,13 @@
 
 ![스크린샷](assets/sample.jpg)
 
-**[Windows용 exe]** **[웹 버전 데모](https://ink-14.github.io/korean_spell_checker/)**
+**[Windows용 exe](https://github.com/Ink-14/KKORI/releases/)** **[웹 버전 데모](https://ink-14.github.io/KKORI/)**
 
 웹 버전 데모는 서버로 텍스트를 전송하므로, 민감한 내용은 송신을 삼가 주시기 바랍니다.
 
 ## 건의 사항 / 버그 제보
 
 **[구글 폼](https://forms.gle/d73kZNGgWZAEdg5aA)** | **[Github Issues](https://github.com/Ink-14/KKORI/issues)** | **[이메일](mailto:farple566@gmail.com)**
-
-편하신 창구로 연락해 주시면 답장하겠습니다.
 
 ## 기술 스택
 
