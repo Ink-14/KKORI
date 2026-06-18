@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { getApiBase } from '../lib/api'
 import './fileChecker.css'
+import type { SpellErrorResponse } from '../types/spell'
 
 declare global {
   interface Window {
@@ -10,14 +11,6 @@ declare global {
       }
     }
   }
-}
-
-type SpellErrorResponse = {
-  error_type: string
-  error_message: string
-  start_index: number
-  end_index: number
-  rule_id: string
 }
 
 type SegmentResult = {

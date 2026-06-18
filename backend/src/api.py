@@ -116,6 +116,7 @@ class SpellErrorResponse(BaseModel):
     start_index: int
     end_index: int
     rule_id: str
+    detailed: str
 
 
 class ExcelConfig(BaseModel):
@@ -164,6 +165,7 @@ def _to_response(e: SpellError) -> SpellErrorResponse:
         start_index=e.start_index,
         end_index=e.end_index,
         rule_id=e.rule_id,
+        detailed=e.detailed,
     )
 
 

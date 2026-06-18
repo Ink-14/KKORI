@@ -1,14 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { getApiBase } from '../lib/api'
 import './checker.css'
-
-type SpellErrorResponse = {
-  error_type: string
-  error_message: string
-  start_index: number
-  end_index: number
-  rule_id: string
-}
+import type { SpellErrorResponse } from '../types/spell'
 
 type TooltipState = {
   visible: boolean
@@ -174,6 +167,13 @@ function Checker() {
                   <li key={i} className="checker-error-item">
                     <span className="checker-error-badge">{e.error_type}</span>
                     <span className="checker-error-msg">{e.error_message}</span>
+                    {e.detailed && (
+                      <span
+                        className="checker-detailed-badge"
+                        onMouseEnter={(ev) => showTooltip(ev, e.detailed)}
+                        onMouseLeave={hideTooltip}
+                      >?</span>
+                    )}
                   </li>
                 ))}
               </ul>

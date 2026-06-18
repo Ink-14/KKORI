@@ -234,7 +234,7 @@ class RuleBuilder:
         self.message: str | None = None
         self.error_type: SpellErrorType = error_type
         self.rule_id: str = ""
-        self.detailed_message: str | None = None
+        self.detailed_message: str = ""
 
     def tag(self, tag: Tag):
         """tag 조건. 인자로는 Tag enum을 받음."""

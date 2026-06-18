@@ -37,6 +37,7 @@ class SpellError:
         start_index (int): 에러가 발생한 부분의 시작 인덱스.
         end_index (int): 에러가 발생한 부분의 끝 인덱스.
         rule_id (str): 규칙의 id.
+        detailed (str): 규칙에 대한 세부 설명.
         debug_path (str | None): NFA 엔진 경로 추적용 속성.
 
     """
@@ -45,6 +46,7 @@ class SpellError:
     start_index: int
     end_index: int
     rule_id: str
+    detailed: DetailedMessage
     debug_path: str | None = None
 
 class Tag(StrEnum):

@@ -143,6 +143,7 @@ class SpellChecker:
                 start_index=tokens[start_index].start,
                 end_index=tokens[end_index].end,
                 rule_id=meta.rule_id,
+                detailed=meta.detail,
                 debug_path=meta.debug_path,
             )
 
@@ -170,6 +171,7 @@ class SpellChecker:
                     start_index=tokens[start_index].start,
                     end_index=tokens[end_index].end,
                     rule_id=meta.rule_id,
+                    detailed=meta.detail,
                     debug_path=meta.debug_path,
                 ))
             result.append(errors)
