@@ -25,9 +25,10 @@
 
 ## 빌드 방법
 
-3.12 이상의 Python과 2024 이상의 rust 컴파일러가 필요합니다.
+3.12 이상의 Python과 1.85 이상의 Rust 컴파일러가 필요합니다.
 
 > 아래 빌드 명령어는 Windows 환경 기준입니다.
+> frontend 빌드 결과물은 frontend/dist에 포함되어 있습니다.
 
 ```
 git clone https://github.com/Ink-14/KKORI.git
