@@ -122,6 +122,7 @@ class ExcelConfig(BaseModel):
     sheet_name: str
     text_col: str
     metadata_col: str | None = None
+    has_header: bool = True
 
 
 class CsvConfig(BaseModel):
@@ -150,6 +151,7 @@ class SegmentResult(BaseModel):
 class SheetInfo(BaseModel):
     name: str
     columns: list[str]
+    has_header: bool = True
 
 
 # ──────────────────────────────────────────────────────────────
@@ -171,6 +173,24 @@ def _apply_user_words_to_tokenizer(words: list[dict], score: float = 0.0) -> Non
     for entry in words:
         _tokenizer.add_user_word(entry["word"], Tag[entry["tag"]], score)
 
+
+def _col_letter(idx: int) -> str:
+    s = ""
+    idx += 1
+    while idx:
+        idx, r = divmod(idx - 1, 26)
+        s = chr(65 + r) + s
+    return s
+
+def _detect_has_header(file_path: Path, sheet_name: str) -> bool:
+    import openpyxl
+    wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
+    ws = wb[sheet_name]
+    first_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
+    wb.close()
+    if not first_row:
+        return False
+    return any(c is not None for c in first_row)
 
 # ──────────────────────────────────────────────────────────────
 # 라우터 1: check (항상 노출)
@@ -227,7 +247,13 @@ def excel_info(body: FileCheckRequest) -> list[SheetInfo]:
         ws = wb[sheet_name]
         first_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
         columns = [str(c) for c in first_row if c is not None] if first_row else []
-        result.append(SheetInfo(name=sheet_name, columns=columns))
+
+        has_header = bool(columns)
+        if not columns:
+            ncols = ws.max_column or 0
+            columns = [_col_letter(i) for i in range(ncols)]
+
+        result.append(SheetInfo(name=sheet_name, columns=columns, has_header=has_header))
     wb.close()
     return result
 
@@ -263,7 +289,7 @@ async def file_check(body: FileCheckRequest) -> list[SegmentResult]:
         if body.excel_config is None:
             raise HTTPException(status_code=400, detail="엑셀 파일은 excel_config가 필요합니다.")
         cfg = body.excel_config
-        parser = ExcelParser(sheet_name=cfg.sheet_name, text_col=cfg.text_col, metadata_col=cfg.metadata_col)
+        parser = ExcelParser(sheet_name=cfg.sheet_name, text_col=cfg.text_col, metadata_col=cfg.metadata_col, has_header=cfg.has_header)
     elif ext == ".csv":
         if body.csv_config is None:
             raise HTTPException(status_code=400, detail="CSV 파일은 csv_config가 필요합니다.")

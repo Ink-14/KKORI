@@ -29,12 +29,14 @@ type SegmentResult = {
 type SheetInfo = {
   name: string
   columns: string[]
+  has_header: boolean
 }
 
 type ExcelConfig = {
   sheet_name: string
   text_col: string
   metadata_col: string | null
+  has_header: boolean
 }
 
 type CsvConfig = {
@@ -114,11 +116,11 @@ function FileChecker() {
 
     if (ext === '.xlsx') {
       const mockSheets: SheetInfo[] = [
-        { name: '시트1', columns: ['제목', '내용', '작성자'] },
-        { name: '시트2', columns: ['날짜', '텍스트'] },
+        { name: '시트1', columns: ['제목', '내용', '작성자'], has_header: true },
+        { name: '시트2', columns: ['날짜', '텍스트'], has_header: true },
       ]
       setSheets(mockSheets)
-      setExcelConfig({ sheet_name: '시트1', text_col: '내용', metadata_col: null })
+      setExcelConfig({ sheet_name: '시트1', text_col: '내용', metadata_col: null, has_header: false })
     } else if (ext === '.csv') {
       const mockColumns = ['제목', '겁나긴텍스트겁나긴텍스트겁나긴텍스트겁나긴텍스트겁나긴텍스트겁나긴텍스트겁나긴텍스트겁나긴텍스트겁나긴텍스트겁나긴텍스트겁나긴텍스트겁나긴텍스트겁나긴텍스트겁나긴텍스트', '날짜']
       setCsvColumns(mockColumns)
@@ -155,7 +157,7 @@ function FileChecker() {
       const data: SheetInfo[] = await res.json()
       setSheets(data)
       if (data.length > 0) {
-        setExcelConfig({ sheet_name: data[0].name, text_col: data[0].columns[0] ?? '', metadata_col: null })
+        setExcelConfig({ sheet_name: data[0].name, text_col: data[0].columns[0] ?? '', metadata_col: null, has_header: data[0].has_header })
       }
     } else if (path.toLowerCase().endsWith('.csv')) {
       const res = await fetch(`${base}/csv-info`, {
@@ -252,8 +254,9 @@ function FileChecker() {
                 value={excelConfig.sheet_name}
                 onChange={e => {
                   const name = e.target.value
-                  const cols = sheets.find(s => s.name === name)?.columns ?? []
-                  setExcelConfig({ sheet_name: name, text_col: cols[0] ?? '', metadata_col: null })
+                  const sheet = sheets.find(s => s.name === name)
+                  const cols = sheet?.columns ?? []
+                  setExcelConfig({ sheet_name: name, text_col: cols[0] ?? '', metadata_col: null, has_header: sheet?.has_header ?? true })
                 }}
               >
                 {sheets.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
