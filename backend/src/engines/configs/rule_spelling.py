@@ -1,4 +1,4 @@
-﻿from src.engines.configs.rule_builder import *
+﻿from src.engines.configs.rule_builder import RuleBuilder, AND, OR, NOT, tag, tags, tag_form, form, forms, lemma, batchim, no_batchim, any_batchim, longer, SpacingRule, KoSpellRules
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 모음어미_FORMS = {"어요", "어서", "어도", "어", "었"}
@@ -861,6 +861,14 @@ _REP = [
     .any().opt().context()
     .tag_form(Tag.일반명사, "껍질")
     .msg("'{form[0]} 껍데기'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_헤매다_1")
+    .tag_form(Tag.동사, "해매")
+    .msg("'헤매다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_헤매다_2")
+    .tag_form(Tag.동사, "해매이")
+    .msg("'헤매다'의 오타가 아닌가요? 또한, '헤매다'에는 '-이-'가 결합할 수 없습니다.").build(),
 ]
 
 _MIF = [

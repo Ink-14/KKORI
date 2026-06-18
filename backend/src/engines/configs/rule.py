@@ -16,10 +16,10 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("REP_껍데기")
-    .forms({"달걀", "계란"}).context()
-    .tag_form(Tag.일반명사, "껍질")
-    .msg("'{form[0]} 껍데기'가 올바른 표현입니다.").build(),
+    *rule().id("REP_헤매다")
+    .tag(Tag.일반명사)
+    .tag_form(Tag.일반명사, "속").if_not_spaced()
+    .msg("'헤매다'의 오타가 아닌가요?").build(),
 ]
 
 ML_LABELINGS = [

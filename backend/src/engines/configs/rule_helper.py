@@ -12,7 +12,7 @@ def word_3(word1: str, tag1: Tag, word2: str, tag2: Tag, word3: str, tag3: Tag, 
         raise ValueError("'Any' spacing rule is not allowed in word_3.")
 
 def NNG_and_NNG(nng1: str, nng2: str, spacing_rule: SpacingRule, message = None) -> list[KoSpellRules]:
-    rule = RuleBuilder(SpellErrorType.SPACING).tag_form(Tag.일반명사, nng1).tag_form(Tag.일반명사, nng2)
+    rule = RuleBuilder(SpellErrorType.SPACING).id(f"NNG_and_NNG_{nng1}_{nng2}").tag_form(Tag.일반명사, nng1).tag_form(Tag.일반명사, nng2)
     
     if spacing_rule == SpacingRule.SPACED:
         rule.if_not_spaced()
@@ -46,7 +46,7 @@ def NNG_and_some(nng: str, some: str, tag: str, spacing_rule: SpacingRule, messa
 def VV_EC_VV(vv1: tuple[str, str], ec: str, vv2: tuple[str, str], spacing_rule: SpacingRule, message = None, detail = None) -> list[KoSpellRules]:
     vv1_form, vv1_tag = vv1
     vv2_form, vv2_tag = vv2
-    rule = RuleBuilder(SpellErrorType.SPACING).tag_form(Tag[vv1_tag], vv1_form).tag_form(Tag.연결어미, ec).tag_form(Tag[vv2_tag], vv2_form)
+    rule = RuleBuilder(SpellErrorType.SPACING).id(f"VV_EC_VV_{vv1_form}_{ec}_{vv2_form}").tag_form(Tag[vv1_tag], vv1_form).tag_form(Tag.연결어미, ec).tag_form(Tag[vv2_tag], vv2_form)
 
     message1 = f"merge((\"{vv1_form}\", \"{vv1_tag}\"), (\"{ec}\", \"연결어미\"))"
     message2 = f"merge((\"{vv2_form}\", \"{vv2_tag}\"), (\"다\", \"연결어미\"))"
