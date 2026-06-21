@@ -16,10 +16,11 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("REP_헤매다")
-    .tag(Tag.일반명사)
-    .tag_form(Tag.일반명사, "속").if_not_spaced()
-    .msg("'헤매다'의 오타가 아닌가요?").build(),
+    *rule().id("OM_연결어미어_종결어미")
+    .tags(TagGroup.용언)
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.종결어미, "다")
+    .msg("TEST").build(),
 ]
 
 ML_LABELINGS = [

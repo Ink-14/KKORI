@@ -1,4 +1,5 @@
 from src.engines.configs.rule_builder import *
+from src.engines.configs.rule_constants import 모음연결어미_FORMS, 모음선어말어미_FORMS, 모음관형사형전성어미_FORMS
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 def word_3(word1: str, tag1: Tag, word2: str, tag2: Tag, word3: str, tag3: Tag, spacing_rule: SpacingRule, message: str):
@@ -64,3 +65,19 @@ def VV_EC_VV(vv1: tuple[str, str], ec: str, vv2: tuple[str, str], spacing_rule: 
         rule.detail(detail)
 
     return rule.build()
+
+def abbr_vowel_ending_connectives(abbr: str, abbr_tag: Tag, origin: str, origin_tag: Tag) -> list[KoSpellRules]:
+    """
+    준말에 모음 어미가 결합한 경우를 감지하는 규칙을 만들어 주는 헬퍼입니다.
+    """
+    message = f'\'merge(("{origin}", "{origin_tag.name}"), ("다", "종결어미"))\'가 올바른 표현입니다.'
+    detail = f"준말에는 모음 어미가 결합할 수 없습니다. '{abbr}다'는 '{origin}다'의 준말로서, 모음 어미가 결합할 경우 원래 형태인 '{origin}다'를 사용해야 합니다."
+    
+    def make_base():
+        return RuleBuilder(SpellErrorType.SPELLING).id(f"abbr_vowel_{abbr}다").tag_form(abbr_tag, abbr).msg(message).detail(detail)
+    
+    rule_ec = make_base().AND(tag(Tag.연결어미), forms(모음연결어미_FORMS))
+    rule_ep = make_base().AND(tag(Tag.선어말어미), forms(모음선어말어미_FORMS))
+    rule_etm = make_base().AND(tag(Tag.관형사형전성어미), forms(모음관형사형전성어미_FORMS))
+    
+    return [*rule_ec.build(), *rule_ep.build(), *rule_etm.build()]
