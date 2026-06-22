@@ -40,6 +40,7 @@ import src.engines.configs.rule_meaning as _spell_meaning_cfg
 import src.engines.configs.rule_spacing as _spell_spacing_cfg
 import src.engines.configs.rule_specific as _spell_specific_cfg
 import src.engines.configs.rule_spelling as _spell_spelling_cfg
+import src.engines.configs.rule_complex as _spell_complex_cfg
 import src.engines.configs.rule_warning as _spell_warning_cfg
 import src.engines.configs.rule as _spell_cfg
 import src.engines.configs.raw_string_searcher_config as _raw_cfg
@@ -1086,6 +1087,7 @@ class Api:
         importlib.reload(_spell_spacing_cfg)
         importlib.reload(_spell_specific_cfg)
         importlib.reload(_spell_spelling_cfg)
+        importlib.reload(_spell_complex_cfg)
         importlib.reload(_spell_warning_cfg)
         importlib.reload(_spell_cfg)
 
