@@ -16,11 +16,6 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("OM_연결어미어_종결어미")
-    .tags(TagGroup.용언)
-    .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.종결어미, "다")
-    .msg("TEST").build(),
 ]
 
 ML_LABELINGS = [

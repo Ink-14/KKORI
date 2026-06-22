@@ -1,6 +1,6 @@
 ﻿from src.engines.configs.rule_builder import RuleBuilder, AND, OR, NOT, tag, tags, tag_form, form, forms, lemma, batchim, no_batchim, any_batchim, longer, SpacingRule, KoSpellRules
 from src.engines.configs.rule_helper import abbr_vowel_ending_connectives
-from src.engines.configs.rule_constants import 모음연결어미_FORMS
+from src.engines.configs.rule_constants import 모음연결어미_FORMS, ㄹ사용불가_연결어미_FORMS
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 def rule() -> RuleBuilder:
@@ -426,16 +426,42 @@ _ADD = [
     .tag_form(Tag.일반명사, "윗")
     .tag_form(Tag.일반명사, "어른")
     .msg("'웃어른'이 올바른 표현입니다.").build(),
+
+    *rule().id("ADD_ㄹ로")
+    .forms({"여기"})
+    .tag_form(Tag.부사격조사, "ᆯ로")
+    .msg("'{form[0]}로'가 올바른 표현입니다.").build(),
 ]
 
 _REP = [
-    *rule()
+    *rule().id("REP_든_1")
+    .tag_form(Tag.동사, "그러").context()
+    .AND(tags({Tag.종결어미, Tag.연결어미}), forms({"던가", "던지", "던"}))
+    .NOT(OR(tag_form(Tag.의존명사, "간"), tag_form(Tag.보조용언, "말"))).context()
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
+    *rule().id("REP_든_2")
+    .AND(tag(Tag.연결어미), forms({"던가", "던지", "던"}))
+    .OR(tag_form(Tag.의존명사, "간"), tag_form(Tag.보조용언, "말")).context()
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),   
+
+    *rule().id("REP_든_3")
+    .AND(tag(Tag.연결어미), forms({"던지", "던", "던가", "든지", "든", "든가"})).context()
+    .any().context()
+    .any().context().opt()
+    .AND(tags({Tag.종결어미, Tag.연결어미}), forms({"던가", "던지", "던"}))
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
+    *rule().id("REP_재미있다")
     .tag_form(Tag.일반명사, "제미")
     .tag_form(Tag.동사, "있")
     .msg("'재미있다'의 오타가 아닌가요?")
     .build(),
 
-    *rule()
+    *rule().id("REP_훼손")
     .tag_form(Tag.일반명사, "회손")
     .msg("'훼손'이 올바른 표현입니다.")
     .build(),
@@ -849,6 +875,10 @@ _REP = [
     *rule().id("REP_꽤나")
     .tag_form(Tag.일반부사, "꾀나")
     .msg("'꽤나'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_같히다")
+    .tag_form(Tag.동사, "같히")
+    .msg("'갇히다'가 올바른 표현입니다.").build(),
 ]
 
 _MIF = [
@@ -857,41 +887,36 @@ _MIF = [
     *abbr_vowel_ending_connectives("서둘", Tag.형용사, "서두르", Tag.형용사),
     *abbr_vowel_ending_connectives("내딛", Tag.동사불규칙활용, "내디디", Tag.동사),
     
-    *rule()
-    .id("MIF_ㄹ용언_1")
+    *rule().id("MIF_ㄹ용언_1")
     .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용}), batchim("ᆯ"))
     .tag_form(Tag.선어말어미, "으시")
     .NOT(AND(tag(Tag.선어말어미), forms({"엇"})))
     .msg("'merge(({dform[0]}, {dtag[0]}), ({dform[1]}, {dtag[1]}), ({dform[2]}, {dtag[2]}))'batchim(\"으로\", \"로\") 써야 합니다.")
     .build(),
 
-    *rule()
-    .id("MIF_ㄹ용언_2_었")
+    *rule().id("MIF_ㄹ용언_2_었")
     .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용}), batchim("ᆯ"))
     .tag_form(Tag.선어말어미, "으시")
     .tag_form(Tag.선어말어미, "었")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"으시\", \"선어말어미\"), (\"었\", \"선어말어미\"))'batchim(\"으로\", \"로\") 써야 합니다.")
     .build(),
 
-    *rule()
-    .id("MIF_ㄹ용언_2_엇")
+    *rule().id("MIF_ㄹ용언_2_엇")
     .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용}), batchim("ᆯ"))
     .tag_form(Tag.선어말어미, "으시")
     .tag_form(Tag.선어말어미, "엇")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"으시\", \"선어말어미\"), (\"었\", \"선어말어미\"))'batchim(\"으로\", \"로\") 써야 합니다.")
     .build(),
 
-    *rule()
-    .id("MIF_ㄹ용언_3")
+    *rule().id("MIF_ㄹ용언_3")
     .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용}), batchim("ᆯ"))
     .tag_form(Tag.관형사형전성어미, "은")
     .msg("'merge(({dform[0]}, \"동사\"), (\"ᆫ\", \"관형사형전성어미\"))'batchim(\"으로\", \"로\") 써야 합니다.")
     .build(),
 
-    *rule()
-    .id("MIF_ㄹ용언_4")
+    *rule().id("MIF_ㄹ용언_4")
     .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용}), batchim("ᆯ"))
-    .tag_form(Tag.연결어미, "으면")
+    .AND(tag(Tag.연결어미), forms({"으면", "으니까"}))
     .msg("'merge(({dform[0]}, {dtag[0]}), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 써야 합니다.")
     .build(),
 
@@ -972,12 +997,6 @@ _MIF = [
     *rule()
     .tag_form(Tag.종결어미, "ᆸ시요")
     .msg("'~ᆸ시오'가 올바른 표현입니다.")
-    .build(),
-    
-    *rule()
-    .OR(tag_form(Tag.연결어미, "던지"), tag_form(Tag.연결어미, "던"))
-    .OR(tag_form(Tag.의존명사, "간"), tag_form(Tag.보조용언, "말"))
-    .msg("'든'이 올바른 표현입니다.")
     .build(),
 
     *rule()
