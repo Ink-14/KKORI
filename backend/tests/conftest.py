@@ -23,3 +23,16 @@ def configured_checker():
     c = SpellChecker()
     c.add_rule_from_list(SPELL_CHECK_RULES)
     return c
+
+def pytest_sessionfinish(session, exitstatus):
+    from tests.test_spell_checker_default_config import ALL_CASES
+
+    total = len(ALL_CASES)
+    pending = sum(1 for c in ALL_CASES if c.is_pending)
+    achieved = total - pending
+
+    print("\n" + "=" * 50)
+    print(f"스펙 커버리지: {achieved}/{total} ({achieved / total:.1%})")
+    print(f"  - 통과 목표: {achieved}")
+    print(f"  - pending: {pending}")
+    print("=" * 50)
