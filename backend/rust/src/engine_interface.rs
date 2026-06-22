@@ -71,7 +71,7 @@ impl Condition {
             Condition::AnyBatchim => token.batchim > 1, // 0 = 한글 이외, 1 = 받침 없음
             Condition::First => token.start == 0,
             Condition::TagSet(mask) => (mask >> token.tag()) & 1 == 1,
-            Condition::FormSet(forms) => forms.binary_search(&token.form()).is_ok(),
+            Condition::FormSet(forms) => token.form() > 0 && forms.binary_search(&token.form()).is_ok(),
             Condition::And(conds) => conds.iter().all(|c| c.check_match(token)),
             Condition::Or(conds) => conds.iter().any(|c| c.check_match(token)),
             Condition::Not(cond) => !cond.check_match(token),
@@ -110,17 +110,6 @@ pub enum SpacingRule {
     ANY = 0,
     SPACED,
     ATTACHED,
-}
-
-#[pyclass]
-#[derive(PartialEq, Debug, Clone)]
-pub struct RuleMatchedError {
-    #[pyo3(get)]
-    pub match_id: u32,
-    #[pyo3(get)]
-    pub start_index: u32,
-    #[pyo3(get)]
-    pub end_index: u32,
 }
 
 pub static TAG2IDX: phf::Map<&'static str, u8> = phf_map! {
