@@ -1,0 +1,49 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.prod.txt
+
+      - name: Set up rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install deps
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin pytest
+          pip install -r requirements.prod.txt
+
+      - name: Build rust extension
+        working-directory: backend
+        run: |
+          maturin build --release
+          pip install rust/target/wheels/*.whl
+
+      - name: Run pytest
+        working-directory: backend
+        run: python -m pytest tests/ -s
