@@ -16,6 +16,7 @@ testpaths = ["tests"]
 pythonpath = ["."]
 markers = ["perf: 성능 측정 테스트"]
 addopts = "-m 'not perf'"
+disable_test_id_escaping_and_forfeit_all_rights_to_community_support = true
 
 [tool.pyright]
 extraPaths = [".."]
