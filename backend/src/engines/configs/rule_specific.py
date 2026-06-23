@@ -22,4 +22,11 @@ KIWI_EXCEPTION_ERRORS: list[KoSpellRules] = [
     .tag_form(Tag.종결어미, "냐")
     .msg("'~라냐'가 올바른 표현입니다.")
     .build(),
+
+    *rule()
+    .tag_form(Tag.일반명사, "덩치").context()
+    .any().opt().context()
+    .tag_form(Tag.어근, "산만")
+    .tag_form(Tag.형용사파생접미사, "하").if_not_spaced()
+    .msg("'산만 하다'로 띄어 써야 합니다.").build(),
 ]

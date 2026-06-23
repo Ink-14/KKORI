@@ -225,12 +225,12 @@ _OM = [
     .msg("'안절부절못하다'가 올바른 표현입니다.")
     .build(),
 
-    *rule()
+    *rule().id("OM_가능한 한")
     .tag_form(Tag.일반명사, "가능")
     .tag_form(Tag.형용사파생접미사, "하")
     .tag_form(Tag.관형사형전성어미, "ᆫ")
     .tag(Tag.일반부사)
-    .msg("'가능한 한~'으로 써야 합니다.")
+    .msg("'가능한 한 {dform[3]}'batchim(\"으로\", \"로\") 써야 합니다.")
     .build(),
     
     *rule()
@@ -879,6 +879,31 @@ _REP = [
     *rule().id("REP_같히다")
     .tag_form(Tag.동사, "같히")
     .msg("'갇히다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_내재")
+    .tag_form(Tag.일반명사, "내제")
+    .msg("'내재'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_쳐지다")
+    .tag_form(Tag.일반부사, "축").context()
+    .tag_form(Tag.동사, "쳐지")
+    .msg("'늘어지다'의 의미로는 '처지다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_맞닥뜨리다")
+    .tag_form(Tag.동사, "맞")
+    .tag_form(Tag.일반부사, "딱").if_not_spaced()
+    .tag_form(Tag.동사, "드리").if_not_spaced()
+    .msg("'맞닥뜨리다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_채")
+    .tag_form(Tag.의존명사, "체")
+    .tag_form(Tag.부사격조사, "로").context()
+    .msg("'채'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_량")
+    .tag(Tag.관형사형전성어미).context()
+    .tag_form(Tag.일반명사, "량")
+    .msg("'양'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -1283,7 +1308,13 @@ _MIF = [
     .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
     .tag_form(Tag.종결어미, "요").if_not_spaced()
     .msg("'merge((\"되\", {dtag[0]}), (\"어\", \"연결어미\"), ({dform[1]}, {dtag[1]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
-    
+
+    *rule().id("MIF_되_연결어미_용언")
+    .tag(Tag.긍정지정사).if_spaced()
+    .tag_form(Tag.연결어미, "되")
+    .tags(TagGroup.용언).if_not_spaced()
+    .msg("'돼'가 올바른 표현입니다.").build(),
+
     *rule().id("MIF_되+어+다면")
     .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
     .tag_form(Tag.연결어미, "어")
@@ -1341,10 +1372,15 @@ _JOSA = [
     .tag_form(Tag.목적격조사, "를")
     .msg('받침 있는 명사에는 \'을\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("을", "목적격조사"))\'의 오타가 아닌가요?').build(),
 
-    *rule().id("JOSA_은")
+    *rule().id("JOSA_은_1")
     .AND(tags(JOSA_TARGETS), no_batchim())
     .tag_form(Tag.보조사, "은")
     .msg('받침 없는 명사에는 \'는\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("는", "보조사"))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("JOSA_은_2")
+    .tag_form(Tag.명사파생접미사, "들").context()
+    .tag_form(Tag.관형사형전성어미, "는")
+    .msg("'은'의 오타가 아닌가요?").build(),
 
     *rule().id("JOSA_는")
     .AND(tags(JOSA_TARGETS), any_batchim())
