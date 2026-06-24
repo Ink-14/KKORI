@@ -257,7 +257,19 @@ _OM = [
     .tags(TagGroup.용언)
     .tag_form(Tag.연결어미, "어")
     .tag(Tag.종결어미)
-    .msg("TEST").build(),
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("었", "선어말어미"), ({dform[2]}, {dtag[2]}))\' 또는 \'merge(({dform[0]}, {dtag[0]}), ({dform[2]}, "종결어미"))\'의 오타가 아닌가요?').build(),
+
+    *rule().id("OM_동사_동사_종결어미")
+    .tag(Tag.동사)
+    .tag_form(Tag.동사, "주")
+    .tag(Tag.종결어미)
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("어", "연결어미")) merge(("주", "동사"), ({dform[2]}, "종결어미"))\'의 오타가 아닌가요?').build(),
+
+    *rule().id("OM_마렴")
+    .tag_form(Tag.보조용언, "마")
+    .tag_form(Tag.종결어미, "렴")
+    .msg("'말렴'이 올바른 표현입니다.")
+    .build(),
 ]
 
 _ADD = [
@@ -409,17 +421,11 @@ _ADD = [
     .msg("'씌이다'는 이중 피동 표현이므로 'merge((\"씌\", \"동사\"), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.")
     .build(),
 
-    *rule()
+    *rule().id("ADD_안줏거리")
     .tag_form(Tag.일반명사, "안주")
     .tag_form(Tag.의존명사, "거리")
     .if_not_spaced()
     .msg("'술과 함께 먹는 먹을거리'의 의미인 경우, '안줏거리'로 써야 합니다.")
-    .build(),
-
-    *rule()
-    .tag_form(Tag.보조용언, "마")
-    .tag_form(Tag.종결어미, "렴")
-    .msg("'말렴'이 올바른 표현입니다.")
     .build(),
 
     *rule().id("ADD_웃어른")
@@ -904,6 +910,39 @@ _REP = [
     .tag(Tag.관형사형전성어미).context()
     .tag_form(Tag.일반명사, "량")
     .msg("'양'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_았다")
+    .tag(Tag.동사)
+    .tag_form(Tag.보조용언, "있").if_not_spaced()
+    .tag(Tag.종결어미)
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("었", "선어말어미"), ({dform[2]}, {dtag[2]}))\'의 오타가 아닌가요?').build(),
+
+    *rule().id("REP_연결어미_주격조사_려다")
+    .tag_form(Tag.연결어미, "려").context()
+    .tag_form(Tag.주격조사, "가")
+    .msg("'려다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_~어져")
+    .tag_form(Tag.연결어미, "어").context()
+    .tag_form(Tag.관형사, "저").if_not_spaced()
+    .tags(TagGroup.용언).context()
+    .msg("'져'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_매달리다")
+    .tag_form(Tag.동사, "메달리")
+    .msg("'매달리다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_덩쿨")
+    .tag_form(Tag.일반명사, "덩쿨")
+    .msg("'덩굴'이 올바른 표현입니다.").build(),
+
+    *rule().id("REP_제패")
+    .tag_form(Tag.일반명사, "재패")
+    .msg("'제패'가 올바른 표현입니다.").build(),
+    
+    *rule().id("REP_통틀다")
+    .tag_form(Tag.동사, "통들")
+    .msg("'통틀다'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -1258,11 +1297,21 @@ _MIF = [
     .AND(tag(Tag.연결어미), forms({"려고", "려면"}))
     .msg("'만들{form[1]}'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
 
-    *rule().id("MIF_만듦")
-    .tag_form(Tag.동사, "만들")
+    *rule().id("MIF_명사형전성어미_ㅁ_음")
+    .AND(tags({Tag.동사, Tag.형용사}), batchim("ᆯ"))
     .tag_form(Tag.관형사형전성어미, "ᆯ")
     .tag_form(Tag.종결어미, "음")
-    .msg("'만들다'의 명사형은 '만듦'이 올바른 표기입니다.").build(),
+    .msg("'merge(({dform[0]}, {dtag[0]}), (\"다\", \"종결어미\"))'의 명사형은 'merge(({dform[0]}, {dtag[0]}), (\"ᆷ\", \"명사형전성어미\"))'이 올바른 표기입니다.").build(),
+
+    *rule().id("MIF_명사형전성어미_음_드물음")
+    .tag_form(Tag.일반명사, "드")
+    .tag_form(Tag.일반명사, "물음").if_not_spaced()
+    .msg("'드묾'의 오타가 아닌가요?").build(),
+
+    *rule().id("MIF_명사형전성어미_알음")
+    .tag_form(Tag.일반명사, "알음")
+    .NOT(form("알음")).context()
+    .msg("'앎'이 올바른 표현입니다.").build(),
     
     *rule().id("MIF_게끔")
     .tag_form(Tag.연결어미, "겠끔")
@@ -1331,11 +1380,11 @@ _MIF = [
     .tag_form(Tag.동사, "멤돌")
     .msg("'맴돌다'가 올바른 표현입니다.").build(),
 
-    *rule().id("MIF_ㅅ받침_우")
+    *rule().id("MIF_ㅅ받침_우") # '쏟아부우면' 같은 경우
     .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), batchim("ᆺ"))
     .tag_form(Tag.연결어미, "우")
     .tags({Tag.연결어미, Tag.종결어미})
-    .msg('').build(),
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ({dform[2]}, {dtag[2]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
 
     *rule().id("MIF_EC어_NNB수")
     .tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용})
@@ -1347,6 +1396,22 @@ _MIF = [
     *rule().id("MIF_높이다")
     .tag_form(Tag.동사, "높히")
     .msg("'높이다'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_붙이다_1")
+    .tag_form(Tag.동사, "붙")
+    .tag_form(Tag.동사, "치")
+    .msg("'붙이다'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_붙이다_2")
+    .tag_form(Tag.동사, "붙히")
+    .msg("'붙이다' 또는 '부치다'의 오타가 아닌가요?")
+    .detail("'맞닿다'의 의미로는 '붙이다', '물건을 보내다'의 의미로는 '부치다'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_~자말자")
+    .tag_form(Tag.연결어미, "자").context()
+    .tag_form(Tag.보조용언, "말").if_not_spaced()
+    .AND(tags({Tag.연결어미, Tag.종결어미}), form("자")).context()
+    .msg("'~자마자'가 올바른 표현입니다.").build()
 ]
 
 JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}

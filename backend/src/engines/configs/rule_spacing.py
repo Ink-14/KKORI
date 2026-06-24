@@ -85,10 +85,10 @@ GENERAL_SPACING_ERRORS: list[KoSpellRules] = [
     # .tag(Tag.관형사).if_not_spaced()
     # .msg("관형사 앞을 띄어 써야 합니다.").build(),
 
-    *rule()
+    *rule().id("쉼표_띄어쓰기")
     .NOT(tag(Tag.숫자)).context()
     .tag_form(Tag.구분부호, ",")
-    .NOT(tags({Tag.숫자, Tag.닫는부호, Tag.구분부호, Tag.종결부호, Tag.여는부호})).if_not_spaced()
+    .NOT(tags({Tag.숫자, Tag.닫는부호, Tag.구분부호, Tag.종결부호, Tag.여는부호, Tag.해시태그, Tag.알파벳})).if_not_spaced()
     .msg("쉼표 뒤에 띄어쓰기가 없습니다.").build(),
 
     *rule()
@@ -317,12 +317,6 @@ _SPACING_ERRORS = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.보조용언, "하").if_spaced()
     .msg("'{dform[0]}해하다'로 붙여 써야 합니다.").build(),
-
-    *rule()
-    .tags({Tag.동사, Tag.형용사, Tag.형용사불규칙활용, Tag.형용사규칙활용, Tag.형용사파생접미사, Tag.형용사파생접미사규칙활용, Tag.형용사파생접미사불규칙활용})
-    .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.보조용언, "지").if_spaced()
-    .msg("'지다'를 앞 말에 붙여 써야 합니다.").build(),
     
     *rule()
     .AND(tag(Tag.동사), forms({"갖", "바래"}))
@@ -504,6 +498,11 @@ _SPACING_ERRORS = [
 ]
 
 _NNB = [
+    *rule().id("NNB_체언뒤_띄어쓰기")
+    .tags({Tag.일반명사, Tag.의존명사, Tag.명사파생접미사, Tag.의존명사})
+    .AND(tag(Tag.의존명사), forms({"쪽", "측"})).if_not_spaced()
+    .msg("'{dform[0]} {form[0]}'으로 띄어 써야 합니다.").build(),
+    
     *rule().id("NNB_몇_띄어쓰기")
     .tag_form(Tag.관형사, "몇")
     .AND(tag(Tag.의존명사), forms({"번", "개", "명"})).if_not_spaced()
@@ -759,19 +758,12 @@ _NNB = [
     .tag_form(Tag.의존명사, "격").if_not_spaced()
     .msg("'{dform[0]} 격'으로 띄어 써야 합니다.").build(),
 
-    *rule()
-    .id("NNB_명사_쪽_띄어쓰기")
-    .tag(Tag.일반명사)
-    .tag_form(Tag.의존명사, "쪽").if_not_spaced()
-    .msg("'{dform[0]} 쪽'으로 띄어 써야 합니다.").build(),
-
     *rule().id("NNB_시_띄어쓰기")
     .tag_form(Tag.관형사형전성어미, "ᆯ").context()
     .tag_form(Tag.의존명사, "시").if_not_spaced()
     .msg("'시'를 앞 말과 띄어 써야 합니다.").build(),
 
-    *rule()
-    .id("NNB_숫자_만_띄어쓰기")
+    *rule().id("NNB_숫자_만_띄어쓰기")
     .tag(Tag.숫자)
     .tag(Tag.의존명사)
     .tag_form(Tag.의존명사, "만").if_not_spaced()
@@ -1585,6 +1577,8 @@ _NNG_NNG = [
     *NNG_and_NNG("중간", "부분", SpacingRule.SPACED),
     *NNG_and_NNG("진행", "과정", SpacingRule.SPACED),
     *NNG_and_NNG("음반", "매장", SpacingRule.SPACED),
+    *NNG_and_NNG("일등", "공신", SpacingRule.SPACED),
+    *NNG_and_NNG("수제", "비누", SpacingRule.SPACED),
 ]
 
 _NR = [
@@ -1601,6 +1595,11 @@ _NR = [
 ]
 
 _VV = [
+    *rule().id("VV_일반부사뒤_띄어쓰기")
+    .AND(tag(Tag.일반부사), forms({"미리"})).context()
+    .tags(TagGroup.용언).if_not_spaced()
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("다", "종결어미"))\'를 앞 말과 띄어 써야 합니다.').build(),
+
     *rule()
     .id("관형사_말_하다_띄어쓰기")
     .tags({Tag.관형격조사, Tag.관형사}).context()
@@ -2035,6 +2034,13 @@ _VV = [
     .tag_form(Tag.명사파생접미사, "쯤").context()
     .tag_form(Tag.동사파생접미사, "하").if_not_spaced()
     .msg("'쯤 하다'로 띄어 써야 합니다.").build(),
+    
+    *rule().id("VV_함께하다_붙여쓰기")
+    .AND(tag(Tag.부사격조사), forms({"와", "과", "에"})).context()
+    .tag(Tag.보조사).opt().context()
+    .tag_form(Tag.일반부사, "함께")
+    .tag_form(Tag.동사, "하").if_spaced()
+    .msg("'함께하다'로 붙여 써야 합니다.").build(),
 ]
 
 _NNG_VV = [
@@ -2243,6 +2249,7 @@ _VV_EC_VV = [
     *VV_EC_VV(("구르", "동사"), "어", ("떨어지", "동사"), SpacingRule.ATTACHED),
     *VV_EC_VV(("부르", "동사"), "어", ("들이", "동사"), SpacingRule.ATTACHED),
     *VV_EC_VV(("달", "동사"), "라", ("붙", "동사"), SpacingRule.ATTACHED),
+    *VV_EC_VV(("가지", "동사"), "어", ("오", "보조용언"), SpacingRule.ATTACHED),
 
     # 띄어 써야 하는 것
     *VV_EC_VV(("밀", "동사"), "어", ("넣", "동사"), SpacingRule.SPACED),
@@ -2295,11 +2302,17 @@ _VX = [
     .tag_form(Tag.보조용언, "하").if_not_spaced()
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"어\", \"연결어미\")) 하다'로 띄어 써야 합니다.").build(),
     
-    *rule()
-    .tags({Tag.일반명사, Tag.연결어미})
+    *rule().id("VX_일반명사_말다_띄어쓰기")
+    .tags({Tag.일반명사}).context()
     .tag_form(Tag.보조용언, "말").if_not_spaced()
     .msg("'말다(마)'를 앞 말과 띄어 써야 합니다.").build(),
-    
+
+    *rule().id("VX_연결어미_말다_띄어쓰기")
+    .AND(tag(Tag.연결어미), NOT(form("자"))).context()
+    .tag_form(Tag.보조용언, "말").if_not_spaced()
+    .NOT(AND(tags({Tag.연결어미, Tag.종결어미}), form("자"))).context()
+    .msg("'말다(마)'를 앞 말과 띄어 써야 합니다.").build(),
+
     *rule().id("VX_지 말아 줘_띄어쓰기")
     .tag_form(Tag.연결어미, "지").context()
     .tag(Tag.보조사).opt().context()
@@ -2585,6 +2598,28 @@ _VCP = [
     .tag(Tag.긍정지정사).if_spaced()
     .tag(Tag.종결어미)
     .msg('\'merge(("이", "긍정지정사"), ({dform[1]}, "종결어미"))\'batchim("을", "를") 앞 말에 붙여 써야 합니다.').build(),
+
+    *rule().id("VCP_의존명사_VCP_종결어미_붙여쓰기")
+    .tag(Tag.의존명사).context()
+    .tag(Tag.닫는부호).opt().context()
+    .tag(Tag.긍정지정사).if_spaced()
+    .AND(tag(Tag.종결어미), forms({"ᆸ니다", "잖아"}))
+    .msg('\'merge(("이", "긍정지정사"), ({form[0]}, "종결어미"))\'batchim("을", "를") 앞 말과 붙여 써야 합니다.').build(),
+
+    *rule().id("VCP_의존명사_VCP_다_붙여쓰기")
+    .AND(tag(Tag.의존명사), forms({"것", "편", "뿐"})).context()
+    .tag(Tag.닫는부호).opt().context()
+    .tag(Tag.긍정지정사).if_spaced()
+    .AND(tag(Tag.종결어미), forms({"다"}))
+    .msg('\'merge(("이", "긍정지정사"), ({form[0]}, "종결어미"))\'batchim("을", "를") 앞 말과 붙여 써야 합니다.').build(),
+
+    *rule().id("VCP_의존명사_VCP_선어말어미_종결어미_붙여쓰기")
+    .tag(Tag.의존명사).context()
+    .tag(Tag.닫는부호).opt().context()
+    .tag(Tag.긍정지정사).if_spaced()
+    .tag(Tag.선어말어미)
+    .AND(tag(Tag.종결어미), forms({"다", "습니다"}))
+    .msg('\'merge(("이", "긍정지정사"), ({dform[1]}, "선어말어미"), ({form[0]}, "종결어미"))\'batchim("을", "를") 앞 말과 붙여 써야 합니다.').build(),
 ]
 
 _MM = [
@@ -2605,7 +2640,7 @@ _MM = [
 ]
 
 _MAG = [
-    *rule()
+    *rule().id("MAG_명사_내내_띄어쓰기")
     .tags({Tag.일반명사, Tag.고유명사, Tag.의존명사})
     .tag_form(Tag.일반부사, "내내").if_not_spaced()
     .msg("'{dform[0]} 내내'로 띄어 써야 합니다.").build(),
@@ -2927,7 +2962,7 @@ _EC = [
     .msg("'~하고서라도'로 붙여 써야 합니다.").build(),
     
     *rule().id("EC_ㄹ수록_붙여쓰기")
-    .tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용, Tag.긍정지정사, Tag.보조용언})
+    .tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용, Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용, Tag.긍정지정사, Tag.보조용언, Tag.동사파생접미사, Tag.형용사파생접미사})
     .tag_form(Tag.관형사형전성어미, "ᆯ")
     .tag_form(Tag.일반명사, "수록").if_spaced()
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"ᆯ수록\", \"연결어미\"))'batchim(\"으로\", \"로\") 붙여 써야 합니다.").build(),
@@ -3145,12 +3180,18 @@ _XSV = [
     .tag_form(Tag.동사파생접미사, "하").if_spaced()
     .msg("'{dform[0]}{dform[1]}하다'로 붙여 써야 합니다.").build(),
 
-    *rule()
-    .id("XSV_받다_붙여쓰기")
+    *rule().id("XSV_받다_붙여쓰기")
     .NOT(tag(Tag.관형사형전성어미)).context()
     .AND(tag(Tag.일반명사), forms(받다_ALLOWS))
     .tag_form(Tag.동사불규칙활용, "받").if_spaced()
     .msg("'{dform[0]}받다'로 붙여 써야 합니다.").detail("물리적으로 전달받는 것이 아닌, 어떤 행위의 대상이 됨을 나타낼 때에는 '받다'를 앞 말에 붙여 써야 합니다.\n예를 들어 '평가받다'의 경우, '평가'라는 물건을 받는 것이 아닌 '평가를 당하다'의 의미이므로 '평가받다'로 붙여 씁니다.\n'받다'를 '하다'로 바꿔 써서 말이 된다면, 붙여 씁니다.\n※열받다는 예외적으로 붙여 씁니다.").build(),
+
+    *rule().id("XSV_어지다_붙여쓰기")
+    .NOT(tag(Tag.연결어미)).context()
+    .tags({Tag.동사, Tag.동사불규칙활용, Tag.동사규칙활용, Tag.형용사, Tag.형용사불규칙활용, Tag.형용사규칙활용, Tag.형용사파생접미사, Tag.형용사파생접미사규칙활용, Tag.형용사파생접미사불규칙활용})
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지").if_spaced()
+    .msg("'merge(({dform[0]}, {dtag[0]}), (\"어\", \"연결어미\"), (\"지\", \"보조용언\"), (\"다\", \"종결어미\"))'로 붙여 써야 합니다.").build(),
 ]
 
 _SE = [
