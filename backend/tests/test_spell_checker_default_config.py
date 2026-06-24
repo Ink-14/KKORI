@@ -20,6 +20,8 @@ class Case:
 FILE_ERROR_MAPPING = {
     "spacing.tsv": SpellErrorType.SPACING,
     "spelling.tsv": SpellErrorType.SPELLING,
+    "complex.tsv": SpellErrorType.COMPLEX,
+    "loanword.tsv": SpellErrorType.LOANWORD,
     "meaning.tsv": SpellErrorType.MEANING,
 }
 

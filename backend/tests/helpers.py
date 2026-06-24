@@ -15,7 +15,7 @@ def assert_error(errors: list[SpellError], tokens: list | None = None):
     token_info = "\nToken: " + ", ".join(f"{t.form}/{Tag(t.tag).name}" for t in tokens) if tokens else ""
     assert errors != [], f"Expected errors, but no error asserted.{token_info}"
 
-def assert_no_errors(errors: list[SpellError], checker, tokens: list | None = None,):
+def assert_no_errors(errors: list[SpellError], tokens: list | None = None):
     __tracebackhide__ = True
     token_info = "\nToken: " + ", ".join(f"{t.form}/{t.tag}" for t in tokens) if tokens else ""
     assert errors == [], f"Expected no errors, but got: {errors}\n{token_info}\n"
@@ -29,11 +29,18 @@ def assert_no_errors_raw_text(errors: list, text: str):
     assert errors == [], f"Expected no errors, but got: {errors}{text}\n"
     
 def check_error_type(errors: list[SpellError], error_type: SpellErrorType):
+    __tracebackhide__ = True
+
     for e in errors:
         if e.error_type == error_type:
             return
-    error_types = list({e.error_type.name for e in errors})
-    assert f"Expected {error_type} Error, but got: {", ".join(error_types)}"
+
+    error_types = sorted({e.error_type.name for e in errors})
+
+    assert False, (
+        f"Expected {error_type.name} Error, "
+        f"but got: {', '.join(error_types) if error_types else 'no errors'}"
+    )
 
 @dataclass
 class DummyToken:
