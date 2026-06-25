@@ -41,10 +41,4 @@
 .desktop-content {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none; /* Firefox */
-}
-
-.desktop-content::-webkit-scrollbar {
-  display: none; /* Chrome/WebKit (pywebview) */
 }

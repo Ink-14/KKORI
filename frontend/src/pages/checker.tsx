@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { getApiBase } from '../lib/api'
 import './checker.css'
 import type { SpellErrorResponse } from '../types/spell'
+import ScrollToTopButton from '../components/ScrollToTopButton'
 
 type TooltipState = {
   visible: boolean
@@ -187,6 +188,7 @@ function Checker() {
           {tooltip.text}
         </div>
       )}
+      <ScrollToTopButton />
     </div>
   )
 }

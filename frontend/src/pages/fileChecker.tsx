@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { getApiBase } from '../lib/api'
 import './fileChecker.css'
 import type { SpellErrorResponse } from '../types/spell'
+import ScrollToTopButton from '../components/ScrollToTopButton'
 
 declare global {
   interface Window {
@@ -379,6 +380,7 @@ function FileChecker() {
           </div>
         )}
       </div>
+      <ScrollToTopButton />
     </div>
   )
 }
