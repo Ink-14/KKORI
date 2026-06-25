@@ -943,6 +943,11 @@ _REP = [
     *rule().id("REP_통틀다")
     .tag_form(Tag.동사, "통들")
     .msg("'통틀다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_파투")
+    .tag_form(Tag.일반명사, "파토")
+    .NOT(tag_form(Tag.동사, "나")).if_not_spaced().context()
+    .msg("'파투'가 올바른 표현입니다.").build(),
 ]
 
 _MIF = [
@@ -1303,6 +1308,11 @@ _MIF = [
     .tag_form(Tag.종결어미, "음")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"다\", \"종결어미\"))'의 명사형은 'merge(({dform[0]}, {dtag[0]}), (\"ᆷ\", \"명사형전성어미\"))'이 올바른 표기입니다.").build(),
 
+    *rule().id("MIF_명사형전성어미_ㄻ_만듦")
+    .tag_form(Tag.동사, "만드")
+    .form("ᆷ")
+    .msg("'만듦'이 올바른 표현입니다.").build(),
+
     *rule().id("MIF_명사형전성어미_음_드물음")
     .tag_form(Tag.일반명사, "드")
     .tag_form(Tag.일반명사, "물음").if_not_spaced()
@@ -1350,7 +1360,7 @@ _MIF = [
     *rule().id("MIF_돼+연결어미")
     .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
     .tag_form(Tag.연결어미, "어")
-    .AND(tags(TagGroup.어미), NOT(form("다면"))).if_not_spaced()
+    .AND(tags(TagGroup.어미 - {Tag.종결어미}), NOT(form("다면"))).if_not_spaced()
     .msg("'merge((\"되\", {dtag[0]}), ({dform[2]}, {dtag[2]}))'의 오타가 아닌가요?").build(),
     
     *rule().id("MIF_되_종결어미")
@@ -1411,7 +1421,33 @@ _MIF = [
     .tag_form(Tag.연결어미, "자").context()
     .tag_form(Tag.보조용언, "말").if_not_spaced()
     .AND(tags({Tag.연결어미, Tag.종결어미}), form("자")).context()
-    .msg("'~자마자'가 올바른 표현입니다.").build()
+    .msg("'~자마자'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_씌어지다")
+    .tag_form(Tag.동사, "씌어지")
+    .msg("'쓰다'의 이중 피동 표현 또는 '씌워지다'의 오타가 아닌가요?")
+    .detail("'쓰다'라면 '쓰이다' 또는 '써지다'로 쓰기를 권장합니다.").build(),
+
+    *rule().id("MIF_려")
+    .tags(TagGroup.용언)
+    .tag_form(Tag.연결어미, "ᆯ려")
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("려", "연결어미"))\'가 올바른 표현입니다.').build(),
+
+    *rule().id("MIF_관형사형전성어미_은")
+    .AND(tag(Tag.동사), forms({"꼬"}))
+    .tag_form(Tag.연결어미, "은")
+    .msg('\'merge(({form[0]}, "동사"), ("ᆫ", "관형사형전성어미"))\'이 올바른 표현입니다.').build(),
+    
+    *rule().id("MIF_거르다")
+    .tag_form(Tag.동사, "걸르")
+    .msg("'거르다'가 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_피우다")
+    .AND(tag(Tag.일반명사), forms({"담배", "바람"})).context()
+    .any().context().opt()
+    .any().context().opt()
+    .tag_form(Tag.동사, "피")
+    .msg("'{form[0]} 피우다'가 올바른 표현입니다.").build(),
 ]
 
 JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
@@ -1506,6 +1542,12 @@ _SHIFT_MISS = [
     .tags(TagGroup.용언)
     .tag_form(Tag.선어말어미, "엇")
     .msg('\'merge(({dform[0]}, {dtag[0]}), ("었", "선어말어미"))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("꺼")
+    .tag_form(Tag.의존명사, "꺼")
+    .tag(Tag.긍정지정사)
+    .tag_form(Tag.종결어미, "야")
+    .msg("'거야'가 올바른 표현입니다.").build(),
 ]
 
 _Z_CODA = [
@@ -1513,6 +1555,12 @@ _Z_CODA = [
     .tag(Tag.종결어미)
     .tag_form(Tag.덧붙은받침, "ᆮ")
     .msg("'{dform[0]}'의 오타가 아닌가요?").build(),
+]
+
+_RECOMMENDED = [
+    *rule().id("RECOMMEND_후술")
+    .tag_form(Tag.일반명사, "하술")
+    .msg("'하술(下述)'은 비표준어이므로 '후술(後述)'로 쓸 것을 권장합니다.").build(),
 ]
 
 _DEPENDS_ON_DICTIONARY = [
@@ -1581,6 +1629,10 @@ _LOANWORDS = [
     *rule().id("LOANWORD_콜리플라워")
     .tag_form(Tag.일반명사, "컬리플라워")
     .msg("'콜리플라워'가 올바른 표현입니다.").build(),
+
+    *rule().id("LOANWORD_크루져")
+    .form("크루져")
+    .msg("'크루저'가 올바른 표기입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:
@@ -1653,5 +1705,6 @@ SPELL_MISS_ERRORS = [
     *_JOSA,
     *_SHIFT_MISS,
     *_Z_CODA,
+    *_RECOMMENDED,
     *_LOANWORDS
 ]

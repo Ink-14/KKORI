@@ -17,12 +17,12 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("VV_함께하다_붙여쓰기")
-    .AND(tag(Tag.부사격조사), forms({"와", "과"})).context()
-    .tag(Tag.보조사).opt().context()
-    .tag_form(Tag.일반부사, "함께")
-    .tag_form(Tag.동사, "하").if_spaced()
-    .msg("'함께하다'로 붙여 써야 합니다.").build(),
+    *rule().id("MIF_피우다")
+    .AND(tag(Tag.일반명사), forms({"담배", "바람"})).context()
+    .any().context().opt()
+    .any().context().opt()
+    .tag_form(Tag.동사, "피")
+    .msg("'{form[0]} 피우다'가 올바른 표현입니다.").build(),
 ]
 
 ML_LABELINGS = [
