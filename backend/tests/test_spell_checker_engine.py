@@ -512,6 +512,43 @@ class TestChainOutputNotSuppressed:
         assert any(e.error_message == "PQ 출력" for e in errors)
         assert all(e.error_message != "PQR 출력" for e in errors)
 
+# ── message 기준 dedup 테스트 ──
+
+DEDUP_RULES = [
+    *rule()
+    .form("A").context()
+    .form("B")
+    .msg("출력").build(),
+
+    *rule()
+    .form("B")
+    .form("A").context()
+    .msg("출력").build(),
+
+    *rule()
+    .form("B")
+    .NOT(form("A")).context()
+    .msg("출력2").build(),
+]
+
+class TestMessageDedup:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.checker = SpellChecker()
+        self.checker.add_rule_from_list(DEDUP_RULES)
+
+    def test_dequp_message(self):
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사), ("A", Tag.일반명사))
+        errors = list(self.checker.check(tokens))
+        # message dedup으로 1개만 발생
+        assert len(errors) == 1
+
+    def test_not_dequp_message(self):
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사), ("C", Tag.일반명사))
+        errors = list(self.checker.check(tokens))
+        # message 다른 경우에는 출력
+        assert any(e.error_message == "출력" for e in errors)
+        assert any(e.error_message == "출력2" for e in errors)
 
 # ── 스트레스 & 성능 벤치마크 테스트 ──
 
