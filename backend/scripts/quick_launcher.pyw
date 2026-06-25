@@ -462,6 +462,10 @@ HTML = """
         <input type="checkbox" id="folder-use-raw">
         RawString 검사 사용
       </label>
+      <label>
+        <input type="checkbox" id="folder-dedup-msg">
+        중복 메시지 거르기
+      </label>
     </div>
     <button id="btn-folder-start" class="btn-primary" onclick="startFolderCheck()">
       폴더 선택 후 시작
@@ -747,6 +751,9 @@ function onLabelingToggle() {
   const rawChk = document.getElementById('folder-use-raw');
   rawChk.disabled = mode;
   if (mode) rawChk.checked = false;
+  const dedupChk = document.getElementById('folder-dedup-msg');
+  dedupChk.disabled = mode;
+  if (mode) dedupChk.checked = false;
 }
 
 function setFolderBlocking(on) {
@@ -756,9 +763,11 @@ function setFolderBlocking(on) {
   if (on) {
     document.getElementById('folder-rule').disabled = true;
     document.getElementById('folder-use-raw').disabled = true;
+    document.getElementById('folder-dedup-msg').disabled = true;
   } else {
     document.getElementById('folder-rule').disabled = labelingChecked;
     document.getElementById('folder-use-raw').disabled = labelingChecked;
+    document.getElementById('folder-dedup-msg').disabled = labelingChecked;
   }
 }
 
@@ -798,8 +807,9 @@ async function startFolderCheck() {
 
   setFolderStatus('처리 시작…');
   const useRaw = !labelingMode && document.getElementById('folder-use-raw').checked;
+  const dedupMsg = !labelingMode && document.getElementById('folder-dedup-msg').checked;
   const startRes = await pywebview.api.start_folder_check(
-    folderRes.folder, ruleName, labelingMode, savePath, useRaw
+    folderRes.folder, ruleName, labelingMode, savePath, useRaw, dedupMsg
   );
   if (startRes.error) {
     setFolderBlocking(false);
@@ -1329,7 +1339,7 @@ class Api:
 
     def start_folder_check(self, folder: str, rule_name: str,
                            labeling_mode: bool, save_path: str | None,
-                           use_raw: bool = False) -> dict:
+                           use_raw: bool = False, dedup_msg: bool = False) -> dict:
         if err := self._ensure_ready():
             return err
         if self._folder_state and self._folder_state.get("running"):
@@ -1350,6 +1360,7 @@ class Api:
             "save_path": save_path,
             "labeling_mode": labeling_mode,
             "use_raw": use_raw and not labeling_mode,
+            "dedup_msg": dedup_msg and not labeling_mode,
             "rule_name": rule_name,
             "error": None,
             "history": [], # 뒤로 가기를 위한 히스토리
@@ -1396,6 +1407,9 @@ class Api:
                 importlib.reload(_raw_cfg)
                 raw = RawStringSearcher()
                 raw.add_word_from_list(_raw_cfg.RAW_STRING_RULES)
+
+            dedup_msg = state.get("dedup_msg")
+            seen_msgs: set[str] = set()
 
             for fi, file in enumerate(files):
                 seen_hashes = set()
@@ -1466,6 +1480,10 @@ class Api:
                         highlighted = highlight_text(paragraph, errors)
                         error_types = "\n".join({get_error_type_name(e) for e in errors})
                         msg = "\n".join(e.error_message for e in errors)
+                        if dedup_msg:
+                            if msg in seen_msgs:
+                                continue
+                            seen_msgs.add(msg)
                         state["results"].append({
                             "file": state["current_file"],
                             "paragraph": paragraph,
@@ -1872,7 +1890,7 @@ if __name__ == "__main__":
     t.start()
 
     window = webview.create_window(
-        title="Korean Spell Checker Tools",
+        title="KKORI Debug Tool",
         html=HTML,
         js_api=api,
         width=860,
