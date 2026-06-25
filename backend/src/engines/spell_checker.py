@@ -116,6 +116,62 @@ class SpellChecker:
             self._checker = self._builder.build()  # type: ignore
             self._builder = None
 
+    def _make_spell_error(
+        self,
+        tokens: list[KoToken],
+        match_id: int,
+        start_index: int,
+        end_index: int,
+    ) -> tuple[SpellError, tuple[int, int, str]]:
+        meta = self._registry[match_id]
+
+        sliced_tokens = tokens[start_index : end_index + 1]
+        raw_message = meta.msg.render(sliced_tokens)
+
+        error_message = (
+            f"{match_id}: {raw_message}"
+            if self._debug
+            else raw_message
+        )
+
+        start = tokens[start_index].start
+        end = tokens[end_index].end
+
+        error = SpellError(
+            error_type=meta.error_type,
+            error_message=error_message,
+            start_index=start,
+            end_index=end,
+            rule_id=meta.rule_id,
+            detailed=meta.detail,
+            debug_path=meta.debug_path,
+        )
+        
+        dedup_key = (start, end, raw_message)
+
+        return error, dedup_key
+
+    def _iter_deduped_errors(
+        self,
+        tokens: list[KoToken],
+        rust_errors,
+    ) -> Iterator[SpellError]:
+        seen: set[tuple[int, int, str]] = set()
+
+        for match_id, start_index, end_index in rust_errors:
+            error, key = self._make_spell_error(
+                tokens,
+                match_id,
+                start_index,
+                end_index,
+            )
+
+            if key in seen:
+                continue
+
+            seen.add(key)
+            yield error
+
     def check(self, tokens: list[KoToken]) -> Iterator[SpellError]:
         """토큰을 검사하는 함수.
 
@@ -135,17 +191,8 @@ class SpellChecker:
         assert self._checker is not None
 
         rust_errors = self._checker.check(tokens)
-        for match_id, start_index, end_index in rust_errors:
-            meta = self._registry[match_id]
-            yield SpellError(
-                error_type=meta.error_type,
-                error_message=str(match_id) + ": " + meta.msg.render(tokens[start_index : end_index + 1]) if self._debug else meta.msg.render(tokens[start_index : end_index + 1]),
-                start_index=tokens[start_index].start,
-                end_index=tokens[end_index].end,
-                rule_id=meta.rule_id,
-                detailed=meta.detail,
-                debug_path=meta.debug_path,
-            )
+
+        yield from self._iter_deduped_errors(tokens, rust_errors)
 
     def check_batch(self, batch: list[list[KoToken]]) -> list[list[SpellError]]:
         """병렬 검사용 함수."""
@@ -159,22 +206,14 @@ class SpellChecker:
             [(t.form, t.tag, t.start, t.end, t.len, t.lemma) for t in tokens]
             for tokens in batch
         ]
+
         rust_batch = self._checker.check_batch_tuples(tuple_batch)
         result = []
+        
         for tokens, rust_errors in zip(batch, rust_batch):
-            errors = []
-            for match_id, start_index, end_index in rust_errors:
-                meta = self._registry[match_id]
-                errors.append(SpellError(
-                    error_type=meta.error_type,
-                    error_message=str(match_id) + ": " + meta.msg.render(tokens[start_index : end_index + 1]) if self._debug else meta.msg.render(tokens[start_index : end_index + 1]),
-                    start_index=tokens[start_index].start,
-                    end_index=tokens[end_index].end,
-                    rule_id=meta.rule_id,
-                    detailed=meta.detail,
-                    debug_path=meta.debug_path,
-                ))
+            errors = list(self._iter_deduped_errors(tokens, rust_errors))
             result.append(errors)
+
         return result
     
     def stats(self) -> RuleCheckerStats:
