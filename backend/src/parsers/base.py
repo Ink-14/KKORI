@@ -11,4 +11,4 @@ class ParsedText:
 class Parser(ABC):
     @abstractmethod
     def parse(self, file: Path) -> Iterator[ParsedText]:
-        raise NotImplementedError("'parsed' method must be implemented.")
+        raise NotImplementedError("'parse' method must be implemented.")
