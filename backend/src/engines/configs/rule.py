@@ -17,12 +17,10 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("MIF_피우다")
-    .AND(tag(Tag.일반명사), forms({"담배", "바람"})).context()
-    .any().context().opt()
-    .any().context().opt()
-    .tag_form(Tag.동사, "피")
-    .msg("'{form[0]} 피우다'가 올바른 표현입니다.").build(),
+    *rule()
+    .tag(Tag.일반명사)
+    .tag_form(Tag.동사파생접미사, "시키").if_spaced()
+    .msg("{dform[0]}").build(),
 ]
 
 ML_LABELINGS = [

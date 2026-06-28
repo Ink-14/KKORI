@@ -1,6 +1,6 @@
 ﻿from src.engines.configs.rule_builder import RuleBuilder, AND, OR, NOT, tag, tags, tag_form, form, forms, lemma, batchim, no_batchim, any_batchim, longer, SpacingRule, KoSpellRules
 from src.engines.configs.rule_helper import abbr_vowel_ending_connectives
-from src.engines.configs.rule_constants import 모음연결어미_FORMS, ㄹ사용불가_연결어미_FORMS
+from src.engines.configs.rule_constants import 모음연결어미_FORMS, ㄹ사용불가_연결어미_FORMS, JOSA_TARGETS
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 def rule() -> RuleBuilder:
@@ -948,6 +948,15 @@ _REP = [
     .tag_form(Tag.일반명사, "파토")
     .NOT(tag_form(Tag.동사, "나")).if_not_spaced().context()
     .msg("'파투'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_끝없이")
+    .tag_form(Tag.동사, "끊")
+    .tag_form(Tag.일반부사, "없이")
+    .msg("'끝없이' 또는 '끊임없이'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_찌푸리다")
+    .tag_form(Tag.동사, "찌뿌리")
+    .msg("'찌푸리다'가 올바른 표현입니다.").build(),
 ]
 
 _MIF = [
@@ -1246,13 +1255,13 @@ _MIF = [
 
     *rule()
     .id("MIF_동사_는구나")
-    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), forms({"모르", "모자라", "좋아하", "닫"}))
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), forms({"모르", "모자라", "좋아하", "닫", "하"}))
     .tag_form(Tag.종결어미, "구나")
     .msg('동사에는 \'는구나\'가 결합하므로, \'merge(({dform[0]}, {dtag[0]}), ("는구나", "종결어미"))\'로 써야 합니다.').build(),
     
     *rule()
     .id("MIF_동사_는군")
-    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), forms({"모르", "모자라", "좋아하", "닫"}))
+    .AND(tags({Tag.동사, Tag.동사규칙활용, Tag.동사불규칙활용}), forms({"모르", "모자라", "좋아하", "닫", "하"}))
     .tag_form(Tag.종결어미, "군")
     .msg('동사에는 \'는군\'이 결합하므로, \'merge(({dform[0]}, {dtag[0]}), ("는군", "종결어미"))\'으로 써야 합니다.').build(),
 
@@ -1304,7 +1313,7 @@ _MIF = [
 
     *rule().id("MIF_명사형전성어미_ㅁ_음")
     .AND(tags({Tag.동사, Tag.형용사}), batchim("ᆯ"))
-    .tag_form(Tag.관형사형전성어미, "ᆯ")
+    .tag_form(Tag.관형사형전성어미, "ᆯ").opt()
     .tag_form(Tag.종결어미, "음")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"다\", \"종결어미\"))'의 명사형은 'merge(({dform[0]}, {dtag[0]}), (\"ᆷ\", \"명사형전성어미\"))'이 올바른 표기입니다.").build(),
 
@@ -1443,23 +1452,53 @@ _MIF = [
     .msg("'거르다'가 올바른 표현입니다.").build(),
     
     *rule().id("MIF_피우다")
-    .AND(tag(Tag.일반명사), forms({"담배", "바람"})).context()
+    .AND(tag(Tag.일반명사), forms({"담배", "줄담배", "바람"})).context()
     .any().context().opt()
     .any().context().opt()
     .tag_form(Tag.동사, "피")
-    .msg("'{form[0]} 피우다'가 올바른 표현입니다.").build(),
-]
+    .msg("'{form[0]}batchim(\"을\", \"를\") 피우다'가 올바른 표현입니다.").build(),
 
-JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
+    *rule().id("MIF_메다")
+    .AND(tag(Tag.일반명사), forms({"총대", "가방"})).context()
+    .any().context().opt()
+    .any().context().opt()
+    .tag_form(Tag.동사, "매")
+    .msg("'{form[0]}batchim(\"을\", \"를\") 메다'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_느라")
+    .tag_form(Tag.연결어미, "느냐")
+    .tag(Tag.일반명사).context()
+    .tag(Tag.형용사파생접미사).context()
+    .tag_form(Tag.선어말어미, "었").context()
+    .msg("'느라'가 올바른 표현입니다.").build(),
+]
 
 _JOSA = [
     *rule().id("JOSA_으로")
     .AND(tags(JOSA_TARGETS), OR(no_batchim(), batchim("ᆯ")))
     .tag_form(Tag.부사격조사, "으로")
     .msg('받침이 없거나 ㄹ로 끝나는 명사에는 \'로\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("로", "부사격조사"))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("JOSA_으로_괄호")
+    .AND(tags(JOSA_TARGETS), OR(no_batchim(), batchim("ᆯ")))
+    .tag_form(Tag.여는부호, "(")
+    .any()
+    .any().opt()
+    .tag_form(Tag.닫는부호, ")")
+    .tag_form(Tag.부사격조사, "으로")
+    .msg('받침이 없거나 ㄹ로 끝나는 명사에는 \'로\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("로", "부사격조사"))\'의 오타가 아닌가요?').build(),
 
     *rule().id("JOSA_로")
     .AND(tags(JOSA_TARGETS), AND(any_batchim(), NOT(batchim("ᆯ"))))
+    .tag_form(Tag.부사격조사, "로")
+    .msg('ㄹ이 아닌 받침으로 끝나는 명사에는 \'으로\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("으로", "부사격조사"))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("JOSA_로")
+    .AND(tags(JOSA_TARGETS), AND(any_batchim(), NOT(batchim("ᆯ"))))
+    .tag_form(Tag.여는부호, "(")
+    .any()
+    .any().opt()
+    .tag_form(Tag.닫는부호, ")")
     .tag_form(Tag.부사격조사, "로")
     .msg('ㄹ이 아닌 받침으로 끝나는 명사에는 \'으로\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("으로", "부사격조사"))\'의 오타가 아닌가요?').build(),
 
@@ -1468,8 +1507,26 @@ _JOSA = [
     .tag_form(Tag.목적격조사, "을")
     .msg('받침 없는 명사에는 \'를\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("를", "목적격조사"))\'의 오타가 아닌가요?').build(),
 
+    *rule().id("JOSA_을_괄호")
+    .AND(tags(JOSA_TARGETS), no_batchim())
+    .tag_form(Tag.여는부호, "(")
+    .any()
+    .any().opt()
+    .tag_form(Tag.닫는부호, ")")
+    .tag_form(Tag.목적격조사, "을")
+    .msg('받침 없는 명사에는 \'를\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("를", "목적격조사"))\'의 오타가 아닌가요?').build(),
+
     *rule().id("JOSA_를")
     .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.목적격조사, "를")
+    .msg('받침 있는 명사에는 \'을\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("을", "목적격조사"))\'의 오타가 아닌가요?').build(),
+
+    *rule().id("JOSA_를_괄호")
+    .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.여는부호, "(")
+    .any()
+    .any().opt()
+    .tag_form(Tag.닫는부호, ")")
     .tag_form(Tag.목적격조사, "를")
     .msg('받침 있는 명사에는 \'을\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("을", "목적격조사"))\'의 오타가 아닌가요?').build(),
 
@@ -1482,9 +1539,27 @@ _JOSA = [
     .tag_form(Tag.명사파생접미사, "들").context()
     .tag_form(Tag.관형사형전성어미, "는")
     .msg("'은'의 오타가 아닌가요?").build(),
+    
+    *rule().id("JOSA_은_괄호")
+    .AND(tags(JOSA_TARGETS), no_batchim())
+    .tag_form(Tag.여는부호, "(")
+    .any()
+    .any().opt()
+    .tag_form(Tag.닫는부호, ")")
+    .tag_form(Tag.보조사, "은")
+    .msg('받침 없는 명사에는 \'는\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("는", "보조사"))\'의 오타가 아닌가요?').build(),
 
     *rule().id("JOSA_는")
     .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.보조사, "는")
+    .msg('받침 있는 명사에는 \'은\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("은", "보조사"))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("JOSA_는_괄호")
+    .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.여는부호, "(")
+    .any()
+    .any().opt()
+    .tag_form(Tag.닫는부호, ")")
     .tag_form(Tag.보조사, "는")
     .msg('받침 있는 명사에는 \'은\'을 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("은", "보조사"))\'의 오타가 아닌가요?').build(),
 
@@ -1492,9 +1567,27 @@ _JOSA = [
     .AND(tags(JOSA_TARGETS), no_batchim())
     .tag_form(Tag.주격조사, "이")
     .msg('받침 없는 명사에는 \'가\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("이", "주격조사"))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("JOSA_이_괄호")
+    .AND(tags(JOSA_TARGETS), no_batchim())
+    .tag_form(Tag.여는부호, "(")
+    .any()
+    .any().opt()
+    .tag_form(Tag.닫는부호, ")")
+    .tag_form(Tag.주격조사, "이")
+    .msg('받침 없는 명사에는 \'가\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("이", "주격조사"))\'의 오타가 아닌가요?').build(),
 
     *rule().id("JOSA_가")
     .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.주격조사, "가")
+    .msg('받침 있는 명사에는 \'이\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("이", "주격조사"))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("JOSA_가_괄호")
+    .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.여는부호, "(")
+    .any()
+    .any().opt()
+    .tag_form(Tag.닫는부호, ")")
     .tag_form(Tag.주격조사, "가")
     .msg('받침 있는 명사에는 \'이\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("이", "주격조사"))\'의 오타가 아닌가요?').build(),
 
@@ -1502,9 +1595,27 @@ _JOSA = [
     .AND(tags(JOSA_TARGETS), no_batchim())
     .tag_form(Tag.접속조사, "과")
     .msg('받침 없는 명사에는 \'와\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("이", "접속조사"))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("JOSA_과_괄호")
+    .AND(tags(JOSA_TARGETS), no_batchim())
+    .tag_form(Tag.여는부호, "(")
+    .any()
+    .any().opt()
+    .tag_form(Tag.닫는부호, ")")
+    .tag_form(Tag.접속조사, "과")
+    .msg('받침 없는 명사에는 \'와\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("이", "접속조사"))\'의 오타가 아닌가요?').build(),
 
     *rule().id("JOSA_와")
     .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.접속조사, "와")
+    .msg('받침 있는 명사에는 \'과\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("과", "접속조사"))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("JOSA_와_괄호")
+    .AND(tags(JOSA_TARGETS), any_batchim())
+    .tag_form(Tag.여는부호, "(")
+    .any()
+    .any().opt()
+    .tag_form(Tag.닫는부호, ")")
     .tag_form(Tag.접속조사, "와")
     .msg('받침 있는 명사에는 \'과\'를 사용해야 합니다. \'merge(({dform[0]}, {dtag[0]}), ("과", "접속조사"))\'의 오타가 아닌가요?').build(),
 
@@ -1543,11 +1654,15 @@ _SHIFT_MISS = [
     .tag_form(Tag.선어말어미, "엇")
     .msg('\'merge(({dform[0]}, {dtag[0]}), ("었", "선어말어미"))\'의 오타가 아닌가요?').build(),
     
-    *rule().id("꺼")
+    *rule().id("SHIFT_꺼")
     .tag_form(Tag.의존명사, "꺼")
     .tag(Tag.긍정지정사)
     .tag_form(Tag.종결어미, "야")
     .msg("'거야'가 올바른 표현입니다.").build(),
+    
+    *rule().id("SHIFT_꺾다")
+    .tag_form(Tag.동사, "꺽")
+    .msg("'꺾다'의 오타가 아닌가요?").build(),
 ]
 
 _Z_CODA = [
@@ -1633,6 +1748,10 @@ _LOANWORDS = [
     *rule().id("LOANWORD_크루져")
     .form("크루져")
     .msg("'크루저'가 올바른 표기입니다.").build(),
+    
+    *rule().id("LOANWORD_업그레이드")
+    .tag_form(Tag.일반명사, "업그레이")
+    .msg("'업그레이드'의 오타가 아닌가요?").build(),
 ]
 
 def rule() -> RuleBuilder:
