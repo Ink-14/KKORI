@@ -543,7 +543,7 @@ class TestMessageDedup:
         # message dedup으로 1개만 발생
         assert len(errors) == 1
 
-    def test_not_dequp_message(self):
+    def test_not_dequp_by_diff_message(self):
         tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사), ("C", Tag.일반명사))
         errors = list(self.checker.check(tokens))
         # message 다른 경우에는 출력
