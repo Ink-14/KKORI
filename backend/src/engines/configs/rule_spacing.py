@@ -1373,7 +1373,7 @@ _NNG_SINGLE_WORDS = [
 
     *rule().id("NNG_SINGLE_명사_띄어쓰기")
     .tags({Tag.일반명사, Tag.의존명사}).context()
-    .AND(tag(Tag.일반명사), forms({"시절", "비용", "정도", "가량"})).if_not_spaced()
+    .AND(tag(Tag.일반명사), forms({"시절", "비용", "정도", "가량", "자체"})).if_not_spaced()
     .msg("'{form[0]}'batchim(\"을\", \"를\") 앞 말과 띄어 써야 합니다.").build(),
 
     *rule().id("NNG_SINGLE_일정_띄어쓰기")
@@ -1565,6 +1565,8 @@ _NNG_NNG = [
     *NNG_and_NNG("주변", "지역", SpacingRule.SPACED),
     *NNG_and_NNG("기술", "부채", SpacingRule.SPACED),
     *NNG_and_NNG("직장", "생활", SpacingRule.SPACED),
+    *NNG_and_NNG("보물", "상자", SpacingRule.SPACED),
+    *NNG_and_NNG("보물", "지도", SpacingRule.SPACED),
 ]
 
 _NR = [
@@ -2019,7 +2021,7 @@ _VV = [
     .NOT(form("박수")).context()
     .tag_form(Tag.동사, "치")
     .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.보조용언, "주")
+    .tag_form(Tag.보조용언, "주").if_not_spaced()
     .msg("'쳐주다'로 붙여 써야 합니다.").build(),
 
     *rule().id("VV_쯤 하다_띄어쓰기")
@@ -2630,6 +2632,11 @@ _VCP = [
     .tag_form(Tag.명사형전성어미, "기")
     .tag_form(Tag.보조사, "도")
     .msg("'이기도'를 앞 말에 붙여 써야 합니다.").build(),
+
+    *rule().id("VCP_입니다_붙여쓰기")
+    .tag(Tag.긍정지정사).if_spaced()
+    .tag_form(Tag.종결어미, "ᆸ니다")
+    .msg("'입니다'를 앞 말에 붙여 써야 합니다.").build(),
 ]
 
 _VCN = [
@@ -2909,6 +2916,21 @@ _JKB = [
     .tag(Tag.닫는부호).opt()
     .tag_form(Tag.의존명사, "만큼").if_spaced()
     .msg("'앞 말과 동등한 정도로'의 뜻인 '만큼'은 앞 말에 붙여 써야 합니다.").build(),
+
+    *rule().id("JKB_용언앞_띄어쓰기")
+    .tags({Tag.일반명사, Tag.고유명사}).context()
+    .AND(tag(Tag.부사격조사), forms({"에", "와", "으로", "로"})).context()
+    .tags(TagGroup.용언).if_not_spaced()
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("다", "연결어미"))\'를 앞 말과 띄어 써야 합니다.').build(),
+
+    *rule().id("JKB_같이_붙여쓰기")
+    .tag(Tag.일반명사).context()
+    .tag_form(Tag.일반부사, "같이").if_spaced()
+    .tags(TagGroup.용언).context()
+    .tag(Tag.연결어미).context()
+    .tag(Tag.보조용언).context()
+    .tag_form(Tag.종결어미, "ᆫ다").context()
+    .msg("'같이'를 앞 말에 붙여 써야 합니다.").build(),
 ]
 
 _JKO = [
@@ -2919,10 +2941,10 @@ _JKO = [
 ]
 
 _EF = [
-    *rule()
+    *rule().id("EF_종결어미_붙여쓰기")
     .NOT(tags({Tag.여는부호, Tag.닫는부호, Tag.종결부호, Tag.구분부호, Tag.인용부호괄호, Tag.기타특수문자})).context()
     .tag(Tag.종결어미).if_spaced()
-    .msg("어미를 앞 말에 붙여 써야 합니다.").build(),
+    .msg("'{dform[0]}'batchim(\"을\", \"를\") 앞 말에 붙여 써야 합니다.").build(),
     
     *rule()
     .AND(tag(Tag.관형사형전성어미), forms({"라는", "다는", "는"}))
@@ -3164,11 +3186,6 @@ _XSN = [
     .tag_form(Tag.관형사형전성어미, "는").context()
     .tag_form(Tag.의존명사, "것").context()
     .msg("'하다'를 앞 맡에 붙여 써야 합니다.").build(),
-
-    *rule().id("XSN_하다_6_붙여쓰기")
-    .AND(tag(Tag.일반명사), forms({"운운"})).context()
-    .tag_form(Tag.동사파생접미사, "하").if_spaced()
-    .msg("'하다'를 앞 말에 붙여 써야 합니다.").build(),
 
     *rule().id("제_숫자")
     .tag_form(Tag.체언접두사, "제")
