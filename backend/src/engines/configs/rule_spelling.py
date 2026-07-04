@@ -1756,6 +1756,10 @@ _LOANWORDS = [
     *rule().id("LOANWORD_노멀")
     .tag_form(Tag.일반명사, "노말")
     .msg("'노말(normal)'이 올바른 표기입니다.").build(),
+
+    *rule().id("LOANWORD_시리얼")
+    .tag_form(Tag.일반명사, "씨리얼")
+    .msg("'시리얼'이 올바른 표기입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:
