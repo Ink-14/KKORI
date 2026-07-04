@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getApiBase } from '../lib/api'
 import './fileChecker.css'
 import type { SpellErrorResponse } from '../types/spell'
@@ -11,6 +11,7 @@ declare global {
         open_file_dialog: () => Promise<string | null>
       }
     }
+    onFileDropped?: (path: string) => void
   }
 }
 
@@ -122,9 +123,7 @@ function FileChecker() {
     }
   }
 
-  async function handlePickFile() {
-    const path = await window.pywebview.api.open_file_dialog()
-    if (!path) return
+  async function loadFile(path: string) {
     const ext = path.toLowerCase().match(/\.[^.]+$/)?.[0] ?? ''
     if (!SUPPORTED_EXTENSIONS.includes(ext)) {
       setFileError(`지원하지 않는 파일 형식입니다: ${ext || '(확장자 없음)'}`)
@@ -164,6 +163,29 @@ function FileChecker() {
       setCsvConfig({ text_col: columns[0] ?? '', metadata_col: null, encoding: 'utf-8' })
     }
   }
+
+  async function handlePickFile() {
+    const path = await window.pywebview.api.open_file_dialog()
+    if (!path) return
+    await loadFile(path)
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+  }
+
+  useEffect(() => {
+    window.onFileDropped = (path: string) => {
+      void loadFile(path)
+    }
+    return () => {
+      window.onFileDropped = undefined
+    }
+  }, [])
 
   async function handleCsvEncodingChange(encoding: string) {
     if (!filePath || !csvConfig) return
@@ -217,7 +239,7 @@ function FileChecker() {
   const totalErrors = errorSegments.reduce((sum, s) => sum + s.errors.length, 0)
 
   return (
-    <div className="fc-wrap">
+    <div className="fc-wrap" onDragOver={handleDragOver} onDrop={handleDrop}>
       <div className="fc-inner">
         <div className="fc-file-row">
           <button className="fc-pick-btn" onClick={handlePickFile}>
@@ -334,7 +356,7 @@ function FileChecker() {
               <span className="fc-guide-icon">📂</span>
               <div>
                 <strong>파일 선택</strong>
-                <p>파일 선택 버튼을 눌러 검사할 파일을 선택하세요.</p>
+                <p>파일 선택 버튼을 누르거나 파일을 끌어다 놓으세요.</p>
                 <p>지원 확장자: .xlsx, .csv, .txt, .srt</p>
               </div>
             </div>

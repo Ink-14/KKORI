@@ -1,3 +1,4 @@
+import json
 import socket
 import threading
 import time
@@ -62,4 +63,13 @@ if __name__ == "__main__":
         text_select=True,
         js_api=Api(),
     )
+
+    def _on_drop(e):
+        files = e.get("dataTransfer", {}).get("files", [])
+        path = files[0].get("pywebviewFullPath") if files else None
+        if path:
+            window.evaluate_js(f"window.onFileDropped && window.onFileDropped({json.dumps(path)})")
+
+    window.events.loaded += lambda: window.dom.body.on("drop", _on_drop)
+
     webview.start()
