@@ -50,4 +50,10 @@ MEANING_CONFLICT_ERRORS: list[KoSpellRules] = [
     .tag_form(Tag.관형사, "다른")
     .tag_form(Tag.일반명사, "이견")
     .msg("'이견(異見)'에 이미 '다른'의 의미가 포함되어 있습니다. '다른 의견' 혹은 '이견'으로만 쓸 것을 권장합니다.").build(),
+
+    *rule().id("MEANING_매OO마다")
+    .tag_form(Tag.관형사, "매").context()
+    .any().context()
+    .tag_form(Tag.보조사, "마다")
+    .msg("'매(每)'에 이미 '마다'의 의미가 포함되어 있습니다.").build(),
 ]

@@ -26,6 +26,13 @@ _SPELLING_SPACING = [
     .tag(Tag.연결어미)
     .AND(tag(Tag.보조용언), forms(보조용언_FORMS)).if_not_spaced()
     .msg('\'흩트려 merge(({dform[2]}, "보조용언"), ("다", "종결어미"))\'가 올바른 표현입니다.').build(),
+
+    *rule().id("COMPLEX_갖다 놓다+띄어쓰기")
+    .tag_form(Tag.동사, "가")
+    .tag_form(Tag.선어말어미, "었")
+    .tag_form(Tag.연결어미, "다")
+    .tag_form(Tag.보조용언, "놓").if_not_spaced()
+    .msg("'갖다 놓다'로 써야 합니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [

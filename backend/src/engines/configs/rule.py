@@ -17,13 +17,10 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("JX_OO만 하다_붙여쓰기")
-    .tags({Tag.일반명사, Tag.고유명사, Tag.명사형전성어미, Tag.대명사, Tag.의존명사})
-    .form("만").if_spaced()
-    .AND(tags({Tag.형용사파생접미사, Tag.동사}), form("하"))
-    .tag_form(Tag.관형사형전성어미, "ᆫ").context()
-    .tag_form(Tag.의존명사, "것").context()
-    .msg("'{dform[0]}만 하다'로 띄어 써야 합니다.").build(),
+    *rule().id("MIF_되_연결어미로 분석되는 경우")
+    .tag_form(Tag.연결어미, "되")
+    .tags(TagGroup.용언).if_not_spaced().context()
+    .msg("'돼'가 올바른 표현입니다.").build(),
 ]
 
 ML_LABELINGS = [

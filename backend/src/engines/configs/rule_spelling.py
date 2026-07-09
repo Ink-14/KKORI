@@ -270,6 +270,11 @@ _OM = [
     .tag_form(Tag.종결어미, "렴")
     .msg("'말렴'이 올바른 표현입니다.")
     .build(),
+
+    *rule().id("OM_동사_어도")
+    .AND(tag(Tag.동사), forms({"쬐"}))
+    .tag_form(Tag.보조사, "도")
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("어도", "연결어미"))\'가 올바른 표현입니다.').build(),
 ]
 
 _ADD = [
@@ -437,6 +442,10 @@ _ADD = [
     .forms({"여기"})
     .tag_form(Tag.부사격조사, "ᆯ로")
     .msg("'{form[0]}로'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_빠짊")
+    .tag_form(Tag.일반명사, "빠짊")
+    .msg("'빠짐'이 올바른 표현입니다.").build(),
 ]
 
 _REP = [
@@ -682,17 +691,6 @@ _REP = [
     .tag_form(Tag.동사, "갖히")
     .msg("'갇히다'가 올바른 표현입니다.").build(),
     
-    *rule().id("REP_켜다_1")
-    .AND(tag(Tag.일반명사), forms({"불", "조명", "전등", "옵션", "설정"}))
-    .tag_form(Tag.동사, "키")
-    .msg("'{dform[0]}batchim(\"을\", \"룰\") 켜다'가 올바른 표현입니다.").build(),
-    
-    *rule().id("REP_켜다_2")
-    .tag(Tag.일반명사)
-    .tag(Tag.목적격조사)
-    .tag_form(Tag.동사, "키")
-    .msg("'{dform[0]}batchim(\"을\", \"룰\") 켜다'가 올바른 표현입니다.").build(),
-    
     *rule().id("REP_적합하다")
     .tag_form(Tag.일반명사, "적")
     .tag_form(Tag.일반명사, "함")
@@ -928,9 +926,74 @@ _REP = [
     .tags(TagGroup.용언).context()
     .msg("'져'의 오타가 아닌가요?").build(),
 
+    *rule().id("REP_끝없이")
+    .tag_form(Tag.동사, "끊")
+    .tag_form(Tag.일반부사, "없이")
+    .msg("'끝없이' 또는 '끊임없이'의 오타가 아닌가요?").build(),
+]
+
+_REP_VERBS = [
     *rule().id("REP_매달리다")
     .tag_form(Tag.동사, "메달리")
     .msg("'매달리다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_찌푸리다")
+    .tag_form(Tag.동사, "찌뿌리")
+    .msg("'찌푸리다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_뒤집다")
+    .tag_form(Tag.일반명사, "뒤")
+    .tag_form(Tag.동사, "짚").if_not_spaced()
+    .msg("'뒤집다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_갖다 놓다")
+    .tag_form(Tag.동사, "가")
+    .tag_form(Tag.선어말어미, "었")
+    .tag_form(Tag.연결어미, "다")
+    .AND(tags({Tag.동사, Tag.보조용언}), form("놓")).context().if_spaced()
+    .msg("'갖다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_통틀다")
+    .tag_form(Tag.동사, "통들")
+    .msg("'통틀다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_낮추다")
+    .tag_form(Tag.동사, "낯추")
+    .msg("'낮추다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_건네다")
+    .tag_form(Tag.동사, "건내")
+    .msg("'건네다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_켜다_1")
+    .AND(tag(Tag.일반명사), forms({"불", "조명", "전등", "옵션", "설정"})).context()
+    .tag_form(Tag.동사, "키")
+    .any()
+    .msg("'merge((\"켜\", \"동사\"), ({dform[1]}, {dtag[1]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
+    
+    *rule().id("REP_켜다_2")
+    .tag(Tag.목적격조사).context()
+    .tag_form(Tag.동사, "키")
+    .any()
+    .msg("'merge((\"켜\", \"동사\"), ({dform[1]}, {dtag[1]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
+
+    *rule().id("REP_켜다_2")
+    .tag(Tag.동사).context()
+    .tag(Tag.선어말어미).context()
+    .tag(Tag.연결어미).context()
+    .tag_form(Tag.동사, "키")
+    .msg("'켜다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_실패")
+    .tag_form(Tag.일반명사, "실페")
+    .msg("'실패'의 오타가 아닌가요?").build(),
+]
+
+_REP_NNG = [
+    *rule().id("REP_파투")
+    .tag_form(Tag.일반명사, "파토")
+    .NOT(tag_form(Tag.동사, "나")).if_not_spaced().context()
+    .msg("'파투'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_덩쿨")
     .tag_form(Tag.일반명사, "덩쿨")
@@ -939,24 +1002,21 @@ _REP = [
     *rule().id("REP_제패")
     .tag_form(Tag.일반명사, "재패")
     .msg("'제패'가 올바른 표현입니다.").build(),
-    
-    *rule().id("REP_통틀다")
-    .tag_form(Tag.동사, "통들")
-    .msg("'통틀다'의 오타가 아닌가요?").build(),
 
-    *rule().id("REP_파투")
-    .tag_form(Tag.일반명사, "파토")
-    .NOT(tag_form(Tag.동사, "나")).if_not_spaced().context()
-    .msg("'파투'가 올바른 표현입니다.").build(),
+    *rule().id("REP_겉보기")
+    .tag_form(Tag.일반명사, "곁")
+    .tag_form(Tag.동사, "보").if_not_spaced()
+    .tag_form(Tag.명사형전성어미, "기")
+    .tags(TagGroup.조사).context()
+    .msg("'겉보기'의 오타가 아닌가요?").build(),
 
-    *rule().id("REP_끝없이")
-    .tag_form(Tag.동사, "끊")
-    .tag_form(Tag.일반부사, "없이")
-    .msg("'끝없이' 또는 '끊임없이'의 오타가 아닌가요?").build(),
-    
-    *rule().id("REP_찌푸리다")
-    .tag_form(Tag.동사, "찌뿌리")
-    .msg("'찌푸리다'가 올바른 표현입니다.").build(),
+    *rule().id("REP_증가")
+    .tag_form(Tag.일반명사, "중가")
+    .msg("'증가'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_재활치료")
+    .tag_form(Tag.일반명사, "재홀치료")
+    .msg("'재활치료'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -1378,9 +1438,14 @@ _MIF = [
     .msg("'merge((\"되\", {dtag[0]}), (\"어\", \"연결어미\"), ({dform[1]}, {dtag[1]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
 
     *rule().id("MIF_되_연결어미_용언")
-    .tag(Tag.긍정지정사).if_spaced()
+    .tag(Tag.긍정지정사).if_spaced().context()
     .tag_form(Tag.연결어미, "되")
-    .tags(TagGroup.용언).if_not_spaced()
+    .tags(TagGroup.용언).if_not_spaced().context()
+    .msg("'돼'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_되_연결어미로 분석되는 경우")
+    .tag_form(Tag.연결어미, "되")
+    .tags(TagGroup.용언).if_not_spaced().context()
     .msg("'돼'가 올바른 표현입니다.").build(),
 
     *rule().id("MIF_되+어+다면")
@@ -1471,6 +1536,13 @@ _MIF = [
     .tag(Tag.형용사파생접미사).context()
     .tag_form(Tag.선어말어미, "었").context()
     .msg("'느라'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_~려다가시피")
+    .any()
+    .tag_form(Tag.연결어미, "려다")
+    .tag_form(Tag.일반명사, "가시").if_not_spaced()
+    .tag_form(Tag.일반명사, "피").if_not_spaced()
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("리", "동사"), ("어", "연결어미"), ("가", "동사"), ("다시피", "연결어미"))\'의 오타가 아닌가요?').build(),
 ]
 
 _JOSA = [
@@ -1678,13 +1750,6 @@ _RECOMMENDED = [
     .msg("'하술(下述)'은 비표준어이므로 '후술(後述)'로 쓸 것을 권장합니다.").build(),
 ]
 
-_DEPENDS_ON_DICTIONARY = [
-    *rule()
-    .tag_form(Tag.동사, "건내")
-    .msg("'건네다'의 오타가 아닌가요?")
-    .build(),
-]
-
 _NOT_CERTAINS = [
     
 ]
@@ -1760,6 +1825,18 @@ _LOANWORDS = [
     *rule().id("LOANWORD_시리얼")
     .tag_form(Tag.일반명사, "씨리얼")
     .msg("'시리얼'이 올바른 표기입니다.").build(),
+
+    *rule().id("LOANWORD_태블릿")
+    .tag_form(Tag.일반명사, "테블릿")
+    .msg("'태블릿'이 올바른 표기입니다.").build(),
+
+    *rule().id("LOANWORD_오마주")
+    .tag_form(Tag.일반명사, "오마쥬")
+    .msg("'오마주'가 올바른 표기입니다.").build(),
+
+    *rule().id("LOANWORD_컨트롤")
+    .tag_form(Tag.일반명사, "콘트롤")
+    .msg("'컨트롤'이 올바른 표기입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:
@@ -1824,10 +1901,11 @@ _NEED_ML_JUDGE = [
 SPELL_MISS_ERRORS = [
     *_CERTAINS,
     *_NOT_CERTAINS,
-    *_DEPENDS_ON_DICTIONARY,
     *_OM,
     *_ADD,
     *_REP,
+    *_REP_VERBS,
+    *_REP_NNG,
     *_MIF,
     *_JOSA,
     *_SHIFT_MISS,
