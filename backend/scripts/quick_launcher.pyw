@@ -42,6 +42,7 @@ import src.engines.configs.rule_specific as _spell_specific_cfg
 import src.engines.configs.rule_spelling as _spell_spelling_cfg
 import src.engines.configs.rule_complex as _spell_complex_cfg
 import src.engines.configs.rule_warning as _spell_warning_cfg
+import src.engines.configs.rule_constants as _spell_rule_constants
 import src.engines.configs.rule as _spell_cfg
 import src.engines.configs.raw_string_searcher_config as _raw_cfg
 from src.reporters.html_reporter import highlight_text, get_error_type_name
@@ -1089,7 +1090,7 @@ class Api:
 
     def _ensure_ready(self) -> dict | None:
         if not self._ready:
-            return {"error": "초기화 중입니다. 잠시 후 다시 시도해주세요."}
+            return {"error": "초기화 중입니다. 잠시 후 다시 시도해 주세요."}
         return None
 
     def _reload_spell_modules(self):
@@ -1099,6 +1100,7 @@ class Api:
         importlib.reload(_spell_spelling_cfg)
         importlib.reload(_spell_complex_cfg)
         importlib.reload(_spell_warning_cfg)
+        importlib.reload(_spell_rule_constants)
         importlib.reload(_spell_cfg)
 
     def _build_spell_checkers(self):
