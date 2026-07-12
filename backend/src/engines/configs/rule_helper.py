@@ -70,11 +70,10 @@ def abbr_vowel_ending_connectives(abbr: str, abbr_tag: Tag, origin: str, origin_
     """
     준말에 모음 어미가 결합한 경우를 감지하는 규칙을 만들어 주는 헬퍼입니다.
     """
-    message = f'\'merge(("{origin}", "{origin_tag.name}"), ("다", "종결어미"))\'가 올바른 표현입니다.'
     detail = f"준말에는 모음 어미가 결합할 수 없습니다. '{abbr}다'는 '{origin}다'의 준말로서, 모음 어미가 결합할 경우 원래 형태인 '{origin}다'를 사용해야 합니다."
     
     def make_base():
-        return RuleBuilder(SpellErrorType.SPELLING).id(f"abbr_vowel_{abbr}다").tag_form(abbr_tag, abbr).msg(message).detail(detail)
+        return RuleBuilder(SpellErrorType.SPELLING).id(f"abbr_vowel_{abbr}다").tag_form(abbr_tag, abbr).msg(f'\'merge(("{origin}", "{origin_tag.name}"),' + '({dform[1]}, {dtag[1]}))\'가 올바른 표현입니다.').detail(detail)
     
     rule_ec = make_base().AND(tag(Tag.연결어미), forms(모음연결어미_FORMS))
     rule_ep = make_base().AND(tag(Tag.선어말어미), forms(모음선어말어미_FORMS))

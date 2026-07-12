@@ -128,13 +128,13 @@ _SPACING_ERRORS = [
     *rule()
     .tags({Tag.의존명사, Tag.일반명사, Tag.명사파생접미사, Tag.대명사})
     .form("뿐").if_spaced()
-    .msg("'뿐'을 앞 말에 붙여 써야 합니다.").build(),
+    .msg("명사 뒤의 '뿐'을 앞 말에 붙여 써야 합니다.").build(),
     
     *rule()
     .tags({Tag.관형사형전성어미})
     .form("뿐").if_not_spaced()
     .NOT(form("더러")).context()
-    .msg("'뿐'을 앞 말과 띄어 써야 합니다.").build(),
+    .msg("동사/형용사 뒤의 '뿐'을 앞 말과 띄어 써야 합니다.").build(),
 
     *rule()
     .AND(tag(Tag.관형사형전성어미), batchim("ᆯ"))
@@ -800,7 +800,7 @@ _NNB = [
 
     *rule().id("NNB_이_띄어쓰기")
     .tag(Tag.관형사형전성어미).context()
-    .tag_form(Tag.의존명사, "이")
+    .tag_form(Tag.의존명사, "이").if_not_spaced()
     .msg("'이'를 앞 말과 띄어 써야 합니다.").build(),
 
     *rule().id("NNB_듯이_띄어쓰기")
