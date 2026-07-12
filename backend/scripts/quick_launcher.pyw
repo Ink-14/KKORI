@@ -42,6 +42,7 @@ import src.engines.configs.rule_specific as _spell_specific_cfg
 import src.engines.configs.rule_spelling as _spell_spelling_cfg
 import src.engines.configs.rule_complex as _spell_complex_cfg
 import src.engines.configs.rule_warning as _spell_warning_cfg
+import src.engines.configs.rule_proofread as _spell_proofread_cfg
 import src.engines.configs.rule_constants as _spell_rule_constants
 import src.engines.configs.rule as _spell_cfg
 import src.engines.configs.raw_string_searcher_config as _raw_cfg
@@ -1094,13 +1095,14 @@ class Api:
         return None
 
     def _reload_spell_modules(self):
+        importlib.reload(_spell_rule_constants)
         importlib.reload(_spell_meaning_cfg)
         importlib.reload(_spell_spacing_cfg)
         importlib.reload(_spell_specific_cfg)
         importlib.reload(_spell_spelling_cfg)
         importlib.reload(_spell_complex_cfg)
         importlib.reload(_spell_warning_cfg)
-        importlib.reload(_spell_rule_constants)
+        importlib.reload(_spell_proofread_cfg)        
         importlib.reload(_spell_cfg)
 
     def _build_spell_checkers(self):

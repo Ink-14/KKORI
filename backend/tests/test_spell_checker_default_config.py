@@ -23,6 +23,7 @@ FILE_ERROR_MAPPING = {
     "complex.tsv": SpellErrorType.COMPLEX,
     "loanword.tsv": SpellErrorType.LOANWORD,
     "meaning.tsv": SpellErrorType.MEANING,
+    "proofread.tsv": SpellErrorType.PROOFREAD,
 }
 
 CURRENT_DIR = Path(__file__).parent

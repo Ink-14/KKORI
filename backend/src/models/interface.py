@@ -20,6 +20,7 @@ class SpellErrorType(Enum):
     SPECIFIC = auto()
     LOANWORD = auto()
     COMPLEX = auto()
+    PROOFREAD = auto()
 
     WARNING = auto()
     NEED_ML_JUDGE = auto()

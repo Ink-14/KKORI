@@ -930,6 +930,13 @@ _REP = [
     .tag_form(Tag.동사, "끊")
     .tag_form(Tag.일반부사, "없이")
     .msg("'끝없이' 또는 '끊임없이'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_으로써")
+    .tag_form(Tag.동사파생접미사, "하").context()
+    .tag_form(Tag.명사형전성어미, "ᆷ").context()
+    .tag_form(Tag.부사격조사, "으로서")
+    .msg("'으로써'로 써야 합니다.")
+    .detail("'으로서'는 자격, '으로써'는 수단을 나타냅니다. '선생으로서의 의무'는 선생이라는 위치를 의미하므로 '으로서'를 사용하여야 합니다. '매로써 학생들을 다스렸다'는 '매를 이용해서'를 의미하므로 '으로써'를 사용하여야 합니다.").build(),
 ]
 
 _REP_VERBS = [
@@ -983,10 +990,6 @@ _REP_VERBS = [
     .tag(Tag.연결어미).context()
     .tag_form(Tag.동사, "키")
     .msg("'켜다'가 올바른 표현입니다.").build(),
-
-    *rule().id("REP_실패")
-    .tag_form(Tag.일반명사, "실페")
-    .msg("'실패'의 오타가 아닌가요?").build(),
 ]
 
 _REP_NNG = [
@@ -1017,6 +1020,10 @@ _REP_NNG = [
     *rule().id("REP_재활치료")
     .tag_form(Tag.일반명사, "재홀치료")
     .msg("'재활치료'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_실패")
+    .tag_form(Tag.일반명사, "실페")
+    .msg("'실패'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -1837,6 +1844,10 @@ _LOANWORDS = [
     *rule().id("LOANWORD_컨트롤")
     .tag_form(Tag.일반명사, "콘트롤")
     .msg("'컨트롤'이 올바른 표기입니다.").build(),
+
+    *rule().id("LOANWORD_블랜딩")
+    .tag_form(Tag.일반명사, "블랜딩")
+    .msg("'블렌딩'이 올바른 표기입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:

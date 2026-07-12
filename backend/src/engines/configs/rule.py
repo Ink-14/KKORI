@@ -1,6 +1,6 @@
 from src.engines.configs.rule_builder import *
 from src.models.interface import Tag, TagGroup, SpellErrorType
-from src.engines.configs import rule_meaning, rule_spacing, rule_specific, rule_spelling, rule_warning, rule_complex, rule_model
+from src.engines.configs import rule_meaning, rule_spacing, rule_specific, rule_spelling, rule_warning, rule_complex, rule_proofread, rule_model
 from src.engines.configs.rule_constants import *
 
 # 규칙 작성 예시
@@ -17,10 +17,10 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("MIF_되_연결어미로 분석되는 경우")
-    .tag_form(Tag.연결어미, "되")
-    .tags(TagGroup.용언).if_not_spaced().context()
-    .msg("'돼'가 올바른 표현입니다.").build(),
+    *rule().id("XSA_하다_search")
+    .tag(Tag.일반명사)
+    .tag_form(Tag.형용사파생접미사, "하").if_spaced()
+    .msg("{dform[0]}").build(),
 ]
 
 ML_LABELINGS = [
@@ -33,5 +33,6 @@ SPELL_CHECK_RULES: list[KoSpellRules] = [
     *rule_meaning.MEANING_CONFLICT_ERRORS,
     *rule_specific.KIWI_EXCEPTION_ERRORS,
     *rule_complex.COMPLEX_ERRORS,
+    *rule_proofread.PROOFREAD_ERRORS,
     # *rule_warning.WARNINGS,
  ]
