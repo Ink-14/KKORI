@@ -33,11 +33,15 @@ function App() {
         ))}
       </nav>
       <main className="desktop-content">
-        {activeTab === 'checker' && <Checker />}
-        {activeTab === 'fileChecker' && <FileChecker />}
-        {activeTab === 'wordAdd' && <WordAdd />}
-        {activeTab === 'settings' && <Settings />}
-        {activeTab === 'info' && <Info />}
+        {tabs.map(tab => (
+          <div key={tab.id} style={{ display: activeTab === tab.id ? 'contents' : 'none' }}>
+            {tab.id === 'checker' && <Checker />}
+            {tab.id === 'fileChecker' && <FileChecker />}
+            {tab.id === 'wordAdd' && <WordAdd />}
+            {tab.id === 'settings' && <Settings />}
+            {tab.id === 'info' && <Info />}
+          </div>
+        ))}
       </main>
     </div>
   )
