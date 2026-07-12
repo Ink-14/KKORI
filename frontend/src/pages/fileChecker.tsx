@@ -147,6 +147,12 @@ function FileChecker() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path }),
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        setFileError(err?.detail ?? `파일 정보를 불러오지 못했습니다 (${res.status})`)
+        setFilePath(null)
+        return
+      }
       const data: SheetInfo[] = await res.json()
       setSheets(data)
       if (data.length > 0) {
@@ -158,6 +164,12 @@ function FileChecker() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path, encoding: 'utf-8' }),
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        setFileError(err?.detail ?? `파일 정보를 불러오지 못했습니다 (${res.status})`)
+        setFilePath(null)
+        return
+      }
       const columns: string[] = await res.json()
       setCsvColumns(columns)
       setCsvConfig({ text_col: columns[0] ?? '', metadata_col: null, encoding: 'utf-8' })
@@ -198,6 +210,11 @@ function FileChecker() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ path: filePath, encoding }),
     })
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      setFileError(err?.detail ?? `CSV 정보를 불러오지 못했습니다 (${res.status})`)
+      return
+    }
     const columns: string[] = await res.json()
     setCsvColumns(columns)
     setCsvConfig({ ...updatedConfig, text_col: columns[0] ?? '', metadata_col: null })
@@ -206,19 +223,28 @@ function FileChecker() {
   async function handleCheck() {
     if (!filePath) return
     setLoading(true)
-    const base = await getApiBase()
-    const body: { path: string; excel_config?: ExcelConfig; csv_config?: CsvConfig } = { path: filePath }
-    if (isExcel && excelConfig) body.excel_config = excelConfig
-    if (isCSV && csvConfig) body.csv_config = csvConfig
-    const res = await fetch(`${base}/file-check`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    const data: SegmentResult[] = await res.json()
-    setSegments(data)
-    setChecked(true)
-    setLoading(false)
+    setFileError(null)
+    try {
+      const base = await getApiBase()
+      const body: { path: string; excel_config?: ExcelConfig; csv_config?: CsvConfig } = { path: filePath }
+      if (isExcel && excelConfig) body.excel_config = excelConfig
+      if (isCSV && csvConfig) body.csv_config = csvConfig
+      const res = await fetch(`${base}/file-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        setFileError(err?.detail ?? `검사에 실패했습니다 (${res.status})`)
+        return
+      }
+      const data: SegmentResult[] = await res.json()
+      setSegments(data)
+      setChecked(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   function handleClear() {

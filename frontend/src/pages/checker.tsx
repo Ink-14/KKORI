@@ -70,14 +70,16 @@ function Checker() {
 
     const sorted = [...errs].sort((a, b) => a.start_index - b.start_index || a.end_index - b.end_index)
     const groups: SpellErrorResponse[][] = []
+    let groupEnd = -Infinity
 
     for (const e of sorted) {
       const last = groups[groups.length - 1]
-      if (last && e.start_index < last[last.length - 1].end_index) {
+      if (last && e.start_index < groupEnd) {
         last.push(e)
       } else {
         groups.push([e])
       }
+      groupEnd = Math.max(groupEnd, e.end_index)
     }
 
     const parts: React.ReactNode[] = []
