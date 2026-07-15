@@ -17,10 +17,11 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("XSA_하다_search")
-    .tag(Tag.일반명사)
-    .tag_form(Tag.형용사파생접미사, "하").if_spaced()
-    .msg("{dform[0]}").build(),
+    *rule().id("XSN_분_붙여쓰기")
+    .AND(tag(Tag.일반명사), forms(분_MUST_ATTACHED_NOUNS))
+    .tag_form(Tag.의존명사, "분").if_spaced()
+    .msg("'{dform[0]}분'으로 붙여 써야 합니다.")
+    .detail("이때의 '분'은 앞 말에 붙여 높임의 의미를 나타내는 접사입니다. 따라서 없어도 문장이 성립한다면 붙여 써야 하고, 없을 때 문장이 성립하지 않으면 의존명사이므로 띄어 써야 합니다.\n(접사인 경우) 남편분이 직접 와 주세요. / 남편이 직접 와 주세요.\n(의존명사인 경우) 많은 분들이 모여 주셨습니다. / 많은 들이 모여 주셨습니다.").build(),
 ]
 
 ML_LABELINGS = [
