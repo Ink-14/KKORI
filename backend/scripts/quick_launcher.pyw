@@ -33,7 +33,7 @@ sys.path.insert(2, _venv_site)
 import webview
 
 from src.tokenizations.ko_tokenizer import KoTokenizer
-from src.models.interface import Tag
+from src.models.interface import Tag, SpellErrorType
 from src.engines.spell_checker import SpellChecker
 from src.engines.raw_searcher import RawStringSearcher
 import src.engines.configs.rule_meaning as _spell_meaning_cfg
@@ -53,6 +53,11 @@ from assets.bktree import BKTree
 from jamo import h2j
 
 TAG_REPLACE_REGEX = re.compile(r"\<[^>]+\>")
+
+def _normalize_type_name(name: str) -> str:
+    """평가 타입을 통일시키는 함수. 
+    SPELLING_RAW -> SPELLING 처럼 _RAW 접미사 제거."""
+    return name[:-4] if name.endswith("_RAW") else name
 
 HTML = """
 <!DOCTYPE html>
@@ -389,6 +394,25 @@ HTML = """
   .folder-toolbar .count {
     font-size: 12px; color: var(--muted);
   }
+
+  .frozen-eng {
+    text-decoration: underline;
+    text-decoration-color: #ef4444;
+    text-decoration-style: wavy;
+    text-decoration-thickness: 1.5px;
+    color: #dc2626; font-weight: 600;
+    background: rgba(239,68,68,0.09);
+    border-radius: 3px; cursor: pointer; padding: 0 1px;
+  }
+  #frozen-tooltip {
+    position: fixed;
+    background: #1e293b; color: #e2e8f0;
+    padding: 6px 10px; border-radius: 6px;
+    font-size: 12px; line-height: 1.5; max-width: 300px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    z-index: 99999; pointer-events: none; display: none;
+    white-space: pre-wrap; word-break: break-word;
+  }
 </style>
 </head>
 <body>
@@ -458,15 +482,19 @@ HTML = """
       </label>
       <label>
         <input type="checkbox" id="folder-labeling" onchange="onLabelingToggle()">
-        라벨링 모드 (ML_LABELINGS, RawString 미적용)
+        ML 라벨링
+      </label>
+      <label>
+        <input type="checkbox" id="folder-frozen" onchange="onFrozenToggle()">
+        Ground Truth 라벨링
       </label>
       <label>
         <input type="checkbox" id="folder-use-raw">
-        RawString 검사 사용
+        RawString 사용
       </label>
       <label>
         <input type="checkbox" id="folder-dedup-msg">
-        중복 메시지 거르기
+        Dedup
       </label>
     </div>
     <button id="btn-folder-start" class="btn-primary" onclick="startFolderCheck()">
@@ -487,6 +515,37 @@ HTML = """
       <button class="btn-danger" onclick="submitLabel('1')">1: 오류/교정 (→)</button>
       <button class="btn-primary" onclick="submitLabel('SKIP')">건너뛰기 (↓)</button>
       <button class="btn-danger" onclick="abortLabeling()" style="margin-left:auto;">중단</button>
+    </div>
+  </div>
+
+  <div id="folder-frozen-area" style="display:none; margin-top:16px;">
+    <div id="frozen-tooltip"></div>
+    <div class="label-counter">
+      <strong><span id="frozen-idx">0</span></strong> / <span id="frozen-total">0</span>
+      <span id="frozen-file" style="color:var(--subtle); font-size:12px; margin-left:8px;"></span>
+    </div>
+
+    <div style="font-size:12px; color:var(--muted); margin:6px 0;">
+      빨간 밑줄(엔진 검출) 클릭 → 정답 추가 · 드래그로 직접 선택 후 [선택 구간 추가] · 초록(정답) 클릭 → 제거
+    </div>
+    <div id="frozen-select-text" class="spell-preview" style="user-select:text; cursor:text;"></div>
+
+    <div class="toolbar">
+      <span id="frozen-sel-info" style="font-size:12px; color:var(--muted);">선택 없음</span>
+      <select id="frozen-type-select"></select>
+      <button class="btn-primary" onclick="addFrozenSpanFromSelection()">선택 구간 추가</button>
+    </div>
+
+    <div style="font-size:12px; color:var(--muted); margin:12px 0 4px;">정답(Ground Truth) 구간</div>
+    <table class="error-table" id="frozen-gt-table">
+      <thead><tr><th>#</th><th>Text</th><th>Start</th><th>End</th><th>Type</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="toolbar">
+      <button class="btn-warning" onclick="frozenBack()" id="btn-frozen-back" disabled>이전 (↑)</button>
+      <button class="btn-success" onclick="frozenNext()">저장 후 다음 (→)</button>
+      <button class="btn-danger" onclick="abortFrozen()" style="margin-left:auto;">중단</button>
     </div>
   </div>
 
@@ -747,29 +806,40 @@ function rebuildSpellRules() {
 }
 
 /* ════ 폴더 읽기 ════ */
+function updateFolderControls() {
+  const labeling = document.getElementById('folder-labeling').checked;
+  const frozen   = document.getElementById('folder-frozen').checked;
+  const raw   = document.getElementById('folder-use-raw');
+  const dedup = document.getElementById('folder-dedup-msg');
+  document.getElementById('folder-rule').disabled = labeling; // frozen은 rule 사용
+  const disableExtras = labeling || frozen;
+  raw.disabled = disableExtras;
+  dedup.disabled = disableExtras;
+  if (disableExtras) { raw.checked = false; dedup.checked = false; }
+}
+
 function onLabelingToggle() {
-  const mode = document.getElementById('folder-labeling').checked;
-  document.getElementById('folder-rule').disabled = mode;
-  const rawChk = document.getElementById('folder-use-raw');
-  rawChk.disabled = mode;
-  if (mode) rawChk.checked = false;
-  const dedupChk = document.getElementById('folder-dedup-msg');
-  dedupChk.disabled = mode;
-  if (mode) dedupChk.checked = false;
+  if (document.getElementById('folder-labeling').checked)
+    document.getElementById('folder-frozen').checked = false;
+  updateFolderControls();
+}
+
+function onFrozenToggle() {
+  if (document.getElementById('folder-frozen').checked)
+    document.getElementById('folder-labeling').checked = false;
+  updateFolderControls();
 }
 
 function setFolderBlocking(on) {
   document.getElementById('btn-folder-start').disabled = on;
   document.getElementById('folder-labeling').disabled = on;
-  const labelingChecked = document.getElementById('folder-labeling').checked;
+  document.getElementById('folder-frozen').disabled = on;
   if (on) {
     document.getElementById('folder-rule').disabled = true;
     document.getElementById('folder-use-raw').disabled = true;
     document.getElementById('folder-dedup-msg').disabled = true;
   } else {
-    document.getElementById('folder-rule').disabled = labelingChecked;
-    document.getElementById('folder-use-raw').disabled = labelingChecked;
-    document.getElementById('folder-dedup-msg').disabled = labelingChecked;
+    updateFolderControls();
   }
 }
 
@@ -779,6 +849,7 @@ function setFolderStatus(msg) {
 
 async function startFolderCheck() {
   const labelingMode = document.getElementById('folder-labeling').checked;
+  const frozenMode   = document.getElementById('folder-frozen').checked;
   const ruleName = labelingMode
     ? 'ML_LABELINGS'
     : document.getElementById('folder-rule').value;
@@ -787,6 +858,7 @@ async function startFolderCheck() {
   setFolderStatus('폴더 선택…');
   document.getElementById('folder-results-area').innerHTML = '';
   document.getElementById('folder-labeling-area').style.display = 'none';
+  document.getElementById('folder-frozen-area').style.display = 'none';
 
   const folderRes = await pywebview.api.pick_folder();
   if (folderRes.cancelled || folderRes.error) {
@@ -796,7 +868,7 @@ async function startFolderCheck() {
   }
 
   let savePath = null;
-  if (labelingMode) {
+  if (labelingMode || frozenMode) {
     setFolderStatus('TSV 저장 위치 선택…');
     const saveRes = await pywebview.api.pick_save_file();
     if (saveRes.cancelled || saveRes.error) {
@@ -808,10 +880,10 @@ async function startFolderCheck() {
   }
 
   setFolderStatus('처리 시작…');
-  const useRaw = !labelingMode && document.getElementById('folder-use-raw').checked;
-  const dedupMsg = !labelingMode && document.getElementById('folder-dedup-msg').checked;
+  const useRaw = !labelingMode && !frozenMode && document.getElementById('folder-use-raw').checked;
+  const dedupMsg = !labelingMode && !frozenMode && document.getElementById('folder-dedup-msg').checked;
   const startRes = await pywebview.api.start_folder_check(
-    folderRes.folder, ruleName, labelingMode, savePath, useRaw, dedupMsg
+    folderRes.folder, ruleName, labelingMode, savePath, useRaw, dedupMsg, frozenMode
   );
   if (startRes.error) {
     setFolderBlocking(false);
@@ -829,7 +901,9 @@ async function pollFolderProgress() {
     return;
   }
   const cur = p.current_file ? ' (' + p.current_file + ')' : '';
-  const found = p.labeling_mode ? p.label_queue_count : p.results_count;
+  const found = p.frozen_mode
+    ? p.frozen_queue_count
+    : (p.labeling_mode ? p.label_queue_count : p.results_count);
   setFolderStatus(
     `처리 중… ${p.progress}/${p.total}${cur} — 발견 ${found}건`
   );
@@ -843,6 +917,11 @@ async function pollFolderProgress() {
     setFolderStatus(`라벨링 시작 (총 ${p.label_queue_count}건)`);
     document.getElementById('folder-labeling-area').style.display = 'block';
     loadNextLabel();
+  } else if (p.stage === 'frozen_labeling') {
+    setFolderStatus(`Frozen corpus 라벨링 시작 (총 ${p.frozen_queue_count} row)`);
+    document.getElementById('folder-frozen-area').style.display = 'block';
+    await initFrozenTypeOptions();
+    loadNextFrozen();
   } else {
     const r = await pywebview.api.get_folder_results();
     renderFolderResults(r.results);
@@ -891,6 +970,235 @@ async function abortLabeling() {
   document.getElementById('folder-labeling-area').style.display = 'none';
   setFolderStatus('라벨링 중단됨');
   setFolderBlocking(false);
+}
+
+/* ════ Frozen Corpus 라벨링 ════ */
+let _frozenCur = null;
+let _frozenSel = null;
+let _frozenEngineSpans = [];
+let _frozenTypesLoaded = false;
+
+async function initFrozenTypeOptions() {
+  if (_frozenTypesLoaded) return;
+  const r = await pywebview.api.get_error_types();
+  const sel = document.getElementById('frozen-type-select');
+  sel.innerHTML = (r.types || [])
+    .map(t => '<option value="' + t + '">' + t + '</option>').join('');
+  _frozenTypesLoaded = true;
+}
+
+async function loadNextFrozen() {
+  const item = await pywebview.api.get_next_frozen_item();
+  if (item.done) {
+    document.getElementById('folder-frozen-area').style.display = 'none';
+    setFolderStatus('Frozen corpus 라벨링 완료 (' + item.total + ' row)');
+    setFolderBlocking(false);
+    return;
+  }
+  _frozenCur = item;
+  _frozenSel = null;
+  _frozenCur.gt_spans = (item.gt_spans || [])
+    .map(s => ({ start: s.start, end: s.end, type: s.type }));
+  _frozenEngineSpans = item.engine_spans || [];
+
+  document.getElementById('frozen-idx').textContent = item.idx;
+  document.getElementById('frozen-total').textContent = item.total;
+  document.getElementById('frozen-file').textContent = item.file || '';
+  document.getElementById('frozen-sel-info').textContent = '선택 없음';
+
+  renderFrozenText();
+  renderFrozenGt();
+
+  const backBtn = document.getElementById('btn-frozen-back');
+  if (backBtn) backBtn.disabled = (item.idx <= 1);
+}
+
+/* 엔진 검출(빨강, 클릭시 추가) + 정답(초록, 클릭시 제거)을 한 영역에 렌더링 */
+function renderFrozenText() {
+  const container = document.getElementById('frozen-select-text');
+  if (!_frozenCur) { container.textContent = ''; return; }
+  const text = _frozenCur.text;
+  const engine = _frozenEngineSpans || [];
+  const gt = _frozenCur.gt_spans || [];
+  const n = text.length;
+
+  let html = '';
+  let i = 0;
+  while (i < n) {
+    let eIdx = -1;
+    for (let k = 0; k < engine.length; k++) {
+      if (i >= engine[k].start && i < engine[k].end) { eIdx = k; break; }
+    }
+    let gIdx = -1;
+    for (let k = 0; k < gt.length; k++) {
+      if (i >= gt[k].start && i < gt[k].end) { gIdx = k; break; }
+    }
+    // 다음 경계까지를 하나의 run으로
+    let runEnd = n;
+    for (let k = 0; k < engine.length; k++) {
+      if (engine[k].start > i && engine[k].start < runEnd) runEnd = engine[k].start;
+      if (engine[k].end   > i && engine[k].end   < runEnd) runEnd = engine[k].end;
+    }
+    for (let k = 0; k < gt.length; k++) {
+      if (gt[k].start > i && gt[k].start < runEnd) runEnd = gt[k].start;
+      if (gt[k].end   > i && gt[k].end   < runEnd) runEnd = gt[k].end;
+    }
+    const chunk = escapeHtml(text.slice(i, runEnd));
+
+    if (eIdx >= 0) {
+      const bg = gIdx >= 0 ? 'background:rgba(16,185,129,0.22);' : '';
+      html += '<span class="frozen-eng" style="' + bg + '" '
+        + 'data-tip="' + escapeHtml(engine[eIdx].type) + ' (클릭시 정답 추가)" '
+        + 'onclick="acceptEngineSpan(' + eIdx + ')">' + chunk + '</span>';
+    } else if (gIdx >= 0) {
+      html += '<span style="background:rgba(16,185,129,0.25); '
+        + 'text-decoration:underline; text-decoration-color:#10b981; '
+        + 'text-decoration-thickness:1.5px; cursor:pointer; border-radius:3px; padding:0 1px;" '
+        + 'title="' + escapeHtml(gt[gIdx].type) + ' (클릭시 제거)" '
+        + 'onclick="removeFrozenSpan(' + gIdx + ')">' + chunk + '</span>';
+    } else {
+      html += chunk;
+    }
+    i = runEnd;
+  }
+  container.innerHTML = html;
+}
+
+function acceptEngineSpan(i) {
+  const s = _frozenEngineSpans[i];
+  if (!s) return;
+  addFrozenSpan(s.start, s.end, s.type);
+}
+
+function addFrozenSpan(start, end, type) {
+  const exists = _frozenCur.gt_spans.some(
+    x => x.start === start && x.end === end && x.type === type
+  );
+  if (!exists) _frozenCur.gt_spans.push({ start, end, type });
+  renderFrozenText();
+  renderFrozenGt();
+}
+
+function addFrozenSpanFromSelection() {
+  if (!_frozenSel) { setFolderStatus('먼저 원문에서 구간을 드래그하세요.'); return; }
+  const type = document.getElementById('frozen-type-select').value;
+  addFrozenSpan(_frozenSel.start, _frozenSel.end, type);
+}
+
+function removeFrozenSpan(i) {
+  _frozenCur.gt_spans.splice(i, 1);
+  renderFrozenText();
+  renderFrozenGt();
+}
+
+function renderFrozenGt() {
+  const tbody = document.querySelector('#frozen-gt-table tbody');
+  const spans = _frozenCur ? _frozenCur.gt_spans : [];
+  if (!spans.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="6" style="color:var(--subtle);">구간 없음 (오류 없는 row로 저장됩니다)</td></tr>';
+    return;
+  }
+  tbody.innerHTML = spans.map((s, i) =>
+    '<tr>'
+    + '<td>' + (i + 1) + '</td>'
+    + '<td>' + escapeHtml(_frozenCur.text.slice(s.start, s.end)) + '</td>'
+    + '<td>' + s.start + '</td>'
+    + '<td>' + s.end + '</td>'
+    + '<td class="err-type">' + escapeHtml(s.type) + '</td>'
+    + '<td><button class="btn-danger" style="padding:2px 8px;" '
+    +   'onclick="removeFrozenSpan(' + i + ')">삭제</button></td>'
+    + '</tr>'
+  ).join('');
+}
+
+function captureFrozenSelection() {
+  const container = document.getElementById('frozen-select-text');
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  if (!container.contains(range.startContainer) ||
+      !container.contains(range.endContainer)) return;
+  if (range.collapsed) {
+    _frozenSel = null;
+    document.getElementById('frozen-sel-info').textContent = '선택 없음';
+    return;
+  }
+  const pre = range.cloneRange();
+  pre.selectNodeContents(container);
+  pre.setEnd(range.startContainer, range.startOffset);
+  const start = pre.toString().length;
+  const len = range.toString().length;
+  _frozenSel = { start: start, end: start + len };
+  document.getElementById('frozen-sel-info').textContent =
+    '선택: [' + _frozenSel.start + ':' + _frozenSel.end + '] "'
+    + _frozenCur.text.slice(_frozenSel.start, _frozenSel.end) + '"';
+}
+
+document.addEventListener('mouseup', function () {
+  const area = document.getElementById('folder-frozen-area');
+  if (area && area.style.display === 'block') captureFrozenSelection();
+});
+
+async function frozenNext() {
+  const res = await pywebview.api.frozen_next(_frozenCur ? _frozenCur.gt_spans : []);
+  if (res.error) { setFolderStatus('저장 오류: ' + res.error); return; }
+  loadNextFrozen();
+}
+
+async function frozenBack() {
+  const res = await pywebview.api.frozen_back(_frozenCur ? _frozenCur.gt_spans : []);
+  if (res.error) { setFolderStatus(res.error); return; }
+  loadNextFrozen();
+}
+
+async function abortFrozen() {
+  await pywebview.api.abort_labeling();
+  document.getElementById('folder-frozen-area').style.display = 'none';
+  setFolderStatus('Ground Truth 라벨링 중단됨');
+  setFolderBlocking(false);
+}
+
+(function initFrozenTooltip() {
+  const container = document.getElementById('frozen-select-text');
+  const tip = document.getElementById('frozen-tooltip');
+  if (!container || !tip) return;
+
+  function positionTip(e) {
+    const pad = 8;
+    const rect = tip.getBoundingClientRect();
+    let x = e.clientX + 12;
+    let y = e.clientY + 16;
+    if (x + rect.width + pad > window.innerWidth)  x = window.innerWidth - rect.width - pad;
+    if (x < pad) x = pad;
+    if (y + rect.height + pad > window.innerHeight) y = e.clientY - rect.height - 12;
+    if (y < pad) y = pad;
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+  }
+
+  container.addEventListener('mouseover', e => {
+    const t = e.target.closest('.frozen-eng');
+    if (!t) return;
+    tip.textContent = t.getAttribute('data-tip') || '';
+    tip.style.display = 'block';
+    positionTip(e);
+  });
+  container.addEventListener('mousemove', e => {
+    if (tip.style.display === 'block') positionTip(e);
+  });
+  container.addEventListener('mouseout', e => {
+    if (e.target.closest('.frozen-eng')) tip.style.display = 'none';
+  });
+})();
+
+function cycleFrozenType(dir) {
+  const sel = document.getElementById('frozen-type-select');
+  if (!sel || !sel.options.length) return;
+  let idx = sel.selectedIndex + dir;
+  if (idx < 0) idx = sel.options.length - 1;
+  if (idx >= sel.options.length) idx = 0;
+  sel.selectedIndex = idx;
 }
 
 function renderFolderResults(results) {
@@ -1033,27 +1341,30 @@ async function saveFolderHtml() {
 
 /* ── 라벨링 단축키 (방향키) 설정 ── */
 document.addEventListener('keydown', function(e) {
+  const inField = document.activeElement.tagName === 'INPUT'
+               || document.activeElement.tagName === 'TEXTAREA'
+               || document.activeElement.tagName === 'SELECT';
+
+  // ── ML 라벨링 ──
   const labelingArea = document.getElementById('folder-labeling-area');
-  
-  // 라벨링 탭이 켜져 있고, 다른 입력창(검색창 등)에 커서가 없을 때만 작동
-  if (labelingArea.style.display === 'block' && 
-      document.activeElement.tagName !== 'INPUT' && 
-      document.activeElement.tagName !== 'TEXTAREA') {
-      
-    if (e.key === 'ArrowLeft') {
+  if (labelingArea.style.display === 'block' && !inField) {
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); submitLabel('0'); return; }
+    if (e.key === 'ArrowRight') { e.preventDefault(); submitLabel('1'); return; }
+    if (e.key === 'ArrowDown')  { e.preventDefault(); submitLabel('SKIP'); return; }
+    if (e.key === 'ArrowUp')    {
       e.preventDefault();
-      submitLabel('0'); // 0: 정상 (왼쪽 방향키)
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      submitLabel('1'); // 1: 오류 (오른쪽 방향키)
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      submitLabel('SKIP'); // 건너뛰기 (아래 방향키)
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const backBtn = document.getElementById('btn-label-back');
-      if (!backBtn.disabled) goBackLabel(); // 뒤로 가기 (위 방향키)
+      const b = document.getElementById('btn-label-back');
+      if (!b.disabled) goBackLabel();
+      return;
     }
+  }
+
+  // ── Frozen corpus 라벨링 ──
+  const frozenArea = document.getElementById('folder-frozen-area');
+  if (frozenArea.style.display === 'block' && !inField) {
+    if (e.key === 'ArrowUp')   { e.preventDefault(); cycleFrozenType(-1); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); cycleFrozenType(1);  return; }
+    if (e.code === 'Space')    { e.preventDefault(); addFrozenSpanFromSelection(); return; }
   }
 });
 </script>
@@ -1106,12 +1417,13 @@ class Api:
         importlib.reload(_spell_cfg)
 
     def _build_spell_checkers(self):
-        """기본(SPELL_CHECK_RULES) + RawString을 self에 세팅."""
+        """기본(SPELL_CHECK_RULES) + TEST_SPELL_CHECK_RULES + RawString을 self에 세팅."""
         self._reload_spell_modules()
         importlib.reload(_raw_cfg)
         self._spell = SpellChecker(True)
         self._raw = RawStringSearcher()
         self._spell.add_rule_from_list(_spell_cfg.SPELL_CHECK_RULES)
+        self._spell.add_rule_from_list(_spell_cfg.TEST_SPELL_CHECK_RULES)
         self._raw.add_word_from_list(_raw_cfg.RAW_STRING_RULES)
 
     # ── 토크나이저 API ──────────────────────────────────────────
@@ -1230,6 +1542,20 @@ class Api:
         suggestions = self._fuzzy_suggest(plain_query)
         return {"items": [], "suggestions": suggestions}
 
+    # ── 오류 타입 목록 API (frozen 라벨링용) ────────────────────
+
+    def get_error_types(self) -> dict:
+        """SpellErrorType 이름을 _RAW 정규화 후 중복 제거하여 반환. (prod에서 안 나오는 NOT_SET/TEST 제외)"""
+        exclude = {"NOT_SET", "TEST"}
+        seen: list[str] = []
+        for t in SpellErrorType:
+            n = _normalize_type_name(t.name)
+            if n in exclude:
+                continue
+            if n not in seen:
+                seen.append(n)
+        return {"types": seen}
+
     # ── 맞춤법 검사 API ─────────────────────────────────────────
 
     def spell_check(self, text: str) -> dict:
@@ -1331,6 +1657,21 @@ class Api:
                     paragraphs.append(paragraph)
         return paragraphs
 
+    def _collect_rows(self, file_path) -> list[str]:
+        """frozen corpus용: txt를 row 단위로 읽어 정리 (줄바꿈으로 재분할하지 않음)."""
+        df = read_txt_file(file_path)
+        rows: list[str] = []
+        for row_text in df["text"]:
+            row_text = str(row_text)
+            row_text = row_text.replace("<br>", "\n")
+            row_text = row_text.replace("\\n", "\n")
+            row_text = row_text.replace("\u00A0", " ")
+            row_text = TAG_REPLACE_REGEX.sub("", row_text)
+            row_text = row_text.strip()
+            if row_text:
+                rows.append(row_text)
+        return rows
+
     def _build_folder_spell_checker(self, rule_name: str, debug: bool = False) -> SpellChecker:
       """폴더 읽기 전용: 선택된 규칙으로 reload + 새 SpellChecker 생성."""
       self._reload_spell_modules()
@@ -1343,13 +1684,16 @@ class Api:
 
     def start_folder_check(self, folder: str, rule_name: str,
                            labeling_mode: bool, save_path: str | None,
-                           use_raw: bool = False, dedup_msg: bool = False) -> dict:
+                           use_raw: bool = False, dedup_msg: bool = False,
+                           frozen_mode: bool = False) -> dict:
         if err := self._ensure_ready():
             return err
         if self._folder_state and self._folder_state.get("running"):
             return {"error": "이미 진행 중입니다."}
         if labeling_mode and not save_path:
             return {"error": "라벨링 모드에서는 저장 경로가 필요합니다."}
+        if frozen_mode and not save_path:
+            return {"error": "Frozen corpus 모드에서는 저장 경로가 필요합니다."}
 
         self._folder_state = {
             "running": True,
@@ -1363,12 +1707,16 @@ class Api:
             "label_idx": 0,
             "save_path": save_path,
             "labeling_mode": labeling_mode,
-            "use_raw": use_raw and not labeling_mode,
-            "dedup_msg": dedup_msg and not labeling_mode,
+            "use_raw": use_raw and not labeling_mode and not frozen_mode,
+            "dedup_msg": dedup_msg and not labeling_mode and not frozen_mode,
             "rule_name": rule_name,
             "error": None,
             "history": [], # 뒤로 가기를 위한 히스토리
             "labeled_data": [], # 메모리에 라벨링 결과를 쌓아둘 리스트 추가
+            # ── frozen corpus ──
+            "frozen_mode": frozen_mode,
+            "frozen_queue": [],
+            "frozen_idx": 0,
         }
         t = threading.Thread(
             target=self._run_folder_check,
@@ -1398,6 +1746,9 @@ class Api:
 
     def _run_folder_check(self, folder: str, rule_name: str, labeling_mode: bool):
         state = self._folder_state
+        if state.get("frozen_mode"):
+            self._run_frozen_scan(folder, rule_name)
+            return
         self._folder_debug_spell = None
         self._folder_debug_rule_name = None
         try:
@@ -1509,6 +1860,94 @@ class Api:
         finally:
             state["running"] = False
 
+    def _run_frozen_scan(self, folder: str, rule_name: str):
+        """frozen corpus 라벨링용 스캔: row 단위, 전역 dedup, spell+raw 실행."""
+        state = self._folder_state
+        try:
+            files = get_all_file_paths(folder, "txt")
+            state["total"] = len(files)
+            state["stage"] = "checking"
+
+            spell = self._build_folder_spell_checker(rule_name, debug=False)
+            importlib.reload(_raw_cfg)
+            raw = RawStringSearcher()
+            raw.add_word_from_list(_raw_cfg.RAW_STRING_RULES)
+
+            # 전역(파일 간 포함) dedup
+            seen_hashes: set[int] = set()
+
+            for fi, file in enumerate(files):
+                if state["aborted"]:
+                    break
+                state["progress"] = fi
+                state["current_file"] = file.stem if hasattr(file, "stem") else str(file)
+
+                try:
+                    rows = self._collect_rows(file)
+                except Exception as e:
+                    state["error"] = f"{state['current_file']}: {e}"
+                    continue
+                if not rows:
+                    continue
+
+                unique_rows: list[str] = []
+                for row_text in rows:
+                    if state["aborted"]:
+                        break
+                    h = hash(row_text)
+                    if h in seen_hashes:
+                        continue
+                    seen_hashes.add(h)
+                    unique_rows.append(row_text)
+
+                if not unique_rows:
+                    continue
+
+                tokens_list = list(self._tkn.tokenize(text=unique_rows))
+                CHUNK = 1000
+                all_spell_errors = []
+                for i in range(0, len(tokens_list), CHUNK):
+                    chunk = tokens_list[i : i + CHUNK]
+                    all_spell_errors.extend(spell.check_batch(chunk))
+
+                for row_text, spell_errs in zip(unique_rows, all_spell_errors):
+                    if state["aborted"]:
+                        break
+                    errs = list(spell_errs)
+                    errs.extend(raw.search(row_text))
+
+                    highlighted = highlight_text(row_text, errs)
+                    engine_spans = [
+                        {
+                            "start": e.start_index,
+                            "end": e.end_index,
+                            "type": _normalize_type_name(get_error_type_name(e)),
+                            "msg": e.error_message,
+                        }
+                        for e in errs
+                    ]
+                    state["frozen_queue"].append({
+                        "file": state["current_file"],
+                        "text": row_text,
+                        "highlighted": highlighted,
+                        "engine_spans": engine_spans,
+                        "gt_spans": [],
+                        "reviewed": False,
+                    })
+
+            state["progress"] = state["total"]
+            if state["frozen_queue"] and not state["aborted"]:
+                state["stage"] = "frozen_labeling"
+            else:
+                state["stage"] = "done"
+        except Exception as e:
+            tb = traceback.format_exc()
+            logging.exception("frozen scan failed")
+            state["error"] = f"{type(e).__name__}: {e}\n\n{tb}"
+            state["stage"] = "done"
+        finally:
+            state["running"] = False
+
     def get_folder_progress(self) -> dict:
         state = self._folder_state
         if not state:
@@ -1516,7 +1955,8 @@ class Api:
                     "progress": 0, "total": 0,
                     "current_file": "", "error": None,
                     "results_count": 0, "label_queue_count": 0,
-                    "labeling_mode": False}
+                    "labeling_mode": False,
+                    "frozen_mode": False, "frozen_queue_count": 0}
         return {
             "running": state["running"],
             "stage": state["stage"],
@@ -1527,6 +1967,8 @@ class Api:
             "results_count": len(state["results"]),
             "label_queue_count": len(state["label_queue"]),
             "labeling_mode": state["labeling_mode"],
+            "frozen_mode": state.get("frozen_mode", False),
+            "frozen_queue_count": len(state.get("frozen_queue", [])),
         }
 
     def get_folder_results(self) -> dict:
@@ -1604,11 +2046,119 @@ class Api:
         state["label_idx"] = prev_idx
         return {"ok": True}
 
+    # ── Frozen corpus 라벨링 API ────────────────────────────────
+
+    def get_next_frozen_item(self) -> dict:
+        state = self._folder_state
+        if not state:
+            return {"done": True, "idx": 0, "total": 0}
+        idx = state["frozen_idx"]
+        queue = state["frozen_queue"]
+        total = len(queue)
+        if idx >= total or state["aborted"]:
+            return {"done": True, "idx": idx, "total": total}
+        item = queue[idx]
+        return {
+            "done": False,
+            "idx": idx + 1,
+            "total": total,
+            "file": item["file"],
+            "text": item["text"],
+            "highlighted": item["highlighted"],
+            "engine_spans": item["engine_spans"],
+            "gt_spans": item["gt_spans"],
+        }
+
+    def _frozen_save_current(self, spans) -> None:
+        state = self._folder_state
+        idx = state["frozen_idx"]
+        queue = state["frozen_queue"]
+        if 0 <= idx < len(queue):
+            clean = []
+            for s in spans or []:
+                clean.append({
+                    "start": int(s["start"]),
+                    "end": int(s["end"]),
+                    "type": s["type"],
+                })
+            queue[idx]["gt_spans"] = clean
+            queue[idx]["reviewed"] = True
+
+    def frozen_next(self, spans) -> dict:
+        state = self._folder_state
+        if not state:
+            return {"error": "상태 없음"}
+        self._frozen_save_current(spans)
+        state["frozen_idx"] += 1
+        if state["frozen_idx"] >= len(state["frozen_queue"]):
+            save_res = self._save_frozen_data()
+            if save_res.get("error"):
+                return {"error": f"저장 실패: {save_res['error']}"}
+            return {"done": True}
+        return {"ok": True}
+
+    def frozen_back(self, spans) -> dict:
+        state = self._folder_state
+        if not state:
+            return {"error": "상태 없음"}
+        self._frozen_save_current(spans)
+        if state["frozen_idx"] <= 0:
+            return {"error": "이전 항목이 없습니다."}
+        state["frozen_idx"] -= 1
+        return {"ok": True}
+
+    def _save_frozen_data(self) -> dict:
+        """검토 완료한 row를 text/start/end/type TSV로 덮어쓰기 저장."""
+        state = self._folder_state
+        if not state or not state.get("save_path"):
+            return {"error": "저장 경로가 없습니다."}
+        try:
+            lines = []
+            for item in state["frozen_queue"]:
+                if not item.get("reviewed"):
+                    continue
+                text = (item["text"]
+                        .replace("\t", " ")
+                        .replace("\n", " ")
+                        .replace("\r", " "))
+                spans = item.get("gt_spans", [])
+                if not spans:
+                    # 오류 없는 row (검토 완료)
+                    lines.append(f"{text}\t\t\t\n")
+                else:
+                    for s in spans:
+                        lines.append(f"{text}\t{s['start']}\t{s['end']}\t{s['type']}\n")
+            with open(state["save_path"], "w", encoding="utf-8") as f:
+                f.write("text\tstart\tend\ttype\n")
+                f.writelines(lines)
+            return {"ok": True}
+        except Exception as e:
+            return {"error": str(e)}
+
     def abort_labeling(self) -> dict:
         state = self._folder_state
         if not state:
             return {"error": "상태 없음"}
 
+        # ── frozen corpus 모드 ──
+        if state.get("frozen_mode"):
+            reviewed = [it for it in state.get("frozen_queue", []) if it.get("reviewed")]
+            if reviewed and self._window:
+                do_save = self._window.create_confirmation_dialog(
+                    "저장 확인",
+                    f"검토 완료한 {len(reviewed)}개 row의 라벨을 저장하시겠습니까?\n"
+                    "(기존 파일은 덮어쓰기됩니다)"
+                )
+                if do_save:
+                    save_res = self._save_frozen_data()
+                    if save_res.get("error"):
+                        return {"error": f"저장 실패: {save_res['error']}"}
+            state["aborted"] = True
+            if state["stage"] == "frozen_labeling":
+                state["stage"] = "done"
+            return {"ok": True}
+
+        # ── 기존 ML 라벨링 모드 ──
         labeled_data = state.get("labeled_data", [])
         if labeled_data and self._window:
             do_save = self._window.create_confirmation_dialog(
