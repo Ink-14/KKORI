@@ -72,7 +72,7 @@ def get_compatible_batchim(char: str) -> str:
     else:
         return '0'
 
-def get_compatible_batchim_int(char: str) -> int:
+def get_batchim_int(char: str) -> int:
     """받침의 종류를 정수로 반환하는 함수.
     
     0: 한글 아님, 1: 받침 없음.
@@ -89,6 +89,24 @@ def get_compatible_batchim_int(char: str) -> int:
         return (charpoint - HANGUL_COMP_START) % JONGSEONG_IDX_POINT + 1 # 0번은 '한글 아님'으로 예약
     else:
         return 0
+
+def has_batchim(char: str) -> bool:
+    """받침이 있는지를 판별해 주는 함수.
+
+    Args:
+        char (str): 받침을 판별할 글자. 1글자만 입력되어야 함.
+
+    Returns:
+        bool: 글자의 받침 유무.
+    """
+    charpoint = ord(char)
+    if HANGUL_COMP_START <= charpoint <= HANGUL_COMP_END:
+        if (charpoint - HANGUL_COMP_START) % JONGSEONG_IDX_POINT == 0:
+            return False
+        else:
+            return True
+    else:
+        return False
 
 def remove_batchim(char: str) -> str:
     if len(char) != 1:
