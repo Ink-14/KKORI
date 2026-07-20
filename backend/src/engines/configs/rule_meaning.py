@@ -39,6 +39,7 @@ MEANING_CONFLICT_ERRORS: list[KoSpellRules] = [
     *rule().id("MEANING_다시_재_체언접두사")
     .tag_form(Tag.일반부사, "다시")
     .tag_form(Tag.체언접두사, "재")
+    .NOT(form("방송")).context()
     .msg("'다시'에 이미 '재(再)'의 의미가 포함되어 있습니다.").build(),
     
     *rule().id("MEANING_전_앞")
@@ -56,4 +57,9 @@ MEANING_CONFLICT_ERRORS: list[KoSpellRules] = [
     .any().context()
     .tag_form(Tag.보조사, "마다")
     .msg("'매(每)'에 이미 '마다'의 의미가 포함되어 있습니다.").build(),
+    
+    *rule().id("MEANING_당일 날")
+    .tag_form(Tag.일반명사, "당일")
+    .tag_form(Tag.일반명사, "날")
+    .msg("'당일'에 이미 '날'의 의미가 포함되어 있습니다.").build(),
 ]

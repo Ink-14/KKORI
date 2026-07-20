@@ -44,7 +44,7 @@ def NNG_and_some(nng: str, some: str, tag: str, spacing_rule: SpacingRule, messa
             raise ValueError("you must set error message to function 'NNG_and_some' if spacing rule is SpacingRule.ANY.")
         return rule.msg(message).build()
     
-def VV_EC_VV(vv1: tuple[str, str], ec: str, vv2: tuple[str, str], spacing_rule: SpacingRule, message = None, detail = None) -> list[KoSpellRules]:
+def VV_EC_VV(vv1: tuple[str, str], ec: str, vv2: tuple[str, str], spacing_rule: SpacingRule, message: None | str = None, detail: None | str = None) -> list[KoSpellRules]:
     vv1_form, vv1_tag = vv1
     vv2_form, vv2_tag = vv2
     rule = RuleBuilder(SpellErrorType.SPACING).id(f"VV_EC_VV_{vv1_form}_{ec}_{vv2_form}").tag_form(Tag[vv1_tag], vv1_form).tag_form(Tag.연결어미, ec).tag_form(Tag[vv2_tag], vv2_form)
@@ -53,15 +53,23 @@ def VV_EC_VV(vv1: tuple[str, str], ec: str, vv2: tuple[str, str], spacing_rule: 
     message2 = f"merge((\"{vv2_form}\", \"{vv2_tag}\"), (\"다\", \"연결어미\"))"
     
     if spacing_rule == SpacingRule.SPACED:
-        rule.if_not_spaced().msg(f"'{message1} {message2}'로 띄어 써야 합니다.")
+        rule.if_not_spaced()
+        if message is None:
+            rule.msg(f"'{message1} {message2}'로 띄어 써야 합니다.")
+        else:
+            rule.msg(message)
     elif spacing_rule == SpacingRule.ATTACHED:
-        rule.if_spaced().msg(f"'{message1}{message2}'로 붙여 써야 합니다.")
+        rule.if_spaced()
+        if message is None:
+            rule.msg(f"'{message1}{message2}'로 붙여 써야 합니다.")
+        else:
+            rule.msg(message)
     elif spacing_rule == SpacingRule.ANY:
         if message is None:
             raise ValueError("you must set error message to function 'NNG_and_some' if spacing rule is SpacingRule.ANY.")
         rule.msg(message)
 
-    if detail:
+    if detail is not None:
         rule.detail(detail)
 
     return rule.build()
