@@ -14,7 +14,7 @@ httptools==0.7.1
 idna==3.15
 iniconfig==2.3.0
 kiwipiepy==0.23.2
-kiwipiepy_model==0.23.2
+kiwipiepy_model==0.23.0
 maturin==1.13.1
 numpy==2.4.4
 openpyxl==3.1.5
