@@ -1,8 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getApiBase } from '../lib/api'
 import './fileChecker.css'
 import type { SpellErrorResponse } from '../types/spell'
 import ScrollToTopButton from '../components/ScrollToTopButton'
+
+type TooltipState = {
+  visible: boolean
+  text: string
+  x: number
+  y: number
+}
 
 declare global {
   interface Window {
@@ -48,32 +55,6 @@ const CSV_ENCODINGS = [
   { value: 'cp949', label: 'CP949 (한글 윈도우)' },
 ]
 
-function renderHighlighted(text: string, errors: SpellErrorResponse[]) {
-  if (!errors.length) return <span>{text}</span>
-
-  const sorted = [...errors].sort((a, b) => a.start_index - b.start_index)
-  const parts: React.ReactNode[] = []
-  let cursor = 0
-
-  for (const e of sorted) {
-    if (e.start_index < cursor) continue
-    if (cursor < e.start_index) parts.push(<span key={cursor}>{text.slice(cursor, e.start_index)}</span>)
-    parts.push(
-      <span
-        key={e.start_index}
-        className="fc-error-word"
-        title={`[${e.error_type}] ${e.error_message}`}
-      >
-        {text.slice(e.start_index, e.end_index)}
-      </span>
-    )
-    cursor = e.end_index
-  }
-
-  if (cursor < text.length) parts.push(<span key={cursor}>{text.slice(cursor)}</span>)
-  return <>{parts}</>
-}
-
 function FileChecker() {
   const [filePath, setFilePath] = useState<string | null>(null)
   const [segments, setSegments] = useState<SegmentResult[]>([])
@@ -87,10 +68,88 @@ function FileChecker() {
   const [csvConfig, setCsvConfig] = useState<CsvConfig | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
 
+  const [tooltip, setTooltip] = useState<TooltipState>({ visible: false, text: '', x: 0, y: 0 })
+  const tooltipRef = useRef<HTMLDivElement>(null)
+
   const isExcel = filePath?.toLowerCase().endsWith('.xlsx') ?? false
   const isCSV = filePath?.toLowerCase().endsWith('.csv') ?? false
   const excelReady = !isExcel || (excelConfig !== null && excelConfig.text_col !== '')
   const csvReady = !isCSV || (csvConfig !== null && csvConfig.text_col !== '')
+
+  function showTooltip(e: React.MouseEvent, text: string) {
+    const target = e.currentTarget as HTMLElement
+    const rect = target.getBoundingClientRect()
+    setTooltip({ visible: true, text, x: rect.left + rect.width / 2, y: rect.top })
+  }
+
+  function hideTooltip() {
+    setTooltip(prev => ({ ...prev, visible: false }))
+  }
+
+  // 툴팁이 화면 밖으로 나가지 않도록 위치 조정
+  useEffect(() => {
+    if (!tooltip.visible || !tooltipRef.current) return
+    const el = tooltipRef.current
+    const elRect = el.getBoundingClientRect()
+    const vw = window.innerWidth
+    const margin = 8
+
+    let left = tooltip.x - elRect.width / 2
+    if (left < margin) left = margin
+    if (left + elRect.width > vw - margin) left = vw - margin - elRect.width
+
+    let top = tooltip.y - elRect.height - 10
+    if (top < margin) top = tooltip.y + 28  // 위 공간 없으면 아래로
+
+    el.style.left = `${left}px`
+    el.style.top = `${top}px`
+  }, [tooltip])
+
+  function renderHighlighted(text: string, errs: SpellErrorResponse[]) {
+    if (!errs.length) return <span>{text}</span>
+
+    const sorted = [...errs].sort((a, b) => a.start_index - b.start_index || a.end_index - b.end_index)
+    const groups: SpellErrorResponse[][] = []
+    let groupEnd = -Infinity
+
+    for (const e of sorted) {
+      const last = groups[groups.length - 1]
+      if (last && e.start_index < groupEnd) {
+        last.push(e)
+      } else {
+        groups.push([e])
+      }
+      groupEnd = Math.max(groupEnd, e.end_index)
+    }
+
+    const parts: React.ReactNode[] = []
+    let cursor = 0
+
+    for (const group of groups) {
+      const start = group[0].start_index
+      const end = Math.max(...group.map(e => e.end_index))
+      if (start < cursor) continue
+      if (start >= text.length) break
+
+      if (cursor < start) parts.push(<span key={cursor}>{text.slice(cursor, start)}</span>)
+
+      const tooltipText = group.map(e => `[${e.error_type}]\n${e.error_message}`).join('\n\n')
+      parts.push(
+        <span
+          key={start}
+          className="fc-error-word"
+          onMouseEnter={(ev) => showTooltip(ev, tooltipText)}
+          onMouseLeave={hideTooltip}
+        >
+          {text.slice(start, end)}
+        </span>
+      )
+      cursor = end
+    }
+
+    if (cursor < text.length) parts.push(<span key={cursor}>{text.slice(cursor)}</span>)
+    return <>{parts}</>
+  }
 
   function handleDevMockFile(ext: string) {
     const mockPaths: Record<string, string> = {
@@ -366,7 +425,7 @@ function FileChecker() {
           {checked && (
             totalErrors === 0
               ? <span className="fc-no-error">✓ 맞춤법 오류가 없습니다.</span>
-              : <span className="fc-error-summary">{errorSegments.length}개 구간에서 총 {totalErrors}개의 오류가 발견되었습니다.</span>
+              : <span className="fc-error-summary">총 {totalErrors}개의 오류가 발견되었습니다.</span>
           )}
           <div className="fc-btn-group">
             <button className="fc-btn fc-btn--clear" onClick={handleClear} disabled={!filePath}>지우기</button>
@@ -420,6 +479,13 @@ function FileChecker() {
                     <li key={j} className="fc-error-item">
                       <span className="fc-error-badge">{e.error_type}</span>
                       <span className="fc-error-msg">{e.error_message}</span>
+                      {e.detailed && (
+                        <span
+                          className="fc-detailed-badge"
+                          onMouseEnter={(ev) => showTooltip(ev, e.detailed)}
+                          onMouseLeave={hideTooltip}
+                        >?</span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -428,6 +494,12 @@ function FileChecker() {
           </div>
         )}
       </div>
+
+      {tooltip.visible && (
+        <div ref={tooltipRef} className="fc-tooltip">
+          {tooltip.text}
+        </div>
+      )}
       <ScrollToTopButton />
     </div>
   )
