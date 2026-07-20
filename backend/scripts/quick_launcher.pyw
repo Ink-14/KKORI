@@ -5,6 +5,7 @@
 
 import gzip
 import importlib
+import json
 import os
 import pickle
 import re
@@ -500,6 +501,9 @@ HTML = """
     <button id="btn-folder-start" class="btn-primary" onclick="startFolderCheck()">
       폴더 선택 후 시작
     </button>
+    <button id="btn-folder-resume" class="btn-primary" onclick="startFrozenResume()" style="display:none;">
+      이어서 라벨링 (파일 열기)
+    </button>
     <div class="status" id="folder-status"></div>
   </div>
 
@@ -526,14 +530,15 @@ HTML = """
     </div>
 
     <div style="font-size:12px; color:var(--muted); margin:6px 0;">
-      빨간 밑줄(엔진 검출) 클릭 → 정답 추가 · 드래그로 직접 선택 후 [선택 구간 추가] · 초록(정답) 클릭 → 제거
+      빨간 밑줄(엔진 검출) 클릭 → 정답 추가 · 드래그로 직접 선택 후 [선택 구간 추가] · 초록(정답) 클릭 → 제거<br>
+      단축키: <b>W/S</b> 종류 이동 · <b>A</b> 이전 · <b>D</b> 저장 후 다음 · <b>Space</b> 선택 구간 추가
     </div>
     <div id="frozen-select-text" class="spell-preview" style="user-select:text; cursor:text;"></div>
 
     <div class="toolbar">
       <span id="frozen-sel-info" style="font-size:12px; color:var(--muted);">선택 없음</span>
       <select id="frozen-type-select"></select>
-      <button class="btn-primary" onclick="addFrozenSpanFromSelection()">선택 구간 추가</button>
+      <button class="btn-primary" onclick="addFrozenSpanFromSelection()">선택 구간 추가 (Space)</button>
     </div>
 
     <div style="font-size:12px; color:var(--muted); margin:12px 0 4px;">정답(Ground Truth) 구간</div>
@@ -543,8 +548,8 @@ HTML = """
     </table>
 
     <div class="toolbar">
-      <button class="btn-warning" onclick="frozenBack()" id="btn-frozen-back" disabled>이전 (↑)</button>
-      <button class="btn-success" onclick="frozenNext()">저장 후 다음 (→)</button>
+      <button class="btn-warning" onclick="frozenBack()" id="btn-frozen-back" disabled>이전 (A)</button>
+      <button class="btn-success" onclick="frozenNext()">저장 후 다음 (D)</button>
       <button class="btn-danger" onclick="abortFrozen()" style="margin-left:auto;">중단</button>
     </div>
   </div>
@@ -816,6 +821,9 @@ function updateFolderControls() {
   raw.disabled = disableExtras;
   dedup.disabled = disableExtras;
   if (disableExtras) { raw.checked = false; dedup.checked = false; }
+
+  const resumeBtn = document.getElementById('btn-folder-resume');
+  if (resumeBtn) resumeBtn.style.display = frozen ? '' : 'none';
 }
 
 function onLabelingToggle() {
@@ -832,6 +840,7 @@ function onFrozenToggle() {
 
 function setFolderBlocking(on) {
   document.getElementById('btn-folder-start').disabled = on;
+  document.getElementById('btn-folder-resume').disabled = on;
   document.getElementById('folder-labeling').disabled = on;
   document.getElementById('folder-frozen').disabled = on;
   if (on) {
@@ -869,8 +878,10 @@ async function startFolderCheck() {
 
   let savePath = null;
   if (labelingMode || frozenMode) {
-    setFolderStatus('TSV 저장 위치 선택…');
-    const saveRes = await pywebview.api.pick_save_file();
+    setFolderStatus('저장 위치 선택…');
+    const saveRes = frozenMode
+      ? await pywebview.api.pick_frozen_save_file()
+      : await pywebview.api.pick_save_file();
     if (saveRes.cancelled || saveRes.error) {
       setFolderBlocking(false);
       setFolderStatus(saveRes.error ? '오류: ' + saveRes.error : '취소됨');
@@ -885,6 +896,31 @@ async function startFolderCheck() {
   const startRes = await pywebview.api.start_folder_check(
     folderRes.folder, ruleName, labelingMode, savePath, useRaw, dedupMsg, frozenMode
   );
+  if (startRes.error) {
+    setFolderBlocking(false);
+    setFolderStatus('오류: ' + startRes.error);
+    return;
+  }
+  pollFolderProgress();
+}
+
+async function startFrozenResume() {
+  const ruleName = document.getElementById('folder-rule').value;
+  setFolderBlocking(true);
+  setFolderStatus('저장 파일 선택…');
+  document.getElementById('folder-results-area').innerHTML = '';
+  document.getElementById('folder-labeling-area').style.display = 'none';
+  document.getElementById('folder-frozen-area').style.display = 'none';
+
+  const openRes = await pywebview.api.pick_frozen_open_file();
+  if (openRes.cancelled || openRes.error) {
+    setFolderBlocking(false);
+    setFolderStatus(openRes.error ? '오류: ' + openRes.error : '취소됨');
+    return;
+  }
+
+  setFolderStatus('파일 로드 후 엔진 재실행…');
+  const startRes = await pywebview.api.start_frozen_resume(openRes.path, ruleName);
   if (startRes.error) {
     setFolderBlocking(false);
     setFolderStatus('오류: ' + startRes.error);
@@ -1339,13 +1375,13 @@ async function saveFolderHtml() {
   setFolderStatus('HTML 저장 완료: ' + res.path);
 }
 
-/* ── 라벨링 단축키 (방향키) 설정 ── */
+/* ── 라벨링 단축키 설정 ── */
 document.addEventListener('keydown', function(e) {
   const inField = document.activeElement.tagName === 'INPUT'
                || document.activeElement.tagName === 'TEXTAREA'
                || document.activeElement.tagName === 'SELECT';
 
-  // ── ML 라벨링 ──
+  // ── ML 라벨링 (방향키) ──
   const labelingArea = document.getElementById('folder-labeling-area');
   if (labelingArea.style.display === 'block' && !inField) {
     if (e.key === 'ArrowLeft')  { e.preventDefault(); submitLabel('0'); return; }
@@ -1359,12 +1395,20 @@ document.addEventListener('keydown', function(e) {
     }
   }
 
-  // ── Frozen corpus 라벨링 ──
+  // ── Frozen corpus 라벨링 (WASD) ──
   const frozenArea = document.getElementById('folder-frozen-area');
   if (frozenArea.style.display === 'block' && !inField) {
-    if (e.key === 'ArrowUp')   { e.preventDefault(); cycleFrozenType(-1); return; }
-    if (e.key === 'ArrowDown') { e.preventDefault(); cycleFrozenType(1);  return; }
-    if (e.code === 'Space')    { e.preventDefault(); addFrozenSpanFromSelection(); return; }
+    const k = e.key.toLowerCase();
+    if (k === 'w') { e.preventDefault(); cycleFrozenType(-1); return; }
+    if (k === 's') { e.preventDefault(); cycleFrozenType(1);  return; }
+    if (k === 'a') {
+      e.preventDefault();
+      const b = document.getElementById('btn-frozen-back');
+      if (!b.disabled) frozenBack();
+      return;
+    }
+    if (k === 'd') { e.preventDefault(); frozenNext(); return; }
+    if (e.code === 'Space') { e.preventDefault(); addFrozenSpanFromSelection(); return; }
   }
 });
 </script>
@@ -1623,6 +1667,38 @@ class Api:
         if not result:
             return {"cancelled": True}
         path = result if isinstance(result, str) else result[0]
+        return {"path": path}
+
+    def pick_frozen_save_file(self) -> dict:
+        tstamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if not self._window:
+            return {"error": "window not ready"}
+        try:
+            result = self._window.create_file_dialog(
+                webview.FileDialog.SAVE,
+                save_filename=f"frozen_{tstamp}.json",
+                file_types=("JSON files (*.json)", "All files (*.*)")
+            )
+        except Exception as e:
+            return {"error": str(e)}
+        if not result:
+            return {"cancelled": True}
+        path = result if isinstance(result, str) else result[0]
+        return {"path": path}
+
+    def pick_frozen_open_file(self) -> dict:
+        if not self._window:
+            return {"error": "window not ready"}
+        try:
+            result = self._window.create_file_dialog(
+                webview.FileDialog.OPEN,
+                file_types=("JSON files (*.json)", "All files (*.*)")
+            )
+        except Exception as e:
+            return {"error": str(e)}
+        if not result:
+            return {"cancelled": True}
+        path = result[0] if isinstance(result, (list, tuple)) else result
         return {"path": path}
 
     def pick_html_save_file(self) -> dict:
@@ -1948,6 +2024,137 @@ class Api:
         finally:
             state["running"] = False
 
+    def start_frozen_resume(self, path: str, rule_name: str) -> dict:
+        """저장된 frozen JSON을 열어 이어서 라벨링."""
+        if err := self._ensure_ready():
+            return err
+        if self._folder_state and self._folder_state.get("running"):
+            return {"error": "이미 진행 중입니다."}
+        if not path:
+            return {"error": "파일 경로가 없습니다."}
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+        except Exception as e:
+            return {"error": f"파일 로드 실패: {e}"}
+        if not isinstance(loaded, list):
+            return {"error": "JSON 형식이 올바르지 않습니다 (배열이 아님)."}
+
+        self._folder_state = {
+            "running": True,
+            "aborted": False,
+            "stage": "scanning",
+            "progress": 0,
+            "total": len(loaded),
+            "current_file": "",
+            "results": [],
+            "label_queue": [],
+            "label_idx": 0,
+            "save_path": path,          # 열었던 파일에 그대로 덮어쓰기
+            "labeling_mode": False,
+            "use_raw": False,
+            "dedup_msg": False,
+            "rule_name": rule_name,
+            "error": None,
+            "history": [],
+            "labeled_data": [],
+            "frozen_mode": True,
+            "frozen_queue": [],
+            "frozen_idx": 0,
+        }
+        t = threading.Thread(
+            target=self._run_frozen_resume,
+            args=(loaded, rule_name),
+            daemon=True,
+        )
+        t.start()
+        return {"ok": True}
+
+    def _run_frozen_resume(self, loaded: list, rule_name: str):
+        """저장 파일을 다시 열어 엔진을 재실행(빨간 밑줄 복원)하고,
+        저장돼 있던 gt_spans/reviewed는 그대로 유지한 뒤 첫 미검토 row로 점프."""
+        state = self._folder_state
+        try:
+            state["stage"] = "checking"
+            spell = self._build_folder_spell_checker(rule_name, debug=False)
+            importlib.reload(_raw_cfg)
+            raw = RawStringSearcher()
+            raw.add_word_from_list(_raw_cfg.RAW_STRING_RULES)
+
+            texts: list[str] = []
+            meta: list[dict] = []
+            for row in loaded:
+                if not isinstance(row, dict):
+                    continue
+                text = str(row.get("text", ""))
+                if not text:
+                    continue
+                texts.append(text)
+                meta.append({
+                    "gt_spans": row.get("spans", []) or [],
+                    "reviewed": bool(row.get("reviewed")),
+                })
+
+            state["total"] = len(texts)
+            tokens_list = list(self._tkn.tokenize(text=texts)) if texts else []
+
+            CHUNK = 1000
+            all_spell_errors = []
+            for i in range(0, len(tokens_list), CHUNK):
+                if state["aborted"]:
+                    break
+                chunk = tokens_list[i : i + CHUNK]
+                all_spell_errors.extend(spell.check_batch(chunk))
+                state["progress"] = min(i + CHUNK, len(tokens_list))
+
+            for text, errs_raw, m in zip(texts, all_spell_errors, meta):
+                if state["aborted"]:
+                    break
+                errs = list(errs_raw)
+                errs.extend(raw.search(text))
+                highlighted = highlight_text(text, errs)
+                engine_spans = [
+                    {
+                        "start": e.start_index,
+                        "end": e.end_index,
+                        "type": _normalize_type_name(get_error_type_name(e)),
+                        "msg": e.error_message,
+                    }
+                    for e in errs
+                ]
+                gt_spans = [
+                    {"start": int(s["start"]), "end": int(s["end"]), "type": s["type"]}
+                    for s in m["gt_spans"]
+                    if s.get("type")
+                ]
+                state["frozen_queue"].append({
+                    "file": "(resumed)",
+                    "text": text,
+                    "highlighted": highlighted,
+                    "engine_spans": engine_spans,
+                    "gt_spans": gt_spans,
+                    "reviewed": m["reviewed"],
+                })
+
+            # 첫 미검토 row로 점프 (전부 검토됐으면 0)
+            first_unreviewed = next(
+                (i for i, it in enumerate(state["frozen_queue"]) if not it["reviewed"]),
+                0,
+            )
+            state["frozen_idx"] = first_unreviewed
+            state["progress"] = state["total"]
+            if state["frozen_queue"] and not state["aborted"]:
+                state["stage"] = "frozen_labeling"
+            else:
+                state["stage"] = "done"
+        except Exception as e:
+            tb = traceback.format_exc()
+            logging.exception("frozen resume failed")
+            state["error"] = f"{type(e).__name__}: {e}\n\n{tb}"
+            state["stage"] = "done"
+        finally:
+            state["running"] = False
+
     def get_folder_progress(self) -> dict:
         state = self._folder_state
         if not state:
@@ -2108,29 +2315,25 @@ class Api:
         return {"ok": True}
 
     def _save_frozen_data(self) -> dict:
-        """검토 완료한 row를 text/start/end/type TSV로 덮어쓰기 저장."""
+        """검토 여부와 무관하게 모든 row를 pretty JSON 배열로 저장.
+        각 row: {"text": str, "spans": [{"start","end","type"}], "reviewed": bool}"""
         state = self._folder_state
         if not state or not state.get("save_path"):
             return {"error": "저장 경로가 없습니다."}
         try:
-            lines = []
+            data = []
             for item in state["frozen_queue"]:
-                if not item.get("reviewed"):
-                    continue
-                text = (item["text"]
-                        .replace("\t", " ")
-                        .replace("\n", " ")
-                        .replace("\r", " "))
-                spans = item.get("gt_spans", [])
-                if not spans:
-                    # 오류 없는 row (검토 완료)
-                    lines.append(f"{text}\t\t\t\n")
-                else:
-                    for s in spans:
-                        lines.append(f"{text}\t{s['start']}\t{s['end']}\t{s['type']}\n")
+                spans = [
+                    {"start": int(s["start"]), "end": int(s["end"]), "type": s["type"]}
+                    for s in item.get("gt_spans", [])
+                ]
+                data.append({
+                    "text": item["text"],
+                    "spans": spans,
+                    "reviewed": bool(item.get("reviewed")),
+                })
             with open(state["save_path"], "w", encoding="utf-8") as f:
-                f.write("text\tstart\tend\ttype\n")
-                f.writelines(lines)
+                json.dump(data, f, ensure_ascii=False, indent=2)
             return {"ok": True}
         except Exception as e:
             return {"error": str(e)}
@@ -2142,12 +2345,14 @@ class Api:
 
         # ── frozen corpus 모드 ──
         if state.get("frozen_mode"):
-            reviewed = [it for it in state.get("frozen_queue", []) if it.get("reviewed")]
-            if reviewed and self._window:
+            queue = state.get("frozen_queue", [])
+            reviewed_cnt = sum(1 for it in queue if it.get("reviewed"))
+            if queue and self._window:
                 do_save = self._window.create_confirmation_dialog(
                     "저장 확인",
-                    f"검토 완료한 {len(reviewed)}개 row의 라벨을 저장하시겠습니까?\n"
-                    "(기존 파일은 덮어쓰기됩니다)"
+                    f"진행 상황을 저장하시겠습니까?\n"
+                    f"검토 완료 {reviewed_cnt} / 전체 {len(queue)} row\n"
+                    "(모든 row가 저장되어 나중에 '이어서 라벨링'으로 이어할 수 있습니다.)"
                 )
                 if do_save:
                     save_res = self._save_frozen_data()
