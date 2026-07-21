@@ -107,11 +107,6 @@ _CERTAINS: list[KoSpellRules] = [
     .build(),
 
     *rule()
-    .OR(tag_form(Tag.동사, "헤매이"), tag_form(Tag.동사, "헤메"))
-    .msg("'헤매다'가 올바른 표현입니다.")
-    .build(),
-
-    *rule()
     .tag_form(Tag.동사파생접미사, "하")
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.동사, "매")
@@ -224,6 +219,11 @@ _OM = [
     .tag_form(Tag.형용사규칙활용, "즐겁")
     .tag_form(Tag.관형사형전성어미, "ᆫ")
     .msg("'즐거운'이 올바른 표현입니다.").build(),
+    
+    *rule().id("OM_초하룻날")
+    .tag_form(Tag.일반명사, "초하루")
+    .tag_form(Tag.일반명사, "날")
+    .msg("'초하룻날'이 올바른 표현입니다.").build(),
 ]
 
 _ADD = [
@@ -803,6 +803,10 @@ _REP_VERBS = [
     .tag_form(Tag.동사, "해매이")
     .msg("'헤매다'의 오타가 아닌가요? 또한, '헤매다'에는 '-이-'가 결합할 수 없습니다.").build(),
 
+    *rule().id("REP_헤매다_3")
+    .tag_form(Tag.동사, "헤메")
+    .msg("'헤매다'가 올바른 표현입니다.").build(),
+
     *rule().id("REP_없앨_1")
     .tag_form(Tag.일반명사, "업앨")
     .msg("'없앨'의 오타가 아닌가요?").build(),  
@@ -1207,6 +1211,10 @@ _REP_NNG = [
     *rule().id("REP_비스름")
     .tag_form(Tag.일반명사, "비스무리")
     .msg("'비스무리'는 비표준어이므로 '비스름'으로 쓸 것을 권장합니다.").build(),
+    
+    *rule().id("REP_꼴찌")
+    .tag_form(Tag.일반명사, "꼴지")
+    .msg("'꼴찌'가 올바른 표현입니다.").build(),
 ]
 
 _MIF = [
@@ -1700,6 +1708,12 @@ _MIF = [
     .AND(tag(Tag.동사), forms({"일", "이"})).if_not_spaced()
     .tag_form(Tag.연결어미, "려고")
     .msg("'띄려고'가 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_었은")
+    .tags(TagGroup.용언)
+    .tag_form(Tag.선어말어미, "었")
+    .tag_form(Tag.관형사형전성어미, "은")
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("었", "선어말어미"), ("을", "관형사형전성어미"))\'의 오타가 아닌가요?').build(),
 ]
 
 _JOSA = [
@@ -1908,6 +1922,12 @@ _Z_CODA = [
     *rule().id("Z_CODA_인사말")
     .tag_form(Tag.일반명사, "인삿말")
     .msg("'인사말'이 올바른 표현입니다.").build(),
+    
+    *rule().id("Z_CODA_초하룻")
+    .tag_form(Tag.의존명사, "초")
+    .tag_form(Tag.일반명사, "하룻").if_not_spaced()
+    .NOT(form("날")).context()
+    .msg("'초하루'가 올바른 표현입니다.").build(),
 ]
 
 _RECOMMENDED = [
