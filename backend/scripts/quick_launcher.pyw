@@ -527,11 +527,14 @@ HTML = """
     <div class="label-counter">
       <strong><span id="frozen-idx">0</span></strong> / <span id="frozen-total">0</span>
       <span id="frozen-file" style="color:var(--subtle); font-size:12px; margin-left:8px;"></span>
+      <span id="frozen-noise-badge" style="display:none; background:#64748b; color:#fff;
+            padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600;
+            margin-left:8px;">NOISE (저장 시 삭제)</span>
     </div>
 
     <div style="font-size:12px; color:var(--muted); margin:6px 0;">
       빨간 밑줄(엔진 검출) 클릭 → 정답 추가 · 드래그로 직접 선택 후 [선택 구간 추가] · 초록(정답) 클릭 → 제거<br>
-      단축키: <b>W/S</b> 종류 이동 · <b>A</b> 이전 · <b>D</b> 저장 후 다음 · <b>Space</b> 선택 구간 추가
+      단축키: <b>W/S</b> 종류 이동 · <b>A</b> 이전 · <b>D</b> 저장 후 다음 · <b>Space</b> 선택 구간 추가 · <b>M</b> noise 표시(삭제) 토글 후 다음
     </div>
     <div id="frozen-select-text" class="spell-preview" style="user-select:text; cursor:text;"></div>
 
@@ -550,6 +553,7 @@ HTML = """
     <div class="toolbar">
       <button class="btn-warning" onclick="frozenBack()" id="btn-frozen-back" disabled>이전 (A)</button>
       <button class="btn-success" onclick="frozenNext()">저장 후 다음 (D)</button>
+      <button class="btn-danger" onclick="toggleFrozenNoise()">noise 표시 (M)</button>
       <button class="btn-danger" onclick="abortFrozen()" style="margin-left:auto;">중단</button>
     </div>
   </div>
@@ -1036,6 +1040,7 @@ async function loadNextFrozen() {
   _frozenCur.gt_spans = (item.gt_spans || [])
     .map(s => ({ start: s.start, end: s.end, type: s.type }));
   _frozenEngineSpans = item.engine_spans || [];
+  _frozenCur.noise = !!item.noise;
 
   document.getElementById('frozen-idx').textContent = item.idx;
   document.getElementById('frozen-total').textContent = item.total;
@@ -1044,6 +1049,7 @@ async function loadNextFrozen() {
 
   renderFrozenText();
   renderFrozenGt();
+  renderFrozenNoise();
 
   const backBtn = document.getElementById('btn-frozen-back');
   if (backBtn) backBtn.disabled = (item.idx <= 1);
@@ -1098,6 +1104,21 @@ function renderFrozenText() {
     i = runEnd;
   }
   container.innerHTML = html;
+}
+
+function renderFrozenNoise() {
+  const container = document.getElementById('frozen-select-text');
+  const badge = document.getElementById('frozen-noise-badge');
+  const on = _frozenCur && _frozenCur.noise;
+  if (on) {
+    container.style.background = '#e2e8f0';
+    container.style.opacity = '0.55';
+    if (badge) badge.style.display = '';
+  } else {
+    container.style.background = '';
+    container.style.opacity = '';
+    if (badge) badge.style.display = 'none';
+  }
 }
 
 function acceptEngineSpan(i) {
@@ -1185,6 +1206,14 @@ async function frozenNext() {
 async function frozenBack() {
   const res = await pywebview.api.frozen_back(_frozenCur ? _frozenCur.gt_spans : []);
   if (res.error) { setFolderStatus(res.error); return; }
+  loadNextFrozen();
+}
+
+async function toggleFrozenNoise() {
+  const res = await pywebview.api.frozen_toggle_noise(
+    _frozenCur ? _frozenCur.gt_spans : []
+  );
+  if (res.error) { setFolderStatus('오류: ' + res.error); return; }
   loadNextFrozen();
 }
 
@@ -1408,6 +1437,7 @@ document.addEventListener('keydown', function(e) {
       return;
     }
     if (k === 'd') { e.preventDefault(); frozenNext(); return; }
+    if (k === 'm') { e.preventDefault(); toggleFrozenNoise(); return; }
     if (e.code === 'Space') { e.preventDefault(); addFrozenSpanFromSelection(); return; }
   }
 });
@@ -2009,6 +2039,7 @@ class Api:
                         "engine_spans": engine_spans,
                         "gt_spans": [],
                         "reviewed": False,
+                        "noise": False,
                     })
 
             state["progress"] = state["total"]
@@ -2072,7 +2103,7 @@ class Api:
 
     def _run_frozen_resume(self, loaded: list, rule_name: str):
         """저장 파일을 다시 열어 엔진을 재실행(빨간 밑줄 복원)하고,
-        저장돼 있던 gt_spans/reviewed는 그대로 유지한 뒤 첫 미검토 row로 점프."""
+        저장돼 있던 gt_spans/reviewed/noise는 그대로 유지한 뒤 첫 미검토 row로 점프."""
         state = self._folder_state
         try:
             state["stage"] = "checking"
@@ -2093,6 +2124,7 @@ class Api:
                 meta.append({
                     "gt_spans": row.get("spans", []) or [],
                     "reviewed": bool(row.get("reviewed")),
+                    "noise": bool(row.get("noise")),
                 })
 
             state["total"] = len(texts)
@@ -2134,6 +2166,7 @@ class Api:
                     "engine_spans": engine_spans,
                     "gt_spans": gt_spans,
                     "reviewed": m["reviewed"],
+                    "noise": m["noise"],
                 })
 
             # 첫 미검토 row로 점프 (전부 검토됐으면 0)
@@ -2274,6 +2307,7 @@ class Api:
             "highlighted": item["highlighted"],
             "engine_spans": item["engine_spans"],
             "gt_spans": item["gt_spans"],
+            "noise": item.get("noise", False),
         }
 
     def _frozen_save_current(self, spans) -> None:
@@ -2298,7 +2332,7 @@ class Api:
         self._frozen_save_current(spans)
         state["frozen_idx"] += 1
         if state["frozen_idx"] >= len(state["frozen_queue"]):
-            save_res = self._save_frozen_data()
+            save_res = self._save_frozen_data(final=True)
             if save_res.get("error"):
                 return {"error": f"저장 실패: {save_res['error']}"}
             return {"done": True}
@@ -2314,24 +2348,55 @@ class Api:
         state["frozen_idx"] -= 1
         return {"ok": True}
 
-    def _save_frozen_data(self) -> dict:
-        """검토 여부와 무관하게 모든 row를 pretty JSON 배열로 저장.
-        각 row: {"text": str, "spans": [{"start","end","type"}], "reviewed": bool}"""
+    def frozen_toggle_noise(self, spans) -> dict:
+        """현재 row의 noise 여부를 토글하고 D처럼 다음으로 넘어간다.
+        noise는 메모리에만 표시되고, 최종 저장(final=True) 때만 JSON에서 제거된다."""
+        state = self._folder_state
+        if not state:
+            return {"error": "상태 없음"}
+        idx = state["frozen_idx"]
+        queue = state["frozen_queue"]
+        if not (0 <= idx < len(queue)):
+            return {"error": "잘못된 인덱스"}
+        # 현재 구간 저장(+reviewed=True) 후 noise 토글
+        self._frozen_save_current(spans)
+        queue[idx]["noise"] = not queue[idx].get("noise", False)
+        # D와 동일하게 다음으로 이동
+        state["frozen_idx"] += 1
+        if state["frozen_idx"] >= len(state["frozen_queue"]):
+            save_res = self._save_frozen_data(final=True)
+            if save_res.get("error"):
+                return {"error": f"저장 실패: {save_res['error']}"}
+            return {"done": True}
+        return {"ok": True}
+
+    def _save_frozen_data(self, final: bool = False) -> dict:
+        """모든 row를 pretty JSON 배열로 저장.
+        - final=False (중단/진행 저장): noise row도 유지하되 "noise": true 플래그를 남긴다.
+          → 나중에 '이어서 라벨링'으로 복원 후 다시 토글 가능.
+        - final=True  (마지막 row까지 완료): noise row는 JSON에서 완전히 제거한다.
+        각 row: {"text", "spans":[{"start","end","type"}], "reviewed", (선택)"noise"}"""
         state = self._folder_state
         if not state or not state.get("save_path"):
             return {"error": "저장 경로가 없습니다."}
         try:
             data = []
             for item in state["frozen_queue"]:
+                is_noise = bool(item.get("noise"))
+                if final and is_noise:
+                    continue  # 최종 저장 시 noise row 삭제
                 spans = [
                     {"start": int(s["start"]), "end": int(s["end"]), "type": s["type"]}
                     for s in item.get("gt_spans", [])
                 ]
-                data.append({
+                row = {
                     "text": item["text"],
                     "spans": spans,
                     "reviewed": bool(item.get("reviewed")),
-                })
+                }
+                if is_noise:
+                    row["noise"] = True   # 진행 저장 시에만 플래그로 보존
+                data.append(row)
             with open(state["save_path"], "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             return {"ok": True}
