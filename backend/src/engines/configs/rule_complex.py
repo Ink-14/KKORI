@@ -34,25 +34,35 @@ _SPELLING_SPACING = [
     .tag_form(Tag.보조용언, "놓").if_not_spaced()
     .msg("'갖다 놓다'로 써야 합니다.").build(),
 
-    *rule().id("COMPLE_때_오타+띄어쓰기")
+    *rule().id("COMPLEX_때_오타+띄어쓰기")
     .NOT(tag_form(Tag.동사, "쓰"))
     .tag_form(Tag.관형사형전성어미, "ᆯ").if_not_spaced().context()
     .form("떄")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"ᆯ\", \"관형사형전성어미\")) 때'의 오타가 아닌가요?").build(),
 
-    *rule().id("COMPLE_쓸데_오타+띄어쓰기_1")
+    *rule().id("COMPLEX_쓸데_오타+띄어쓰기_1")
     .tag_form(Tag.동사, "쓰")
     .tag_form(Tag.관형사형전성어미, "ᆯ")
     .forms({"때", "떄"})
     .tag_form(Tag.형용사, "없").if_spaced()
     .msg("'쓸데없다'가 올바른 표현입니다.").build(),
 
-    *rule().id("COMPLE_쓸데_오타+띄어쓰기_1")
+    *rule().id("COMPLEX_쓸데_오타+띄어쓰기_1")
     .tag_form(Tag.동사, "쓰")
     .tag_form(Tag.관형사형전성어미, "ᆯ")
     .forms({"때", "떄"})
     .tag_form(Tag.일반부사, "없이").if_spaced()
     .msg("'쓸데없이'가 올바른 표현입니다.").build(),
+
+    *rule().id("COMPLEX_뜬금_오타+띄어쓰기_1")
+    .tag_form(Tag.일반명사, "뜬끔")
+    .tag_form(Tag.형용사, "없").if_spaced()
+    .msg("'뜬금'이 올바른 표현입니다. 또한 '뜬금없다'로 붙여 써야 합니다.").build(),
+
+    *rule().id("COMPLEX_뜬금_오타+띄어쓰기_1")
+    .tag_form(Tag.일반명사, "뜬끔")
+    .tag_form(Tag.일반부사, "없이").if_spaced()
+    .msg("'뜬금'이 올바른 표현입니다. 또한 '뜬금없이'로 붙여 써야 합니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [

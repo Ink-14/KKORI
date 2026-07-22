@@ -398,6 +398,21 @@ _REP = [
     .msg("'든'이 올바른 표현입니다.")
     .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
 
+    *rule().id("REP_대로_1")
+    .tag_form(Tag.관형사형전성어미, "던").context()
+    .tag_form(Tag.의존명사, "데")
+    .tag_form(Tag.부사격조사, "로")
+    .tag_form(Tag.동사, "하").context()
+    .msg("'대로'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_대로_2")
+    .tag(Tag.목적격조사).context()
+    .tag_form(Tag.형용사, "있").context()
+    .tag_form(Tag.관형사형전성어미, "는").context()
+    .tag_form(Tag.의존명사, "데")
+    .tag_form(Tag.부사격조사, "로")
+    .msg("'대로'가 올바른 표현입니다.").build(),
+
     *rule().id("REP_~께")
     .AND(tags({Tag.종결어미, Tag.연결어미}), forms({"ᆯ께", "ᆯ께요"}))
     .msg("'-ᆯ게'로 써야 합니다.").build(),
@@ -448,13 +463,6 @@ _REP = [
     *rule().id("REP_넓적")
     .tag_form(Tag.어근, "넓쩍")
     .msg("'넓적'이 올바른 표현입니다.").build(),
-
-    *rule().id("REP_대로")
-    .tag_form(Tag.관형사형전성어미, "던").context()
-    .tag_form(Tag.의존명사, "데")
-    .tag_form(Tag.부사격조사, "로")
-    .tag_form(Tag.동사, "하").context()
-    .msg("'대로'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_애초에")
     .tag_form(Tag.일반명사, "에초")
@@ -545,6 +553,11 @@ _REP = [
     *rule().id("REP_의존명사_꺼")
     .tag_form(Tag.의존명사, "꺼")
     .msg("'거'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_ㄹ는지")
+    .tags(TagGroup.용언)
+    .tag_form(Tag.연결어미, "ᆯ런지")
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("ᆯ는지", "연결어미"))\'가 올바른 표현입니다.').build(),
 ]
 
 _REP_VERBS = [
@@ -602,12 +615,6 @@ _REP_VERBS = [
     *rule().id("REP_깨닫다")
     .tag_form(Tag.동사, "깨닿")
     .msg("'깨닫다'가 올바른 표현입니다.").build(),
-
-    *rule().id("REP_세다")
-    .AND(tag(Tag.일반명사), forms({"돈", "액수"})).context()
-    .tag(Tag.목적격조사).context()
-    .tag_form(Tag.동사, "새")
-    .msg("'세다'의 오타가 아닌가요?").build(),
 
     *rule().id("REP_내팽개치다")
     .tag_form(Tag.동사, "내팽겨치")
@@ -858,19 +865,19 @@ _REP_VERBS = [
     .msg("'수군거리다'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_맞히다_1")
-    .AND(tag(Tag.일반명사), forms({"정답", "답", "문제", "퀴즈"})).context()
+    .AND(tag(Tag.일반명사), forms({"정답", "답", "문제", "퀴즈", "암호"})).context()
     .any().opt().context()
     .any().opt().context()
     .tag_form(Tag.동사, "맞추")
-    .msg("문제에 대한 정답을 지칭하는 경우, '맞히다'가 올바른 표현입니다.").build(),
+    .msg("문제에 대한 답을 지칭하는 경우, '맞히다'가 올바른 표현입니다.").build(),
     
     *rule().id("REP_맞히다_2")
     .tag_form(Tag.동사, "맞추")
     .any().opt().context()
     .any().opt().context()
     .any().opt().context()
-    .AND(tag(Tag.일반명사), forms({"정답", "답", "문제", "퀴즈"})).context()    
-    .msg("문제에 대한 정답을 지칭하는 경우, '맞히다'가 올바른 표현입니다.").build(),
+    .AND(tag(Tag.일반명사), forms({"정답", "답", "문제", "퀴즈", "암호"})).context()    
+    .msg("문제에 대한 답을 지칭하는 경우, '맞히다'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_내로라하다")
     .tag_form(Tag.어근, "내노라")
@@ -925,12 +932,6 @@ _REP_VERBS = [
     .tag_form(Tag.동사, "추스리")
     .msg("'추스르다'가 올바른 표현입니다.").build(),
     
-    *rule().id("REP_세다")
-    .AND(tag(Tag.형용사규칙활용), forms({"하얗", "허옇"})).context()
-    .tag_form(Tag.연결어미, "게").context()
-    .tag_form(Tag.동사, "새")
-    .msg("'희어지다'의 의미로는 '세다'가 올바른 표현입니다.").build(),
-    
     *rule().id("REP_쭈그리다_쭈구리다")
     .tag_form(Tag.동사, "쭈구리")
     .msg("'쭈그리다'가 올바른 표현입니다.").build(),
@@ -983,10 +984,22 @@ _REP_VERBS = [
     .tag(Tag.연결어미)
     .tag_form(Tag.동사, "쌓이")
     .msg("'둘러싸이다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_세다_색상")
+    .AND(tag(Tag.형용사규칙활용), forms({"하얗", "허옇", "새하얗"})).context()
+    .tag_form(Tag.연결어미, "게").context()
+    .tag_form(Tag.동사, "새")
+    .msg("'희어지다'의 의미로는 '세다'가 올바른 표현입니다.").build(),
     
-    *rule().id("REP_세다")
+    *rule().id("REP_세다_강하다")
     .tag_form(Tag.형용사, "쎄")
     .msg("'세다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_세다_금액")
+    .AND(tag(Tag.일반명사), forms({"돈", "액수"})).context()
+    .tag(Tag.목적격조사).context()
+    .tag_form(Tag.동사, "새")
+    .msg("'세다'의 오타가 아닌가요?").build(),
     
     *rule().id("REP_쓰러뜨리다")
     .tag_form(Tag.동사, "쓰려뜨리")
@@ -995,6 +1008,10 @@ _REP_VERBS = [
     *rule().id("REP_쓰러트리다")
     .tag_form(Tag.동사, "쓰려트리")
     .msg("'쓰러트리다'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_사그라들다")
+    .tag_form(Tag.동사, "사그러드")
+    .msg("'사그라들다'가 올바른 표현입니다.").build(),
 ]
 
 _REP_NNG = [
@@ -1215,6 +1232,11 @@ _REP_NNG = [
     *rule().id("REP_꼴찌")
     .tag_form(Tag.일반명사, "꼴지")
     .msg("'꼴찌'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_뜬금")
+    .tag_form(Tag.일반명사, "뜬끔")
+    .OR(tag_form(Tag.형용사, "없"), tag_form(Tag.일반부사, "없이")).if_not_spaced().context()
+    .msg("'뜬금'이 올바른 표현입니다.").build(),
 ]
 
 _MIF = [
