@@ -409,7 +409,7 @@ HTML = """
     position: fixed;
     background: #1e293b; color: #e2e8f0;
     padding: 6px 10px; border-radius: 6px;
-    font-size: 12px; line-height: 1.5; max-width: 300px;
+    font-size: 12px; line-height: 1.5; min-width: 200px; max-width: 300px;
     box-shadow: 0 3px 10px rgba(0,0,0,0.25);
     z-index: 99999; pointer-events: none; display: none;
     white-space: pre-wrap; word-break: break-word;
@@ -534,7 +534,7 @@ HTML = """
 
     <div style="font-size:12px; color:var(--muted); margin:6px 0;">
       빨간 밑줄(엔진 검출) 클릭 → 정답 추가 · 드래그로 직접 선택 후 [선택 구간 추가] · 초록(정답) 클릭 → 제거<br>
-      단축키: <b>W/S</b> 종류 이동 · <b>A</b> 이전 · <b>D</b> 저장 후 다음 · <b>Space</b> 선택 구간 추가 · <b>M</b> noise 표시(삭제) 토글 후 다음
+      단축키: <b>W/S</b> 종류 이동 · <b>A</b> 이전 · <b>D</b> 저장 후 다음 · <b>Space</b> 선택 구간 추가 · <b>M</b> noise 표시 토글(켤 때만 다음으로 이동) · <b>F</b> 미검토(reviewed=false) row로 건너뛰기
     </div>
     <div id="frozen-select-text" class="spell-preview" style="user-select:text; cursor:text;"></div>
 
@@ -553,7 +553,8 @@ HTML = """
     <div class="toolbar">
       <button class="btn-warning" onclick="frozenBack()" id="btn-frozen-back" disabled>이전 (A)</button>
       <button class="btn-success" onclick="frozenNext()">저장 후 다음 (D)</button>
-      <button class="btn-danger" onclick="toggleFrozenNoise()">noise 표시 (M)</button>
+      <button class="btn-danger" onclick="toggleFrozenNoise()">noise 표시 토글 (M)</button>
+      <button class="btn-primary" onclick="skipToUnreviewedFrozen()">미검토로 건너뛰기 (F)</button>
       <button class="btn-danger" onclick="abortFrozen()" style="margin-left:auto;">중단</button>
     </div>
   </div>
@@ -1089,8 +1090,11 @@ function renderFrozenText() {
 
     if (eIdx >= 0) {
       const bg = gIdx >= 0 ? 'background:rgba(16,185,129,0.22);' : '';
+      const tip = engine[eIdx].type
+        + (engine[eIdx].msg ? '\\n' + engine[eIdx].msg : '')
+        + '\\n(클릭시 정답 추가)';
       html += '<span class="frozen-eng" style="' + bg + '" '
-        + 'data-tip="' + escapeHtml(engine[eIdx].type) + ' (클릭시 정답 추가)" '
+        + 'data-tip="' + escapeHtml(tip) + '" '
         + 'onclick="acceptEngineSpan(' + eIdx + ')">' + chunk + '</span>';
     } else if (gIdx >= 0) {
       html += '<span style="background:rgba(16,185,129,0.25); '
@@ -1198,19 +1202,37 @@ document.addEventListener('mouseup', function () {
 });
 
 async function frozenNext() {
+  hideFrozenTooltip();
   const res = await pywebview.api.frozen_next(_frozenCur ? _frozenCur.gt_spans : []);
   if (res.error) { setFolderStatus('저장 오류: ' + res.error); return; }
   loadNextFrozen();
 }
 
 async function frozenBack() {
+  hideFrozenTooltip();
   const res = await pywebview.api.frozen_back(_frozenCur ? _frozenCur.gt_spans : []);
   if (res.error) { setFolderStatus(res.error); return; }
   loadNextFrozen();
 }
 
 async function toggleFrozenNoise() {
+  hideFrozenTooltip();
   const res = await pywebview.api.frozen_toggle_noise(
+    _frozenCur ? _frozenCur.gt_spans : []
+  );
+  if (res.error) { setFolderStatus('오류: ' + res.error); return; }
+  if (!res.moved) {
+    // noise 해제: 다음으로 넘어가지 않고 현재 row에 남는다.
+    _frozenCur.noise = res.noise;
+    renderFrozenNoise();
+    return;
+  }
+  loadNextFrozen();
+}
+
+async function skipToUnreviewedFrozen() {
+  hideFrozenTooltip();
+  const res = await pywebview.api.frozen_skip_to_unreviewed(
     _frozenCur ? _frozenCur.gt_spans : []
   );
   if (res.error) { setFolderStatus('오류: ' + res.error); return; }
@@ -1222,6 +1244,11 @@ async function abortFrozen() {
   document.getElementById('folder-frozen-area').style.display = 'none';
   setFolderStatus('Ground Truth 라벨링 중단됨');
   setFolderBlocking(false);
+}
+
+function hideFrozenTooltip() {
+  const tip = document.getElementById('frozen-tooltip');
+  if (tip) tip.style.display = 'none';
 }
 
 (function initFrozenTooltip() {
@@ -1438,6 +1465,7 @@ document.addEventListener('keydown', function(e) {
     }
     if (k === 'd') { e.preventDefault(); frozenNext(); return; }
     if (k === 'm') { e.preventDefault(); toggleFrozenNoise(); return; }
+    if (k === 'f') { e.preventDefault(); skipToUnreviewedFrozen(); return; }
     if (e.code === 'Space') { e.preventDefault(); addFrozenSpanFromSelection(); return; }
   }
 });
@@ -2349,7 +2377,8 @@ class Api:
         return {"ok": True}
 
     def frozen_toggle_noise(self, spans) -> dict:
-        """현재 row의 noise 여부를 토글하고 D처럼 다음으로 넘어간다.
+        """현재 row의 noise 여부를 토글한다.
+        noise를 켤 때(표시)만 D처럼 다음으로 넘어가고, 끌 때(해제)는 현재 row에 남는다.
         noise는 메모리에만 표시되고, 최종 저장(final=True) 때만 JSON에서 제거된다."""
         state = self._folder_state
         if not state:
@@ -2360,14 +2389,41 @@ class Api:
             return {"error": "잘못된 인덱스"}
         # 현재 구간 저장(+reviewed=True) 후 noise 토글
         self._frozen_save_current(spans)
-        queue[idx]["noise"] = not queue[idx].get("noise", False)
-        # D와 동일하게 다음으로 이동
+        turned_on = not queue[idx].get("noise", False)
+        queue[idx]["noise"] = turned_on
+        if not turned_on:
+            # noise 해제 시에는 현재 row에 그대로 남는다.
+            return {"ok": True, "moved": False, "noise": False}
+        # noise를 켤 때만 D와 동일하게 다음으로 이동
         state["frozen_idx"] += 1
         if state["frozen_idx"] >= len(state["frozen_queue"]):
             save_res = self._save_frozen_data(final=True)
             if save_res.get("error"):
                 return {"error": f"저장 실패: {save_res['error']}"}
-            return {"done": True}
+            return {"done": True, "moved": True}
+        return {"ok": True, "moved": True}
+
+    def frozen_skip_to_unreviewed(self, spans) -> dict:
+        """현재 row를 저장한 뒤, reviewed=False인 다음 row로 건너뛴다.
+        (사용자가 JSON에서 직접 reviewed를 false로 바꿔 재검토할 때 사용)"""
+        state = self._folder_state
+        if not state:
+            return {"error": "상태 없음"}
+        self._frozen_save_current(spans)
+        queue = state["frozen_queue"]
+        cur = state["frozen_idx"]
+        nxt = next(
+            (i for i in range(cur + 1, len(queue)) if not queue[i].get("reviewed")),
+            None,
+        )
+        if nxt is None:
+            nxt = next(
+                (i for i in range(0, len(queue)) if not queue[i].get("reviewed")),
+                None,
+            )
+        if nxt is None:
+            return {"error": "reviewed=false인 row가 없습니다."}
+        state["frozen_idx"] = nxt
         return {"ok": True}
 
     def _save_frozen_data(self, final: bool = False) -> dict:
