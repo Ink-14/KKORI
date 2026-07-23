@@ -1,6 +1,6 @@
 from src.engines.configs.rule_builder import RuleBuilder, AND, OR, NOT, tag, tags, tag_form, form, forms, lemma, batchim, longer, SpacingRule, KoSpellRules
 from src.models.interface import Tag, TagGroup, SpellErrorType
-from src.engines.configs.rule_constants import 보조용언_FORMS
+from src.engines.configs.rule_constants import 보조용언_FORMS, 피우다_TARGETS
 
 def rule() -> RuleBuilder:
     return RuleBuilder(SpellErrorType.COMPLEX)
@@ -59,10 +59,21 @@ _SPELLING_SPACING = [
     .tag_form(Tag.형용사, "없").if_spaced()
     .msg("'뜬금'이 올바른 표현입니다. 또한 '뜬금없다'로 붙여 써야 합니다.").build(),
 
-    *rule().id("COMPLEX_뜬금_오타+띄어쓰기_1")
+    *rule().id("COMPLEX_뜬금_오타+띄어쓰기_2")
     .tag_form(Tag.일반명사, "뜬끔")
     .tag_form(Tag.일반부사, "없이").if_spaced()
     .msg("'뜬금'이 올바른 표현입니다. 또한 '뜬금없이'로 붙여 써야 합니다.").build(),
+
+    *rule().id("COMPLEX_피우다_오타+띄어쓰기_1")
+    .AND(tag(Tag.일반명사), forms(피우다_TARGETS)).context()
+    .tag_form(Tag.동사, "피").if_not_spaced()
+    .msg("'{form[0]}batchim(\"을\", \"를\") 피우다'가 올바른 표현입니다. 또한 앞 말과 띄어 써야 합니다.").build(),
+
+    *rule().id("COMPLEX_별의별_오타+띄어쓰기")
+    .tag_form(Tag.일반명사, "별")
+    .tag_form(Tag.부사격조사, "에")
+    .tag_form(Tag.관형사, "별")
+    .msg("'별의별'이 올바른 표현입니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [

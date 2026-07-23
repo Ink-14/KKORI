@@ -1,6 +1,6 @@
 ﻿from src.engines.configs.rule_builder import RuleBuilder, AND, OR, NOT, tag, tags, tag_form, form, forms, lemma, batchim, no_batchim, any_batchim, longer, SpacingRule, KoSpellRules
 from src.engines.configs.rule_helper import abbr_vowel_ending_connectives
-from src.engines.configs.rule_constants import 모음연결어미_FORMS, ㄹ사용불가_연결어미_FORMS, JOSA_TARGETS
+from src.engines.configs.rule_constants import 모음연결어미_FORMS, ㄹ사용불가_연결어미_FORMS, JOSA_TARGETS, 피우다_TARGETS
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 def rule() -> RuleBuilder:
@@ -372,6 +372,14 @@ _REP = [
     .AND(tags({Tag.종결어미, Tag.연결어미}), forms({"던가", "던지", "던"}))
     .msg("'든'이 올바른 표현입니다.")
     .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
+    *rule().id("REP_든_3_1")
+    .AND(tag(Tag.연결어미), forms({"던가", "던지", "던"}))
+    .any().context()
+    .any().context().opt()
+    .AND(tags({Tag.종결어미, Tag.연결어미}), forms({"던지", "던", "던가", "든지", "든", "든가"})).context()
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
     
     *rule().id("REP_든_4")
     .tags(TagGroup.용언).context()
@@ -390,7 +398,54 @@ _REP = [
     .tag_form(Tag.의존명사, "지")
     .msg("'라든지'가 올바른 표현입니다.")
     .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
-    
+
+    *rule().id("REP_다든가_1")
+    .AND(tag(Tag.연결어미), forms({"라며", "라고"})).context()
+    .tag(Tag.일반명사).context()
+    .tag_form(Tag.동사파생접미사, "하").context()
+    .AND(tags({Tag.종결어미, Tag.연결어미}), forms({"ᆫ다던지", "ᆫ다던가"}))
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
+    *rule().id("REP_다든가_1_1")
+    .AND(tag(Tag.연결어미), forms({"라며", "라고"})).context()
+    .tags(TagGroup.용언).context()
+    .tag(Tag.연결어미).context()
+    .tags(TagGroup.용언).context()
+    .AND(tags({Tag.종결어미, Tag.연결어미}), forms({"ᆫ다던지", "ᆫ다던가"}))
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
+    *rule().id("REP_다든가_2")
+    .form("ᆫ다던가")
+    .any().context()
+    .any().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .form("ᆫ다던가").context()
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
+    *rule().id("REP_다든가_2_1")
+    .form("ᆫ다던가").context()
+    .any().context()
+    .any().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .form("ᆫ다던가")
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
     *rule().id("REP_든_동일하다")
     .tags(TagGroup.용언).context()
     .OR(tag_form(Tag.관형사형전성어미, "던"), tag_form(Tag.연결어미, "던지"))
@@ -1012,6 +1067,14 @@ _REP_VERBS = [
     *rule().id("REP_사그라들다")
     .tag_form(Tag.동사, "사그러드")
     .msg("'사그라들다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_맡기다")
+    .tag_form(Tag.동사, "맞기")
+    .msg("'맡기다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_날아다니다")
+    .tag_form(Tag.동사, "날라다니")
+    .msg("'날아다니다'가 올바른 표현입니다.").build(),
 ]
 
 _REP_NNG = [
@@ -1237,6 +1300,18 @@ _REP_NNG = [
     .tag_form(Tag.일반명사, "뜬끔")
     .OR(tag_form(Tag.형용사, "없"), tag_form(Tag.일반부사, "없이")).if_not_spaced().context()
     .msg("'뜬금'이 올바른 표현입니다.").build(),
+
+    *rule().id("REP_덮개")
+    .tag_form(Tag.일반명사, "덮게")
+    .msg("'덮개'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_지우개")
+    .tag_form(Tag.일반명사, "지우게")
+    .msg("'지우개'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_베개")
+    .tag_form(Tag.일반명사, "배게")
+    .msg("'베개'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -1657,10 +1732,10 @@ _MIF = [
     .msg("'거르다'가 올바른 표현입니다.").build(),
     
     *rule().id("MIF_피우다")
-    .AND(tag(Tag.일반명사), forms({"담배", "줄담배", "바람"})).context()
+    .AND(tag(Tag.일반명사), forms(피우다_TARGETS)).context()
     .any().context().opt()
     .any().context().opt()
-    .tag_form(Tag.동사, "피")
+    .tag_form(Tag.동사, "피").if_spaced()
     .msg("'{form[0]}batchim(\"을\", \"를\") 피우다'가 올바른 표현입니다.").build(),
 
     *rule().id("MIF_메다")
@@ -1736,6 +1811,13 @@ _MIF = [
     .tag_form(Tag.선어말어미, "었")
     .tag_form(Tag.관형사형전성어미, "은")
     .msg('\'merge(({dform[0]}, {dtag[0]}), ("었", "선어말어미"), ("을", "관형사형전성어미"))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("MIF_되던")
+    .tag_form(Tag.동사파생접미사, "되")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.일반부사, "더").if_not_spaced()
+    .tag_form(Tag.보조사, "ᆫ")
+    .msg("'되던'의 오타가 아닌가요?").build(),
 ]
 
 _JOSA = [
@@ -1966,105 +2048,113 @@ def rule() -> RuleBuilder:
     return RuleBuilder(SpellErrorType.LOANWORD)
 
 _LOANWORDS = [
-    *rule().id("LOANWORD_브러시")
+    *rule().id("LW_브러시")
     .form("브러쉬")
     .msg("'브러시'가 올바른 표기입니다.").build(),
 
-    *rule().id("LOANWORD_스매시")
+    *rule().id("LW_스매시")
     .form("스매쉬")
     .msg("'스매시'가 올바른 표기입니다.").build(),
     
-    *rule().id("LOANWORD_드롭")
+    *rule().id("LW_드롭")
     .form("드랍")
     .msg("'드롭(drop)'이 올바른 표기입니다.").build(),
     
-    *rule().id("LOANWORD_배턴")
+    *rule().id("LW_배턴")
     .forms({"배톤", "배턴", "바톤"})
     .msg("'배턴' 또는 '바통'이 올바른 표기입니다.").build(),
     
-    *rule().id("LOANWORD_튀르키예")
+    *rule().id("LW_튀르키예")
     .tag_form(Tag.고유명사, "터키")
     .msg("나라 이름인 경우, '튀르키예'가 올바른 표기입니다.").build(),
     
-    *rule().id("LOANWORD_타월")
+    *rule().id("LW_타월")
     .tag_form(Tag.일반명사, "타올")
     .msg("'타월'이 올바른 표기입니다.").build(),
     
-    *rule().id("LOANWORD_수프")
+    *rule().id("LW_수프")
     .tag_form(Tag.일반명사, "스프")
     .msg("'수프(soup)'가 올바른 표기입니다.").build(),
     
-    *rule().id("LOANWORD_레포트")
+    *rule().id("LW_레포트")
     .tag_form(Tag.일반명사, "레포트")
     .msg("'리포트'가 올바른 표기입니다.").build(),
 
-    *rule().id("LOANWORD_프러포즈")
+    *rule().id("LW_프러포즈")
     .tag_form(Tag.일반명사, "프로포즈")
     .msg("'프러포즈'가 올바른 표기입니다.").build(),
 
-    *rule().id("LOANWORD_칼럼")
+    *rule().id("LW_칼럼")
     .tag_form(Tag.일반명사, "컬럼")
     .msg("'칼럼'이 올바른 표기입니다.").build(),
 
-    *rule().id("LOANWORD_윈도")
+    *rule().id("LW_윈도")
     .tag_form(Tag.일반명사, "윈도우")
     .msg("'윈도(window)'가 올바른 표현입니다.").build(),
 
-    *rule().id("LOANWORD_마초")
+    *rule().id("LW_마초")
     .tag_form(Tag.일반명사, "마쵸")
     .msg("'마초(macho)'가 올바른 표현입니다.").build(),
 
-    *rule().id("LOANWORD_미스터리")
+    *rule().id("LW_미스터리")
     .tag_form(Tag.일반명사, "미스테리")
     .msg("'미스터리'가 올바른 표현입니다.").build(),
 
-    *rule().id("LOANWORD_콜리플라워")
+    *rule().id("LW_콜리플라워")
     .tag_form(Tag.일반명사, "컬리플라워")
     .msg("'콜리플라워'가 올바른 표현입니다.").build(),
 
-    *rule().id("LOANWORD_크루져")
+    *rule().id("LW_크루져")
     .form("크루져")
     .msg("'크루저'가 올바른 표기입니다.").build(),
     
-    *rule().id("LOANWORD_업그레이드")
+    *rule().id("LW_업그레이드")
     .tag_form(Tag.일반명사, "업그레이")
     .msg("'업그레이드'의 오타가 아닌가요?").build(),
 
-    *rule().id("LOANWORD_노멀")
+    *rule().id("LW_노멀")
     .tag_form(Tag.일반명사, "노말")
     .msg("'노말(normal)'이 올바른 표기입니다.").build(),
 
-    *rule().id("LOANWORD_시리얼")
+    *rule().id("LW_시리얼")
     .tag_form(Tag.일반명사, "씨리얼")
     .msg("'시리얼'이 올바른 표기입니다.").build(),
 
-    *rule().id("LOANWORD_태블릿")
+    *rule().id("LW_태블릿")
     .tag_form(Tag.일반명사, "테블릿")
     .msg("'태블릿'이 올바른 표기입니다.").build(),
 
-    *rule().id("LOANWORD_오마주")
+    *rule().id("LW_오마주")
     .tag_form(Tag.일반명사, "오마쥬")
     .msg("'오마주'가 올바른 표기입니다.").build(),
 
-    *rule().id("LOANWORD_컨트롤")
+    *rule().id("LW_컨트롤")
     .tag_form(Tag.일반명사, "콘트롤")
     .msg("'컨트롤'이 올바른 표기입니다.").build(),
 
-    *rule().id("LOANWORD_블렌딩")
+    *rule().id("LW_블렌딩")
     .tag_form(Tag.일반명사, "블랜딩")
     .msg("'블렌딩'이 올바른 표기입니다.").build(),
 
-    *rule().id("LOANWORD_파인애플")
+    *rule().id("LW_파인애플")
     .tag_form(Tag.일반명사, "파인에플")
     .msg("'파인애플'이 올바른 표기입니다.").build(),
 
-    *rule().id("LOANWORD_캡처")
+    *rule().id("LW_캡처")
     .tag_form(Tag.일반명사, "캡쳐")
     .msg("'캡처'가 올바른 표기입니다.").build(),
     
-    *rule().id("LOANWORD_섀도")
+    *rule().id("LW_섀도")
     .forms({"셰도", "쉐도"})
     .msg("'섀도(Shadow)'가 올바른 표현입니다.").build(),
+
+    *rule().id("LW_스킨십")
+    .tag_form(Tag.일반명사, "스킨쉽")
+    .msg("'스킨십'이 올바른 표기입니다.").build(),
+
+    *rule().id("LW_플라스마")
+    .forms({"플라즈마", "프라즈마", "프라스마"})
+    .msg("'플라즈마(Plasma)'가 올바른 표기입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:
