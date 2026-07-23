@@ -534,6 +534,7 @@ HTML = """
 
     <div style="font-size:12px; color:var(--muted); margin:6px 0;">
       빨간 밑줄(엔진 검출) 클릭 → 정답 추가 · 드래그로 직접 선택 후 [선택 구간 추가] · 초록(정답) 클릭 → 제거<br>
+      <b>Ctrl+클릭</b>: 빨간 밑줄/드래그 선택 → 구조적 미검출(회색, 고유명사 등 사전 미등재로 어쩔 수 없는 미탐)로 추가 · 정답(초록/회색) 리스트에서 Ctrl+클릭 → 구조적 미검출 ↔ 일반 정답 토글<br>
       단축키: <b>W/S</b> 종류 이동 · <b>A</b> 이전 · <b>D</b> 저장 후 다음 · <b>Space</b> 선택 구간 추가 · <b>M</b> noise 표시 토글(켤 때만 다음으로 이동) · <b>F</b> 미검토(reviewed=false) row로 건너뛰기
     </div>
     <div id="frozen-select-text" class="spell-preview" style="user-select:text; cursor:text;"></div>
@@ -541,7 +542,7 @@ HTML = """
     <div class="toolbar">
       <span id="frozen-sel-info" style="font-size:12px; color:var(--muted);">선택 없음</span>
       <select id="frozen-type-select"></select>
-      <button class="btn-primary" onclick="addFrozenSpanFromSelection()">선택 구간 추가 (Space)</button>
+      <button class="btn-primary" onclick="addFrozenSpanFromSelection(event)">선택 구간 추가 (Space) · Ctrl+클릭시 구조적 미검출로 추가</button>
     </div>
 
     <div style="font-size:12px; color:var(--muted); margin:12px 0 4px;">정답(Ground Truth) 구간</div>
@@ -1089,19 +1090,25 @@ function renderFrozenText() {
     const chunk = escapeHtml(text.slice(i, runEnd));
 
     if (eIdx >= 0) {
-      const bg = gIdx >= 0 ? 'background:rgba(16,185,129,0.22);' : '';
+      const isUnavoidable = gIdx >= 0 && !!gt[gIdx].unavoidable;
+      const bg = gIdx >= 0
+        ? (isUnavoidable ? 'background:rgba(100,116,139,0.28);' : 'background:rgba(16,185,129,0.22);')
+        : '';
       const tip = engine[eIdx].type
         + (engine[eIdx].msg ? '\\n' + engine[eIdx].msg : '')
-        + '\\n(클릭시 정답 추가)';
+        + '\\n(클릭시 정답 추가 · Ctrl+클릭시 구조적 미검출로 추가)';
       html += '<span class="frozen-eng" style="' + bg + '" '
         + 'data-tip="' + escapeHtml(tip) + '" '
-        + 'onclick="acceptEngineSpan(' + eIdx + ')">' + chunk + '</span>';
+        + 'onclick="acceptEngineSpan(' + eIdx + ', event)">' + chunk + '</span>';
     } else if (gIdx >= 0) {
-      html += '<span style="background:rgba(16,185,129,0.25); '
-        + 'text-decoration:underline; text-decoration-color:#10b981; '
+      const isUnavoidable = !!gt[gIdx].unavoidable;
+      const color = isUnavoidable ? '#64748b' : '#10b981';
+      const label = isUnavoidable ? '구조적 미검출' : gt[gIdx].type;
+      html += '<span style="background:' + (isUnavoidable ? 'rgba(100,116,139,0.3)' : 'rgba(16,185,129,0.25)') + '; '
+        + 'text-decoration:underline; text-decoration-color:' + color + '; '
         + 'text-decoration-thickness:1.5px; cursor:pointer; border-radius:3px; padding:0 1px;" '
-        + 'title="' + escapeHtml(gt[gIdx].type) + ' (클릭시 제거)" '
-        + 'onclick="removeFrozenSpan(' + gIdx + ')">' + chunk + '</span>';
+        + 'title="' + escapeHtml(label) + ' (클릭시 제거 · Ctrl+클릭시 구조적 미검출 토글)" '
+        + 'onclick="removeFrozenSpan(' + gIdx + ', event)">' + chunk + '</span>';
     } else {
       html += chunk;
     }
@@ -1125,29 +1132,39 @@ function renderFrozenNoise() {
   }
 }
 
-function acceptEngineSpan(i) {
+function acceptEngineSpan(i, event) {
   const s = _frozenEngineSpans[i];
   if (!s) return;
-  addFrozenSpan(s.start, s.end, s.type);
+  const unavoidable = !!(event && event.ctrlKey);
+  addFrozenSpan(s.start, s.end, s.type, unavoidable);
 }
 
-function addFrozenSpan(start, end, type) {
+function addFrozenSpan(start, end, type, unavoidable) {
   const exists = _frozenCur.gt_spans.some(
     x => x.start === start && x.end === end && x.type === type
   );
-  if (!exists) _frozenCur.gt_spans.push({ start, end, type });
+  if (!exists) _frozenCur.gt_spans.push({ start, end, type, unavoidable: !!unavoidable });
   renderFrozenText();
   renderFrozenGt();
 }
 
-function addFrozenSpanFromSelection() {
+function addFrozenSpanFromSelection(event) {
   if (!_frozenSel) { setFolderStatus('먼저 원문에서 구간을 드래그하세요.'); return; }
   const type = document.getElementById('frozen-type-select').value;
-  addFrozenSpan(_frozenSel.start, _frozenSel.end, type);
+  const unavoidable = !!(event && event.ctrlKey);
+  addFrozenSpan(_frozenSel.start, _frozenSel.end, type, unavoidable);
 }
 
 function removeFrozenSpan(i) {
   _frozenCur.gt_spans.splice(i, 1);
+  renderFrozenText();
+  renderFrozenGt();
+}
+
+function toggleFrozenSpanUnavoidable(i) {
+  const s = _frozenCur.gt_spans[i];
+  if (!s) return;
+  s.unavoidable = !s.unavoidable;
   renderFrozenText();
   renderFrozenGt();
 }
@@ -1161,14 +1178,20 @@ function renderFrozenGt() {
     return;
   }
   tbody.innerHTML = spans.map((s, i) =>
-    '<tr>'
+    '<tr' + (s.unavoidable ? ' style="background:rgba(100,116,139,0.1);"' : '') + '>'
     + '<td>' + (i + 1) + '</td>'
     + '<td>' + escapeHtml(_frozenCur.text.slice(s.start, s.end)) + '</td>'
     + '<td>' + s.start + '</td>'
     + '<td>' + s.end + '</td>'
-    + '<td class="err-type">' + escapeHtml(s.type) + '</td>'
-    + '<td><button class="btn-danger" style="padding:2px 8px;" '
-    +   'onclick="removeFrozenSpan(' + i + ')">삭제</button></td>'
+    + '<td class="err-type">' + escapeHtml(s.type)
+    +   (s.unavoidable ? ' <span style="color:#64748b; font-weight:600;">(구조적 미검출)</span>' : '') + '</td>'
+    + '<td style="white-space:nowrap;">'
+    +   '<button class="btn-danger" style="padding:2px 8px;" '
+    +     'onclick="removeFrozenSpan(' + i + ')">삭제</button> '
+    +   '<button class="btn-warning" style="padding:2px 8px;" '
+    +     'onclick="toggleFrozenSpanUnavoidable(' + i + ')">'
+    +     (s.unavoidable ? '일반 전환' : '미검출 전환') + '</button>'
+    + '</td>'
     + '</tr>'
   ).join('');
 }
@@ -1466,7 +1489,7 @@ document.addEventListener('keydown', function(e) {
     if (k === 'd') { e.preventDefault(); frozenNext(); return; }
     if (k === 'm') { e.preventDefault(); toggleFrozenNoise(); return; }
     if (k === 'f') { e.preventDefault(); skipToUnreviewedFrozen(); return; }
-    if (e.code === 'Space') { e.preventDefault(); addFrozenSpanFromSelection(); return; }
+    if (e.code === 'Space') { e.preventDefault(); addFrozenSpanFromSelection(e); return; }
   }
 });
 </script>
@@ -2183,7 +2206,12 @@ class Api:
                     for e in errs
                 ]
                 gt_spans = [
-                    {"start": int(s["start"]), "end": int(s["end"]), "type": s["type"]}
+                    {
+                        "start": int(s["start"]),
+                        "end": int(s["end"]),
+                        "type": s["type"],
+                        "unavoidable": bool(s.get("unavoidable")),
+                    }
                     for s in m["gt_spans"]
                     if s.get("type")
                 ]
@@ -2349,6 +2377,7 @@ class Api:
                     "start": int(s["start"]),
                     "end": int(s["end"]),
                     "type": s["type"],
+                    "unavoidable": bool(s.get("unavoidable")),
                 })
             queue[idx]["gt_spans"] = clean
             queue[idx]["reviewed"] = True
@@ -2431,7 +2460,9 @@ class Api:
         - final=False (중단/진행 저장): noise row도 유지하되 "noise": true 플래그를 남긴다.
           → 나중에 '이어서 라벨링'으로 복원 후 다시 토글 가능.
         - final=True  (마지막 row까지 완료): noise row는 JSON에서 완전히 제거한다.
-        각 row: {"text", "spans":[{"start","end","type"}], "reviewed", (선택)"noise"}"""
+        각 row: {"text", "spans":[{"start","end","type",(선택)"unavoidable"}], "reviewed", (선택)"noise"}
+        unavoidable=true인 span은 사전 미등재 고유명사 등으로 엔진이 구조적으로 검출할 수 없는
+        미검출(FN)을 의미하며, 평가 시 일반 미탐과 분리 집계된다."""
         state = self._folder_state
         if not state or not state.get("save_path"):
             return {"error": "저장 경로가 없습니다."}
@@ -2441,10 +2472,12 @@ class Api:
                 is_noise = bool(item.get("noise"))
                 if final and is_noise:
                     continue  # 최종 저장 시 noise row 삭제
-                spans = [
-                    {"start": int(s["start"]), "end": int(s["end"]), "type": s["type"]}
-                    for s in item.get("gt_spans", [])
-                ]
+                spans = []
+                for s in item.get("gt_spans", []):
+                    span = {"start": int(s["start"]), "end": int(s["end"]), "type": s["type"]}
+                    if s.get("unavoidable"):
+                        span["unavoidable"] = True
+                    spans.append(span)
                 row = {
                     "text": item["text"],
                     "spans": spans,
