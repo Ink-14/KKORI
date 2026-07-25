@@ -17,9 +17,9 @@ def make_dictionary_list(dictionary_file_name: Path) -> list[tuple[str, Tag, int
 			score = row.get("score", "") or "0"
 
 			if word is None or word == "":
-				raise ValueError("word column has empty values")
+				raise ValueError(f"word column has empty values!\n{row}")
 			if category is None or category == "":
-				raise ValueError("category column has empty values")
+				raise ValueError(f"category column has empty values!\n{row}")
 
 			result.append((word, Tag[category], int(score)))
 	return result
