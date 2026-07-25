@@ -74,6 +74,14 @@ _SPELLING_SPACING = [
     .tag_form(Tag.부사격조사, "에")
     .tag_form(Tag.관형사, "별")
     .msg("'별의별'이 올바른 표현입니다.").build(),
+    
+    *rule().id("COMPLEX_ㄴ다잖아_MIF+띄어쓰기")
+    .tags(TagGroup.용언)
+    .tag_form(Tag.관형사형전성어미, "ᆫ")
+    .tag_form(Tag.의존명사, "대").if_spaced()
+    .tag(Tag.긍정지정사)
+    .tag_form(Tag.종결어미, "잖아")
+    .msg("'merge(({dform[0]}, {dtag[0]}), (\"다\", \"연결어미\"))잖아'가 올바른 표현입니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [

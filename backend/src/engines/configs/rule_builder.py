@@ -497,36 +497,47 @@ class RuleBuilder:
         return results
 
 def tag(t: Tag) -> TagCondition:
+    """tag 조건. 인자로는 Tag enum을 받음."""
     return TagCondition(tag=t)
 
 def tags(ts: set[Tag]) -> _TagSet:
+    """tag set 조건. 인자로는 Tag enum으로 이루어진 set을 받음."""
     return _TagSet(tags=ts)
 
 def form(f: str) -> FormCondition:
+    """form 조건. 인자로는 문자열을 받음."""
     return FormCondition(form=f)
 
 def forms(fs: set[str]) -> _FormSet:
+    """form set 조건. 인자로는 form으로 이루어진 set을 받음."""
     return _FormSet(forms=fs)
 
 def tag_form(t: Tag, f: str) -> TagAndFormCondition:
+    """tag가 A이고 form이 X인 조건. 동시에 만족해야 함. 인자로는 Tag enum과 form을 받음."""
     return TagAndFormCondition(form=f, tag=t)
 
 def lemma(l: str) -> LemmaCondition:
+    """표면형 조건. 인자로는 문자열을 받음."""
     return LemmaCondition(lemma=l)
 
 def longer(n: int) -> LengthCondition:
+    """토큰의 길이가 n 이상인 경우 통과하는 조건. 인자로는 정수를 받음."""
     return LengthCondition(length=n)
 
 def batchim(b: str) -> BatchimCondition:
+    """받침 조건. 인자로는 조합형 자모를 받음."""
     return BatchimCondition(batchim=b)
 
 def any_batchim() -> AnyBatchimCondition:
+    """받침이 있음을 나타내는 조건. 인자로는 아무것도 받지 않음."""
     return AnyBatchimCondition()
 
 def no_batchim() -> BatchimCondition:
+    """받침이 없음을 나타내는 조건. 인자로는 아무것도 받지 않음. batchim("")과 동일 동작."""
     return BatchimCondition(batchim="")
 
 def first() -> FirstTokenCondition:
+    """첫 번째 토큰임을 나타내는 조건. 인자로는 아무것도 받지 않음."""
     return FirstTokenCondition()
 
 def _resolve_to_condition(p: AndParam) -> Condition:

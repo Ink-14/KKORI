@@ -17,10 +17,11 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("VV_~기 O다")
-    .tag_form(Tag.명사형전성어미, "기").context()
-    .tags({Tag.형용사, Tag.형용사규칙활용, Tag.형용사불규칙활용}).if_not_spaced()
-    .msg("'merge(({dform[0]}, {dtag[0]}), (\"다\", \"종결어미\"))'를 앞 말과 띄어 써야 합니다.").build(),
+    *rule().id("NNG_전후_붙여쓰기")
+    .tags(TagGroup.조사 | {Tag.일반명사} ).context()
+    .tag_form(Tag.일반명사, "전")
+    .tag_form(Tag.일반명사, "후").if_spaced()
+    .msg("'전후'로 붙여 써야 합니다.").build(),
 ]
 
 ML_LABELINGS = [
