@@ -1,6 +1,6 @@
 ﻿from src.engines.configs.rule_builder import RuleBuilder, AND, OR, NOT, tag, tags, tag_form, form, forms, lemma, batchim, no_batchim, any_batchim, longer, SpacingRule, KoSpellRules
 from src.engines.configs.rule_helper import abbr_vowel_ending_connectives
-from src.engines.configs.rule_constants import 모음연결어미_FORMS, ㄹ사용불가_연결어미_FORMS, JOSA_TARGETS, 피우다_TARGETS
+from src.engines.configs.rule_constants import 모음연결어미_FORMS, ㄹ사용불가_연결어미_FORMS, JOSA_TARGETS, 피우다_TARGETS, 색상_ADJ_FORMS
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 def rule() -> RuleBuilder:
@@ -642,6 +642,17 @@ _REP = [
     .tag_form(Tag.종결어미, "ᆫ대")
     .tag_form(Tag.종결어미, "잖아")
     .msg('\'merge(({dform[0]}, {dtag[0]}), ("ᆫ다", "종결어미"))잖아\'가 올바른 표현입니다.').build(),
+    
+    *rule().id("REP_명사+끼")
+    .tag(Tag.일반명사)
+    .tag_form(Tag.명사파생접미사, "끼")
+    .msg("'{dform[0]}기'가 올바른 표현입니다.").build(),
+    
+    *rule().id("REP_색상+끼")
+    .AND(tags({Tag.형용사, Tag.형용사규칙활용}), forms(색상_ADJ_FORMS))
+    .tag_form(Tag.관형사형전성어미, "ᆫ")
+    .tag_form(Tag.일반명사, "끼")
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("ᆫ", "관형사형전성어미"))기\'가 올바른 표현입니다.').build(),
 ]
 
 _REP_VERBS = [
@@ -1113,6 +1124,10 @@ _REP_VERBS = [
     .tag_form(Tag.보조사, "마다").context()
     .tag_form(Tag.형용사, "틀리")
     .msg("'다르다'가 올바른 표현입니다.").build(),
+    
+    *rule().id("REP_알아맞히다")
+    .tag_form(Tag.동사, "알아맞추")
+    .msg("'알아맞히다'가 올바른 표현입니다.").build(),
 ]
 
 _REP_NNG = [
@@ -1552,7 +1567,7 @@ _MIF = [
     
     *rule().id("MIF_~다시피")
     .any()
-    .tag_form(Tag.연결어미, "다")
+    .AND(tags({Tag.연결어미, Tag.종결어미}), form("다"))
     .tag_form(Tag.보조용언, "싶")
     .tag_form(Tag.연결어미, "이")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"다\", \"연결어미\"))시피'가 올바른 표현입니다.").build(),
@@ -2111,6 +2126,16 @@ _Z_CODA = [
     .tag_form(Tag.일반명사, "하룻").if_not_spaced()
     .NOT(form("날")).context()
     .msg("'초하루'가 올바른 표현입니다.").build(),
+    
+    *rule().id("Z_CODA_결괏값")
+    .tag_form(Tag.일반명사, "결과")
+    .tag_form(Tag.일반명사, "값")
+    .msg("'결괏값'이 올바른 표현입니다.").build(),
+    
+    *rule().id("Z_CODA_목푯값")
+    .tag_form(Tag.일반명사, "목표")
+    .tag_form(Tag.일반명사, "값")
+    .msg("'결괏값'이 올바른 표현입니다.").build(),
 ]
 
 _RECOMMENDED = [
