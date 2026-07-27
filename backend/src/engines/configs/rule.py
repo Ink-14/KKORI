@@ -17,11 +17,6 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
-    *rule().id("NNG_전후_붙여쓰기")
-    .tags(TagGroup.조사 | {Tag.일반명사} ).context()
-    .tag_form(Tag.일반명사, "전")
-    .tag_form(Tag.일반명사, "후").if_spaced()
-    .msg("'전후'로 붙여 써야 합니다.").build(),
 ]
 
 ML_LABELINGS = [

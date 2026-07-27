@@ -33,8 +33,8 @@ MEANING_CONFLICT_ERRORS: list[KoSpellRules] = [
     
     *rule().id("MEANING_다시_재_명사")
     .tag_form(Tag.일반부사, "다시")
-    .AND(tag(Tag.일반명사), forms({"재건", "재회", "재개"}))
-    .msg("'다시'에 이미 '재(再)'의 의미가 포함되어 있습니다.").build(),
+    .AND(tag(Tag.일반명사), forms({"재건", "재회", "재개", "재탕", "재발", "재고"}))
+    .msg("'{form[1]}'의 '재(再)'에 이미 '다시'의 의미가 포함되어 있습니다.").build(),
 
     *rule().id("MEANING_다시_재_체언접두사")
     .tag_form(Tag.일반부사, "다시")
