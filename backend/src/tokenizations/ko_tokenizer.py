@@ -3,7 +3,8 @@ from pathlib import Path
 
 from kiwipiepy import Kiwi
 
-from src.utils.file_io import get_all_file_paths, make_dictionary_list, make_termbase_list, make_pre_analyzed_dict_list
+from src.utils.file_io import get_all_file_paths, make_dictionary_list, make_termbase_list, make_pre_analyzed_dict_list, make_word_and_score_list
+from src.tokenizations.utils import make_없다_VA_MAG_words
 from src.models.interface import Tag
 from src.utils.paths import backend_resource_path
 
@@ -13,6 +14,7 @@ class KoTokenizer(Kiwi):
 
     DEFAULT_KO_DICT_FILE_NAME = "ko_dictionary"
     DEFAULT_PRE_ANALYZED_DICT_FILE_NAME = "ko_preanalyzed"
+    없다_WORDS_FILE_NAME = "없다_words"
 
     def __new__(cls):
         if cls._instance is None:
@@ -31,6 +33,11 @@ class KoTokenizer(Kiwi):
         ko_dict_file = self.DEFAULT_DICTIONARY_PATH / f"{self.DEFAULT_KO_DICT_FILE_NAME}.csv"
         for words in make_dictionary_list(ko_dict_file):
             word, tag, score = words
+            self.add_user_word(word=word, tag=tag, score=score)
+
+        없다_word_file = self.DEFAULT_DICTIONARY_PATH / f"{self.없다_WORDS_FILE_NAME}.csv"
+        words = make_word_and_score_list(없다_word_file)
+        for word, tag, score in make_없다_VA_MAG_words(words):
             self.add_user_word(word=word, tag=tag, score=score)
     
         pre_analyzed_file = self.DEFAULT_DICTIONARY_PATH / f"{self.DEFAULT_PRE_ANALYZED_DICT_FILE_NAME}.csv"

@@ -1,5 +1,17 @@
 ﻿from src.models.interface import Tag, KoToken
 
+def make_없다_VA_MAG_words(words : list[tuple[str, float]], default_score: float = 0.0) -> list[tuple[str, str, float]]:
+    result_words = []
+    for word, score in words:
+        if score == 0.0 and default_score != 0.0:
+            score = default_score
+
+        VA_form = word + "없"
+        MAG_form = word + "없이"
+        result_words.append((VA_form, "VA", score))
+        result_words.append((MAG_form, "MAG", score))
+    return result_words
+
 def pprint_tokens(tokens: list[KoToken], detailed: bool = False):
     for i, token in enumerate(tokens):
         if detailed:
