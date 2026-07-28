@@ -732,7 +732,7 @@ function dictSearch() {
     }
     const items = result.items;
     document.getElementById('dict-status').textContent =
-      items.length ? items.length + '건 (최대 100건)' : '';
+      items.length ? items.length + '건 (최대 300건)' : '';
     if (!items.length) {
       const sugg = result.suggestions;
       if (sugg && sugg.length) {
@@ -1658,12 +1658,12 @@ class Api:
                 matched = [e for e in self._dict_data if pattern.search(e['word_plain'])]
             except re.error as ex:
                 return {"error": f"정규식 오류: {ex}"}
-            return {"items": matched[:100]}
+            return {"items": matched[:300]}
         plain_query = re.sub(r'[-^]', '', query)
         matched = [e for e in self._dict_data if plain_query in e['word_plain']]
         if matched:
             matched.sort(key=lambda e: self._match_score(plain_query, e['word_plain']), reverse=True)
-            return {"items": matched[:100]}
+            return {"items": matched[:300]}
         suggestions = self._fuzzy_suggest(plain_query)
         return {"items": [], "suggestions": suggestions}
 
