@@ -20,12 +20,6 @@ _CERTAINS: list[KoSpellRules] = [
     .build(),
 
     *rule()
-    .batchim("ᆯ")
-    .AND(tags(TagGroup.조사), form("으로"))
-    .msg("받침이 ᆯ인 단어에는 '로'를 써야 합니다.")
-    .build(),
-
-    *rule()
     .tag_form(Tag.보조용언, "계시")
     .tag_form(Tag.종결어미, "군")
     .msg("'계시는군'의 형태로 써야 합니다.")
@@ -357,19 +351,19 @@ _REP = [
     .msg("'으로써'로 써야 합니다.")
     .detail("'으로서'는 자격, '으로써'는 수단을 나타냅니다. '선생으로서의 의무'는 선생이라는 위치를 의미하므로 '으로서'를 사용하여야 합니다. '매로써 학생들을 다스렸다'는 '매를 이용해서'를 의미하므로 '으로써'를 사용하여야 합니다.").build(),
     
-    *rule().id("REP_으로서_1")
-    .tag_form(Tag.부사격조사, "으로써")
+    *rule().id("REP_으로서/로서_1")
+    .AND(tag(Tag.부사격조사), forms({"으로써", "로써"}))
     .tag(Tag.보조사).opt().context()
     .tag(Tag.일반부사).opt().context()
-    .tag_form(Tag.일반명사, "쓸모").context()
-    .msg("'으로서'로 써야 합니다.")
-    .detail("'으로서'는 자격, '으로써'는 수단을 나타냅니다. '선생으로서의 의무'는 선생이라는 위치를 의미하므로 '으로서'를 사용하여야 합니다. '매로써 학생들을 다스렸다'는 '매를 이용해서'를 의미하므로 '으로써'를 사용하여야 합니다.").build(),
+    .AND(tag(Tag.일반명사), forms({"쓸모", "유일", "칭송"})).context()
+    .msg("'로서'로 써야 합니다.")
+    .detail("'로서'는 자격, '로써'는 수단을 나타냅니다. '선생으로서의 의무'는 선생이라는 위치를 의미하므로 '로서'를 사용하여야 합니다. '매로써 학생들을 다스렸다'는 '매를 이용해서'를 의미하므로 '로써'를 사용하여야 합니다.").build(),
 
-    *rule().id("REP_으로서_2")
-    .tag_form(Tag.부사격조사, "으로써")
+    *rule().id("REP_으로서/로서_2")
+    .AND(tag(Tag.부사격조사), forms({"으로써", "로써"}))
     .tag_form(Tag.관형격조사, "의").context()
     .msg("'으로서'가 올바른 표현입니다.")
-    .detail("'으로서'는 자격, '으로써'는 수단을 나타냅니다. '선생으로서의 의무'는 선생이라는 위치를 의미하므로 '으로서'를 사용하여야 합니다. '매로써 학생들을 다스렸다'는 '매를 이용해서'를 의미하므로 '으로써'를 사용하여야 합니다.").build(),
+    .detail("'로서'는 자격, '로써'는 수단을 나타냅니다. '선생으로서의 의무'는 선생이라는 위치를 의미하므로 '로서'를 사용하여야 합니다. '매로써 학생들을 다스렸다'는 '매를 이용해서'를 의미하므로 '로써'를 사용하여야 합니다.").build(),
 
     *rule().id("REP_로서")
     .AND(tag(Tag.일반명사), forms({"현재"})).context()
@@ -429,11 +423,77 @@ _REP = [
     .msg("'라든지'가 올바른 표현입니다.")
     .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
 
+    *rule().id("REP_다든지_1")
+    .tag_form(Tag.종결어미, "다")
+    .tag_form(Tag.보조사, "던지")
+    .any().context()
+    .any().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .forms({"ᆫ다던가", "는다던가", "ᆫ다던지", "다던지"}).context()
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
+    *rule().id("REP_다든지_1_1")
+    .tag_form(Tag.종결어미, "다").context()
+    .tag_form(Tag.보조사, "던지").context()
+    .any().context()
+    .any().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .forms({"ᆫ다던가", "는다던가", "ᆫ다던지", "다던지"})
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
+    *rule().id("REP_다든지_1_2")
+    .tag_form(Tag.종결어미, "다")
+    .tag_form(Tag.보조사, "던지")
+    .any().context()
+    .any().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .tag_form(Tag.종결어미, "다").context()
+    .tag_form(Tag.보조사, "던지").context()
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
+    *rule().id("REP_다든지_1_3")
+    .tag_form(Tag.종결어미, "다").context()
+    .tag_form(Tag.보조사, "던지").context()
+    .any().context()
+    .any().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .tag_form(Tag.종결어미, "다")
+    .tag_form(Tag.보조사, "던지")
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
     *rule().id("REP_다든가_1")
     .AND(tag(Tag.연결어미), forms({"라며", "라고"})).context()
     .tag(Tag.일반명사).context()
     .tag_form(Tag.동사파생접미사, "하").context()
-    .AND(tags({Tag.종결어미, Tag.연결어미}), forms({"ᆫ다던지", "ᆫ다던가"}))
+    .AND(tags({Tag.종결어미, Tag.연결어미}), forms({"ᆫ다던가"}))
     .msg("'든'이 올바른 표현입니다.")
     .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
 
@@ -442,12 +502,12 @@ _REP = [
     .tags(TagGroup.용언).context()
     .tag(Tag.연결어미).context()
     .tags(TagGroup.용언).context()
-    .AND(tags({Tag.종결어미, Tag.연결어미}), forms({"ᆫ다던지", "ᆫ다던가"}))
+    .AND(tags({Tag.종결어미, Tag.연결어미}), forms({"ᆫ다던가"}))
     .msg("'든'이 올바른 표현입니다.")
     .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
 
     *rule().id("REP_다든가_2")
-    .form("ᆫ다던가")
+    .forms({"ᆫ다던가", "는다던가", "ᆫ다던지", "다던지"})
     .any().context()
     .any().context()
     .any().opt().context()
@@ -457,12 +517,12 @@ _REP = [
     .any().opt().context()
     .any().opt().context()
     .any().opt().context()
-    .form("ᆫ다던가").context()
+    .forms({"ᆫ다던가", "는다던가", "ᆫ다던지", "다던지"}).context()
     .msg("'든'이 올바른 표현입니다.")
     .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
 
     *rule().id("REP_다든가_2_1")
-    .form("ᆫ다던가").context()
+    .forms({"ᆫ다던가", "는다던가"}).context()
     .any().context()
     .any().context()
     .any().opt().context()
@@ -472,7 +532,14 @@ _REP = [
     .any().opt().context()
     .any().opt().context()
     .any().opt().context()
-    .form("ᆫ다던가")
+    .forms({"ᆫ다던가", "는다던가", "ᆫ다던지", "다던지"})
+    .msg("'든'이 올바른 표현입니다.")
+    .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
+
+    *rule().id("REP_는다든가_3")
+    .form("는다던가")
+    .tag_form(Tag.동사, "하").context()
+    .tag_form(Tag.관형사형전성어미, "는").context()
     .msg("'든'이 올바른 표현입니다.")
     .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
 
@@ -696,6 +763,16 @@ _REP = [
     .tag_form(Tag.일반명사, "재일")
     .tag_form(Tag.형용사, "좋").context()
     .msg("'제일'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_고이")
+    .tag_form(Tag.일반명사, "고")
+    .tag_form(Tag.부사파생접미사, "히")
+    .msg("'고이'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_쯤")
+    .tag_form(Tag.일반명사, "때").context()
+    .tag_form(Tag.의존명사, "즈음").if_not_spaced()
+    .msg("'쯤'이 올바른 표현입니다.").build(),
 ]
 
 _REP_VERBS = [
@@ -826,7 +903,7 @@ _REP_VERBS = [
     .msg("'눈에 띄다'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_띠다")
-    .AND(tag(Tag.일반명사), forms({"색", "빛", "빛깔", "분홍색", "분홍빛", "빨간색", "빨간빛", "붉은색", "붉은빛", "파란빛", "푸른빛", "파란색", "푸른색", "노란색", "노란빛", "초록빛", "초록색", "검은색", "검정색", "검은빛", "검정빛", "핏빛", "하얀색", "하얀빛", "주황색", "주홍빛", "다홍색", "다홍빛", "성격", "색채", "형태", "모양", "활기"}))
+    .AND(tag(Tag.일반명사), forms({"색", "빛", "빛깔", "분홍색", "분홍빛", "빨간색", "빨간빛", "붉은색", "붉은빛", "파란빛", "푸른빛", "파란색", "푸른색", "노란색", "노란빛", "초록빛", "초록색", "검은색", "검정색", "검은빛", "검정빛", "핏빛", "하얀색", "하얀빛", "주황색", "주홍빛", "다홍색", "다홍빛", "성격", "색채", "형태", "모양", "활기", "성질"}))
     .any()
     .AND(tag(Tag.동사), forms({"띄", "띄우"}))
     .msg("'{form[0]}batchim(\"을\", \"를\") 띠다'가 올바른 표현입니다.").build(),
@@ -1034,7 +1111,7 @@ _REP_VERBS = [
     .tag_form(Tag.일반명사, "실")
     .tag_form(Tag.일반명사, "날")
     .tag_form(Tag.형용사, "같")
-    .msg("'실날같은'의 오타가 아닌가요?").build(),
+    .msg("'실낱같은'이 올바른 표현입니다.").build(),
    
     *rule().id("REP_실낱같다_2")
     .tag_form(Tag.일반명사, "실날")
@@ -1182,6 +1259,17 @@ _REP_VERBS = [
     *rule().id("REP_날아가다")
     .tag_form(Tag.동사, "날라가")
     .msg("'날아가다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_부치다")
+    .AND(tag(Tag.일반명사), forms({"불문"})).context()
+    .any().opt().context()
+    .tag_form(Tag.동사, "붙이")
+    .msg("'{form[0]}에 부치다'가 올바른 표현입니다.").build(),
+    
+    *rule().id("REP_건들이다")
+    .tag_form(Tag.동사, "건들이")
+    .any()
+    .msg("'merge((\"건드리\", \"동사\"), ({dform[1]}, {dtag[1]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
 ]
 
 _REP_NNG = [
@@ -1457,6 +1545,17 @@ _REP_NNG = [
     *rule().id("REP_순위")
     .tag_form(Tag.일반명사, "순의")
     .msg("'순위'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_해코지")
+    .tag_form(Tag.일반명사, "해꼬지")
+    .msg("'해코지'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_사달")
+    .tag_form(Tag.일반명사, "사단")
+    .any().opt().context()
+    .any().opt().context()
+    .tag_form(Tag.동사, "나").context()
+    .msg("'사달이 나다'가 올바른 표현입니다.").build(),
 ]
 
 _MIF = [
@@ -2225,6 +2324,10 @@ _Z_CODA = [
     .tag_form(Tag.일반명사, "목표")
     .tag_form(Tag.일반명사, "값")
     .msg("'결괏값'이 올바른 표현입니다.").build(),
+
+    *rule().id("Z_CODA_수적")
+    .tag_form(Tag.일반명사, "숫적")
+    .msg("'수적'이 올바른 표현입니다.").build(),
 ]
 
 _RECOMMENDED = [

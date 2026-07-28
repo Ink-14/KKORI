@@ -82,6 +82,11 @@ _SPELLING_SPACING = [
     .tag(Tag.긍정지정사)
     .tag_form(Tag.종결어미, "잖아")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"다\", \"연결어미\"))잖아'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_쯤")
+    .tag_form(Tag.일반명사, "때").context()
+    .tag_form(Tag.의존명사, "즈음").if_spaced()
+    .msg("'쯤'이 올바른 표현입니다. 또한 '쯤'을 앞 말에 붙여 써야 합니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [
