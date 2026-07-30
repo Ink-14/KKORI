@@ -62,4 +62,9 @@ MEANING_CONFLICT_ERRORS: list[KoSpellRules] = [
     .tag_form(Tag.일반명사, "당일")
     .tag_form(Tag.일반명사, "날")
     .msg("'당일'에 이미 '날'의 의미가 포함되어 있습니다.").build(),
+
+    *rule().id("MEANING_백주 대낮")
+    .tag_form(Tag.일반명사, "백주")
+    .tag_form(Tag.일반명사, "대낮")
+    .msg("'백주(白晝)'와 '대낮'은 동의어입니다.").build(),
 ]

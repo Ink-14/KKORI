@@ -36,4 +36,39 @@ PROOFREAD_ERRORS = [
     .tag_form(Tag.종결어미, "구나")
     .tag_form(Tag.인용격조사, "고")
     .msg("'구나라고'의 잘못이 아닌가요?").build(),
+
+    *rule().id("PRFR_~을 있기에")
+    .tags(TagGroup.체언)
+    .tag(Tag.목적격조사)
+    .tag_form(Tag.동사, "있").context()
+    .tag_form(Tag.연결어미, "기에").context()
+    .msg("'{dform[0]}batchim(\"이\", \"가\") 있기에'의 잘못이 아닌가요?").build(),
+
+    *rule().id("PRFR_~에게 대한")
+    .tag_form(Tag.부사격조사, "에게")
+    .tag_form(Tag.동사, "대하").context()
+    .tag_form(Tag.관형사형전성어미, "ᆫ").context()
+    .msg("'~에 대한'의 잘못이 아닌가요?").build(),
+
+    *rule().id("PRFR_~을 바뀐 걸")
+    .tag(Tag.일반명사)
+    .tag(Tag.목적격조사)
+    .tag_form(Tag.동사, "바뀌")
+    .tag_form(Tag.관형사형전성어미, "ᆫ")
+    .tag_form(Tag.의존명사, "거").context()
+    .tag_form(Tag.목적격조사, "ᆯ").context()
+    .msg("'{dform[0]}batchim(\"이\", \"가\") 바뀐' 또는 '{dform[0]}batchim(\"을\", \"를\") 바꾼'의 잘못이 아닌가요?").build(),
+
+    *rule().id("PRFR_이루어 있다")
+    .tag_form(Tag.동사, "이루")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "있")
+    .msg("'이루어져 있다'의 잘못이 아닌가요?").build(),
+
+    *rule().id("PRFR_말았는 것")
+    .tag_form(Tag.보조용언, "말")
+    .tag_form(Tag.선어말어미, "었")
+    .tag_form(Tag.관형사형전성어미, "는")
+    .tag_form(Tag.의존명사, "것").context()
+    .msg("'만'의 잘못이 아닌가요?").build(),
 ]

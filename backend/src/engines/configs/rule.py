@@ -8,7 +8,7 @@ def rule() -> RuleBuilder:
     return RuleBuilder(SpellErrorType.TEST)
 
 SAMPLE = [
-    *rule()
+    *rule().id("SAMPLE_규칙")
     .tags({Tag.형용사, Tag.형용사불규칙활용})
     .tag_form(Tag.연결어미, "지")
     .tag_form(Tag.보조용언, "않")
@@ -17,6 +17,27 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
+    *rule().id("NNB_데_도움을 주다_띄어쓰기")
+    .tag_form(Tag.의존명사, "데").if_not_spaced()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .tag_form(Tag.일반명사, "도움").context()
+    .tag(Tag.부사격조사).context()
+    .tag_form(Tag.동사, "주").context()
+    .msg("'데'를 앞 말과 띄어 써야 합니다.").build(),
+
+    *rule().id("NNB_데_도움이 되다_띄어쓰기")
+    .tag_form(Tag.의존명사, "데").if_not_spaced()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .any().opt().context()
+    .tag_form(Tag.일반명사, "도움").context()
+    .tag(Tag.보격조사).context()
+    .tag_form(Tag.동사, "되").context()
+    .msg("'데'를 앞 말과 띄어 써야 합니다.").build(),
 ]
 
 ML_LABELINGS = [
