@@ -14,8 +14,7 @@ a = Analysis(
     binaries=[],
     datas=[
         # tokenizer CSV
-        ("src/tokenizations/ko_dictionary.csv",   "src/tokenizations"),
-        ("src/tokenizations/ko_preanalyzed.csv",  "src/tokenizations"),
+        ("src/tokenizations/*.csv", "src/tokenizations"),
         # Rust 확장 모듈
         ("_core.pyi", "."),
         # 프론트엔드 빌드 결과물
