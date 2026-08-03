@@ -1,6 +1,6 @@
 from src.engines.configs.rule_builder import RuleBuilder, AND, OR, NOT, tag, tags, tag_form, form, forms, lemma, batchim, longer, SpacingRule, KoSpellRules
 from src.models.interface import Tag, TagGroup, SpellErrorType
-from src.engines.configs.rule_constants import 보조용언_FORMS, 피우다_TARGETS
+from src.engines.configs.rule_constants import 보조용언_FORMS, 피우다_TARGETS, 펴다_TARGETS
 
 def rule() -> RuleBuilder:
     return RuleBuilder(SpellErrorType.COMPLEX)
@@ -68,6 +68,11 @@ _SPELLING_SPACING = [
     .AND(tag(Tag.일반명사), forms(피우다_TARGETS)).context()
     .tag_form(Tag.동사, "피").if_not_spaced()
     .msg("'{form[0]}batchim(\"을\", \"를\") 피우다'가 올바른 표현입니다. 또한 앞 말과 띄어 써야 합니다.").build(),
+    
+    *rule().id("COMPLEX_펴다_오타+띄어쓰기_1")
+    .AND(tag(Tag.일반명사), forms(펴다_TARGETS)).context()
+    .tag_form(Tag.동사, "피").if_not_spaced()
+    .msg("'{form[0]}batchim(\"을\", \"를\") 펴다'가 올바른 표현입니다. 또한 앞 말과 띄어 써야 합니다.").build(),
 
     *rule().id("COMPLEX_별의별_오타+띄어쓰기")
     .tag_form(Tag.일반명사, "별")

@@ -13,6 +13,7 @@ MEANING_CONFLICT_ERRORS: list[KoSpellRules] = [
     *rule().id("MEANING_부상_입다")
     .tag_form(Tag.일반명사, "부상")
     .any().opt()
+    .any().opt()
     .tag_form(Tag.동사불규칙활용, "입")
     .msg("'부상'에 '입다'의 뜻이 포함되어 있습니다. '부상 당하다' 등으로 쓸 것을 권장합니다.").build(),
     
