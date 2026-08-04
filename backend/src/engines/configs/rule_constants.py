@@ -64,3 +64,5 @@ JOSA_TARGETS = {Tag.일반명사, Tag.고유명사}
 색상_ADJ_FORMS = {"붉", "푸르", "노랗", "검", "하얗", "희"}
 
 직_MUST_ATTACHED_NOUNS = {"에이전트", "회장"}
+
+만하다_MUST_ATTACHED_NOUNS = {"사이즈"}

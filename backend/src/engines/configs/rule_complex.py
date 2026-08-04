@@ -97,6 +97,10 @@ _SPELLING_SPACING = [
     .tag(Tag.선어말어미).context()
     .tag_form(Tag.종결어미, "을께")
     .msg("'게'가 올바른 표현입니다. 또한 '게'를 앞 말과 띄어 써야 합니다.").build(),
+    
+    *rule().id("COMPLEX_새어나가다 REP+띄어쓰기")
+    .tag_form(Tag.동사, "세어나가")
+    .msg("'새어 나가다'의 오타가 아닌가요?").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [

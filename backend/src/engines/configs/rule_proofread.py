@@ -5,7 +5,14 @@ def rule() -> RuleBuilder:
     return RuleBuilder(SpellErrorType.PROOFREAD)
 
 PROOFREAD_ERRORS = [
-    *rule().id("PROOFREAD_~ㄹ 수")
+    *rule().id("PRFR_목적격조사+자동사")
+    .any()
+    .tag(Tag.목적격조사)
+    .AND(tag(Tag.동사), forms({"생기"})).context()
+    .tag_form(Tag.연결어미, "고").context()
+    .msg("'{dform[0]}batchim(\"이\", \"가\")'가 아닌가요?").build(),
+    
+    *rule().id("PRFR_~ㄹ 수")
     .AND(tag(Tag.관형사형전성어미), forms({"을", "ᆯ"})).context()
     .tag_form(Tag.의존명사, "수")
     .AND(tag(Tag.일반명사), NOT(form("밖")))

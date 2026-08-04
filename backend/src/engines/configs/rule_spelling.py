@@ -341,6 +341,13 @@ _ADD = [
     .forms({"여기"})
     .tag_form(Tag.부사격조사, "ᆯ로")
     .msg("'{form[0]}로'가 올바른 표현입니다.").build(),
+    
+    *rule().id("ADD_~하고")
+    .tag(Tag.일반명사).context()
+    .tag_form(Tag.동사파생접미사, "하")
+    .tag_form(Tag.관형사형전성어미, "ᆫ")
+    .tag_form(Tag.인용격조사, "고")
+    .msg("'하고'의 오타가 아닌가요?").build(),
 ]
 
 _REP = [
@@ -448,11 +455,19 @@ _REP = [
     .tag_form(Tag.의존명사, "식").context()
     .msg("'든가'가 올바른 표현입니다.").build(),
     
-    *rule().id("RPE_든가_2_든가 아니면")
+    *rule().id("REP_든가_2_든가 아니면")
     .tag_form(Tag.연결어미, "던가")
+    .tag(Tag.구분부호).opt().context()
     .tag(Tag.부정지정사).context()
     .tag_form(Tag.연결어미, "면").context()
     .msg("'든가'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_든가_3_이나 O든가")
+    .tag_form(Tag.접속조사, "이나").context()
+    .tags(TagGroup.용언).context()
+    .tag(Tag.선어말어미).opt().context()
+    .AND(tags({Tag.연결어미, Tag.종결어미}), forms({"던가", "던지", "던가요"}))
+    .msg("'든'이 올바른 표현입니다.").build(),
 
     *rule().id("REP_다든지_1")
     .tag_form(Tag.종결어미, "다")
@@ -795,19 +810,19 @@ _REP = [
     .tag_form(Tag.연결어미, "나")
     .msg("'게나마'의 오타가 아닌가요?").build(),
 
-    # '여럿이서도' 오탐
-    # *rule().id("REP_에서도_1")
-    # .tags({Tag.일반명사, Tag.고유명사, Tag.의존명사, Tag.명사형전성어미, Tag.알파벳}).context()
-    # .tag_form(Tag.부사격조사, "이서")
-    # .tag_form(Tag.보조사, "도")
-    # .msg("'에서도'의 오타가 아닌가요?").build(),
+    # '여럿이서도' 오탐으로 일반명사 제외
+    *rule().id("REP_에서도_1")
+    .tags({Tag.고유명사, Tag.의존명사, Tag.명사형전성어미, Tag.알파벳}).context()
+    .tag_form(Tag.부사격조사, "이서")
+    .tag_form(Tag.보조사, "도")
+    .msg("'에서도'의 오타가 아닌가요?").build(),
 
-    # *rule().id("REP_에서도_2")
-    # .tags({Tag.일반명사, Tag.고유명사, Tag.의존명사, Tag.명사형전성어미, Tag.알파벳}).context()
-    # .tag_form(Tag.주격조사, "이")
-    # .tag_form(Tag.부사격조사, "서")
-    # .tag_form(Tag.보조사, "도")
-    # .msg("'에서도'의 오타가 아닌가요?").build(),
+    *rule().id("REP_에서도_2")
+    .tags({Tag.일반명사, Tag.고유명사, Tag.의존명사, Tag.명사형전성어미, Tag.알파벳}).context()
+    .tag_form(Tag.주격조사, "이")
+    .tag_form(Tag.부사격조사, "서")
+    .tag_form(Tag.보조사, "도")
+    .msg("'에서도'의 오타가 아닌가요?").build(),
 
     *rule().id("REP_제일")
     .tag_form(Tag.일반명사, "재일")
@@ -843,6 +858,14 @@ _REP = [
     *rule().id("REP_네댓")
     .tag_form(Tag.수사, "너댓")
     .msg("'네댓'이 올바른 표현입니다.").build(),
+    
+    *rule().id("REP_갈 데까지 가다")
+    .tag_form(Tag.동사, "가").context()
+    .tag_form(Tag.관형사형전성어미, "ᆯ").context()
+    .tag_form(Tag.일반명사, "때")
+    .tag_form(Tag.보조사, "까지").context()
+    .tag_form(Tag.동사, "가").context()
+    .msg("'데'가 올바른 표현입니다.").build(),
 ]
 
 _REP_VERBS = [
@@ -973,7 +996,7 @@ _REP_VERBS = [
     .msg("'눈에 띄다'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_띠다")
-    .AND(tag(Tag.일반명사), forms({"색", "빛", "빛깔", "분홍색", "분홍빛", "빨간색", "빨간빛", "붉은색", "붉은빛", "파란빛", "푸른빛", "파란색", "푸른색", "노란색", "노란빛", "초록빛", "초록색", "검은색", "검정색", "검은빛", "검정빛", "핏빛", "하얀색", "하얀빛", "주황색", "주홍빛", "다홍색", "다홍빛", "갈색", "갈색빛", "하늘색", "하늘빛", "금색", "금빛", "보라색", "보랏빛", "성격", "색채", "형태", "모양", "활기", "성질", "성향", "분위기", "관련", "폭력성", "성정", "살기", "홍조", "광기", "미소", "모습", "형체", "하락세", "상승세"})).context()
+    .AND(tag(Tag.일반명사), forms({"색", "빛", "빛깔", "분홍색", "분홍빛", "빨간색", "빨간빛", "붉은색", "붉은빛", "파란빛", "푸른빛", "파란색", "푸른색", "노란색", "노란빛", "초록빛", "초록색", "검은색", "검정색", "검은빛", "검정빛", "핏빛", "하얀색", "하얀빛", "주황색", "주홍빛", "다홍색", "다홍빛", "갈색", "갈색빛", "하늘색", "하늘빛", "금색", "금빛", "보라색", "보랏빛", "성격", "색채", "형태", "모양", "활기", "성질", "성향", "분위기", "관련", "폭력성", "성정", "살기", "홍조", "광기", "미소", "모습", "형체", "하락세", "상승세", "구조"})).context()
     .tag(Tag.여는부호).opt().context()
     .any().opt().context()
     .tag(Tag.닫는부호).opt().context()
@@ -1401,10 +1424,6 @@ _REP_VERBS = [
     .tag_form(Tag.동사, "살")
     .msg("'쥐여살다'의 오타가 아닌가요?").build(),
     
-    *rule().id("REP_새어나가다")
-    .tag_form(Tag.동사, "세어나가")
-    .msg("'새어 나가다'의 오타가 아닌가요?").build(),
-    
     *rule().id("REP_내세우다")
     .tag_form(Tag.동사, "내새우")
     .msg("'내세우다'의 오타가 아닌가요?").build(),
@@ -1442,6 +1461,7 @@ _REP_VERBS = [
     .msg("'뺏기다'의 오타가 아닌가요?").build(),
     
     *rule().id("REP_처하다")
+    .tag_form(Tag.부사격조사, "에").context()
     .tag_form(Tag.동사, "쳐하")
     .msg("'처하다'의 오타가 아닌가요?").build(),
     
@@ -1449,6 +1469,22 @@ _REP_VERBS = [
     .tag_form(Tag.어근, "질펀")
     .tag_form(Tag.동사, "나")
     .msg("'질펀하다'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_새어 나가다")
+    .tag(Tag.주격조사).context()
+    .tag_form(Tag.동사, "세")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "나가")
+    .msg("'새어 나가다'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_걸맞다")
+    .tag_form(Tag.동사, "걸맞추")
+    .msg("'걸맞게 하다'의 잘못이 아닌가요? '걸맞추다'라는 단어는 존재하지 않습니다.").build(),
+    
+    *rule().id("REP_불러들이다")
+    .tag_form(Tag.동사, "불려들")
+    .tag_form(Tag.연결어미, "어")
+    .msg("'불러들여'의 오타가 아닌가요?").build(),
 ]
 
 _REP_NNG = [
@@ -1779,10 +1815,6 @@ _REP_NNG = [
     .tag_form(Tag.일반명사, "기역")
     .tag(Tag.일반명사).context()
     .msg("'기억'의 오타가 아닌가요?").build(),
-    
-    *rule().id("REP_걸맞다")
-    .tag_form(Tag.동사, "걸맞추")
-    .msg("'걸맞게 하다'의 잘못이 아닌가요? '걸맞추다'라는 단어는 존재하지 않습니다.").build(),
 ]
 
 _MIF = [
