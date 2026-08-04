@@ -615,22 +615,24 @@ function renderTokenTable(tokens, detailed) {
       '<div style="color:#888;margin-top:8px;">결과 없음</div>';
     return;
   }
-  let headers, rows;
+  let headers, rows, tagCol;
   if (detailed) {
-    headers = ['#', 'form', 'tag', 'raw_form', 'lemma', 'oov', 'spaced'];
+    headers = ['#', 'form', 'len', 'tag', 'raw_form', 'lemma', 'oov', 'spaced'];
+    tagCol = 3;
     rows = tokens.map(t => [
-      t.i, t.form, t.tag, t.raw_form, t.lemma,
+      t.i, t.form, t.len, t.tag, t.raw_form, t.lemma,
       t.oov ? '<span class="spaced">OOV</span>' : '' ,
       t.spaced ? '<span class="spaced">공백 있음</span>' : ''
     ]);
   } else {
     headers = ['#', 'form (base_form)', 'tag'];
+    tagCol = 2;
     rows = tokens.map(t => [t.i, t.form + ' (' + t.base_form + ')', t.tag]);
   }
   const th = headers.map(h => '<th>' + h + '</th>').join('');
   const tbody = rows.map(cells => {
     const tds = cells.map((c, i) =>
-      i === 2 ? '<td class="tag">' + c + '</td>' : '<td>' + c + '</td>'
+      i === tagCol ? '<td class="tag">' + c + '</td>' : '<td>' + c + '</td>'
     ).join('');
     return '<tr>' + tds + '</tr>';
   }).join('');
@@ -1566,6 +1568,7 @@ class Api:
                 tokens.append({
                     "i": i,
                     "form": token.form,
+                    "len": token.len,
                     "tag": f"{Tag(token.tag).name}({token.tag})",
                     "base_form": getattr(token, "base_form", token.form),
                     "raw_form": getattr(token, "raw_form", ""),
