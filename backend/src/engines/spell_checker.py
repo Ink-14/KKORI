@@ -78,7 +78,7 @@ class SpellChecker:
         self._debug: bool = debug
 
         self._registry: list[RuleMetaData] = []
-        self._total_steps: int = 0
+        self.total_steps: int = 0
 
     def _add_rule(self, rules: KoSpellRules) -> None:
         if self._builder is None:
@@ -94,7 +94,7 @@ class SpellChecker:
         for cond, spacing, is_optional, is_context in steps:
             if self._debug:
                 path.append(f"{cond}, {spacing}, {is_optional}, {is_context}")
-                self._total_steps += 1
+                self.total_steps += 1
             rust_steps.append(
                 (_to_rust_condition(cond), spacing.value, is_optional, is_context)
             )
