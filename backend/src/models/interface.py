@@ -24,6 +24,7 @@ class SpellErrorType(Enum):
 
     WARNING = auto()
     NEED_ML_JUDGE = auto()
+    WHITELIST = auto()
     
     TEST = auto()
 
