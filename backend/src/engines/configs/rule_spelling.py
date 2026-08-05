@@ -261,12 +261,19 @@ _ADD = [
     .form("빽빽")
     .msg("'수두룩'이 올바른 표현입니다.('빽빽' 불필요)").build(),
     
-    *rule().id("ADD_잊히다")
+    *rule().id("ADD_갇히다")
     .tag_form(Tag.동사, "잊히")
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.보조용언, "지")
     .any()
     .msg("'잊혀지다'는 이중 피동 표현이므로 'merge((\"잊히\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+
+    *rule().id("ADD_잊히다")
+    .tag_form(Tag.동사, "갇히")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지")
+    .any()
+    .msg("'갇혀지다'는 이중 피동 표현이므로 'merge((\"갇히\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
     
     *rule().id("ADD_불리다")
     .tag_form(Tag.동사, "불리우")
@@ -1485,6 +1492,11 @@ _REP_VERBS = [
     .tag_form(Tag.동사, "불려들")
     .tag_form(Tag.연결어미, "어")
     .msg("'불러들여'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_짜깁다")
+    .tag_form(Tag.동사불규칙활용, "짜집")
+    .any()
+    .msg('\'merge(("짜깁", "동사불규칙활용"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
 ]
 
 _REP_NNG = [
@@ -1815,6 +1827,11 @@ _REP_NNG = [
     .tag_form(Tag.일반명사, "기역")
     .tag(Tag.일반명사).context()
     .msg("'기억'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_추정")
+    .tag_form(Tag.일반명사, "추청")
+    .tag_form(Tag.동사파생접미사, "되").if_not_spaced().context()
+    .msG("'추정'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -2822,6 +2839,16 @@ _LOANWORDS = [
     .form("다크")
     .form("써클")
     .msg("'다크서클'이 올바른 표기입니다.").build(),
+
+    *rule().id("LW_점프슈트_1")
+    .tag_form(Tag.일반명사, "점프")
+    .tag_form(Tag.일반명사, "수트").if_not_spaced()
+    .msg("'점프슈트'가 올바른 표현입니다.").build(),
+
+    *rule().id("LW_점프슈트_2")
+    .tag_form(Tag.일반명사, "점프")
+    .tag_form(Tag.일반명사, "수트").if_spaced()
+    .msg("'점프 슈트'가 올바른 표현입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:

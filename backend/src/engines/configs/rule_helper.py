@@ -31,8 +31,9 @@ def NNG_and_NNG(nng1: str, nng2: str, spacing_rule: SpacingRule, message = None)
     
 def NNG_and_some(nng: str, some: str, tag: str, spacing_rule: SpacingRule, message = None) -> list[KoSpellRules]:
     rule = RuleBuilder(SpellErrorType.SPACING).id(f"NNG_SOME_{nng}{some}다").tag_form(Tag.일반명사, nng).tag_form(Tag[tag], some)
-    
-    message = f"merge((\"{some}\", \"{tag}\"), (\"다\", \"연결어미\"))"
+
+    if message is None:
+        message = f"merge((\"{some}\", \"{tag}\"), (\"다\", \"연결어미\"))"
     if spacing_rule == SpacingRule.SPACED:
         message = "{form[0]} " + message
         return rule.if_not_spaced().msg(f"'{message}'로 띄어 써야 합니다.").build()

@@ -310,7 +310,7 @@ _NNB = [
     .msg("'{dform[0]}월 초'로 띄어 써야 합니다.").build(),
 
     *rule().id("NNB_간_1_띄어쓰기")
-    .tags({Tag.일반명사, Tag.고유명사, Tag.대명사, Tag.명사파생접미사})
+    .AND(tags({Tag.일반명사, Tag.고유명사, Tag.대명사, Tag.명사파생접미사}), NOT(form("며칠")))
     .tag_form(Tag.의존명사, "간").if_not_spaced()
     .NOT(tag(Tag.부사격조사)).context()
     .msg("'{dform[0]} 사이'의 의미인 경우, '{dform[0]} 간'으로 띄어 써야 합니다.").build(),
@@ -389,7 +389,7 @@ _NNB = [
     *rule().id("NNB_걸_동사집합_띄어쓰기")
     .tag_form(Tag.의존명사, "거").if_not_spaced()
     .tag_form(Tag.목적격조사, "ᆯ")
-    .tag(Tag.일반부사).opt()
+    .tag(Tag.일반부사).opt().context()
     .AND(tag(Tag.동사), forms({"좋아하", "도와주", "통하", "알", "보", "가지", "싫어하"})).context()
     .msg("'걸'을 앞 말과 띄어 써야 합니다.").build(),
 
@@ -2534,6 +2534,15 @@ _VV = [
     .tag(Tag.종결어미).context()
     .msg("'안 되다'로 띄어 써야 합니다.").build(),
 
+    *rule().id("VV_안 되다_안 돼_쉼표_띄어쓰기")
+    .NOT(tag_form(Tag.일반부사, "잘")).context()
+    .NOT(tag_form(Tag.일반부사, "잘")).opt().context()
+    .tag_form(Tag.일반부사, "안").context()
+    .tag_form(Tag.동사, "되").if_not_spaced()
+    .tag_form(Tag.연결어미, "어").context()
+    .tag_form(Tag.구분부호, ",").context()
+    .msg("'안 되다'로 띄어 써야 합니다.").build(),
+
     *rule().id("VV_안 되다_관형사형전성어미_띄어쓰기")
     .NOT(tag_form(Tag.일반부사, "잘")).context()
     .NOT(tag_form(Tag.일반부사, "잘")).context()
@@ -4134,6 +4143,12 @@ _VCP = [
 ]
 
 _VCN = [
+    *rule().id("VCN_다름 아니다_띄어쓰기")
+    .tag_form(Tag.형용사, "다르")
+    .tag_form(Tag.명사형전성어미, "ᆷ")
+    .tag(Tag.부정지정사).if_not_spaced()
+    .msg("'다름 아니다'로 띄어 써야 합니다.").build(),
+
     *rule().id("VCN_보격조사_띄어쓰기")
     .tag(Tag.보격조사).context()
     .tag(Tag.부정지정사).if_not_spaced()
@@ -4685,6 +4700,13 @@ _JKB = [
     .tag(Tag.보조용언).context()
     .tag_form(Tag.종결어미, "ᆫ다").context()
     .msg("'같이'를 앞 말에 붙여 써야 합니다.").build(),
+]
+
+_JKS = [
+    *rule().id("JKS_알파벳_주격조사")
+    .tag(Tag.알파벳)
+    .tag(Tag.주격조사).if_spaced()
+    .msg("'{dform[0]}{dform[1]}'batchim(\"으로\", \"로\") 붙여 써야 합니다.").build(),
 ]
 
 _JKO = [
@@ -5336,6 +5358,12 @@ _XSN = [
     .tag_form(Tag.명사파생접미사, "적").if_spaced()
     .tag(Tag.긍정지정사).context()
     .msg("'{dform[0]}적'으로 붙여 써야 합니다.").build(),
+
+    *rule().id("XSN_시_붙여쓰기")
+    .tag(Tag.어근)
+    .tag_form(Tag.명사파생접미사, "시").if_spaced()
+    .tag_form(Tag.동사파생접미사, "되").context()
+    .msg("'{dform[0]}시'로 붙여 써야 합니다.").build(),
 ]
 
 _XSV = [
@@ -5669,6 +5697,7 @@ SPACING_ERRORS = [
     *_JC,
     *_JX,
     *_JKB,
+    *_JKS,
     *_JKO,
     *_JKQ,
     *_EF,
