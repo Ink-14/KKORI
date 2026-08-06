@@ -1,6 +1,6 @@
 ﻿from src.engines.configs.rule_builder import RuleBuilder, AND, OR, NOT, tag, tags, tag_form, form, forms, lemma, batchim, no_batchim, any_batchim, longer, SpacingRule, KoSpellRules
 from src.engines.configs.rule_helper import abbr_vowel_ending_connectives, 로서_combinations
-from src.engines.configs.rule_constants import 모음연결어미_FORMS, ㄹ사용불가_연결어미_FORMS, JOSA_TARGETS, 피우다_TARGETS, 펴다_TARGETS, 색상_ADJ_FORMS
+from src.engines.configs.rule_constants import 모음연결어미_FORMS, ㄹ사용불가_연결어미_FORMS, JOSA_TARGETS, 피우다_TARGETS, 펴다_TARGETS, 색상_ADJ_FORMS, 색상_NOUNS
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 def rule() -> RuleBuilder:
@@ -260,77 +260,6 @@ _ADD = [
     .form("수두룩")
     .form("빽빽")
     .msg("'수두룩'이 올바른 표현입니다.('빽빽' 불필요)").build(),
-    
-    *rule().id("ADD_갇히다")
-    .tag_form(Tag.동사, "잊히")
-    .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.보조용언, "지")
-    .any()
-    .msg("'잊혀지다'는 이중 피동 표현이므로 'merge((\"잊히\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
-
-    *rule().id("ADD_잊히다")
-    .tag_form(Tag.동사, "갇히")
-    .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.보조용언, "지")
-    .any()
-    .msg("'갇혀지다'는 이중 피동 표현이므로 'merge((\"갇히\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
-    
-    *rule().id("ADD_불리다")
-    .tag_form(Tag.동사, "불리우")
-    .any()
-    .msg("'불리우다'는 이중 피동 표현이므로 'merge((\"불리\", \"동사\"), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
-    
-    *rule().id("ADD_쓰이다")
-    .tag_form(Tag.동사, "쓰이")
-    .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.보조용언, "지")
-    .any()
-    .msg("'쓰여지다'는 이중 피동 표현이므로 'merge((\"쓰이\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
-    
-    *rule().id("ADD_적히다")
-    .tag_form(Tag.동사, "적히")
-    .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.보조용언, "지")
-    .any()
-    .msg("'적혀지다'는 이중 피동 표현이므로 'merge((\"적히\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
-    
-    *rule().id("ADD_믿기다")
-    .tag_form(Tag.동사, "믿기")
-    .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.보조용언, "지")
-    .any()
-    .msg("'믿겨지다'는 이중 피동 표현이므로 'merge((\"믿\", \"동사\"), (\"어\", \"연결어미\"), (\"지\", \"연결어미\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
-    
-    *rule().id("ADD_짜이다")
-    .tag_form(Tag.동사, "짜이")
-    .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.보조용언, "지")
-    .any()
-    .msg("'짜여지다'는 이중 피동 표현이므로 'merge((\"짜이\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
-    
-    *rule().id("ADD_설레다카메라에 매우 인상적으로 담겨지기도 했었다")
-    .tag_form(Tag.동사, "설레이")
-    .any()
-    .msg("'설레이다'는 이중 피동 표현이므로 'merge((\"설레\", \"동사\"), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
-    
-    *rule().id("ADD_덮이다")
-    .tag_form(Tag.동사, "덮이")
-    .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.보조용언, "지")
-    .any()
-    .msg("'덮여지다'는 이중 피동 표현이므로 'merge((\"덮이\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
-    
-    *rule().id("ADD_씌다")
-    .tag_form(Tag.동사, "씌이")
-    .any()
-    .msg("'씌이다'는 이중 피동 표현이므로 'merge((\"씌\", \"동사\"), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
-    
-    *rule().id("ADD_담기다")
-    .tag_form(Tag.동사, "담기")
-    .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.보조용언, "지")
-    .any()
-    .msg("'담겨지다'는 이중 피동 표현이므로 'merge((\"담\", \"동사\"), (\"어\", \"연결어미\"), (\"지\", \"연결어미\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
 
     *rule().id("ADD_안줏거리")
     .tag_form(Tag.일반명사, "안주")
@@ -873,6 +802,12 @@ _REP = [
     .tag_form(Tag.보조사, "까지").context()
     .tag_form(Tag.동사, "가").context()
     .msg("'데'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_~건대")
+    .tags(TagGroup.용언)
+    .tag_form(Tag.연결어미, "건데")
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("건대", "연결어미"))\'의 오타가 아닌가요?')
+    .detail("'내가 보건대 이 집은 1억 원은 나갈 것 같다.' 등, 화자가 보고 들은 것이나 바라는 것, 생각하는 것임을 드러낼 때는 '건대'를 사용해야 합니다.").build(),
 ]
 
 _REP_VERBS = [
@@ -1003,7 +938,7 @@ _REP_VERBS = [
     .msg("'눈에 띄다'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_띠다")
-    .AND(tag(Tag.일반명사), forms({"색", "빛", "빛깔", "분홍색", "분홍빛", "빨간색", "빨간빛", "붉은색", "붉은빛", "파란빛", "푸른빛", "파란색", "푸른색", "노란색", "노란빛", "초록빛", "초록색", "검은색", "검정색", "검은빛", "검정빛", "핏빛", "하얀색", "하얀빛", "주황색", "주홍빛", "다홍색", "다홍빛", "갈색", "갈색빛", "하늘색", "하늘빛", "금색", "금빛", "보라색", "보랏빛", "성격", "색채", "형태", "모양", "활기", "성질", "성향", "분위기", "관련", "폭력성", "성정", "살기", "홍조", "광기", "미소", "모습", "형체", "하락세", "상승세", "구조"})).context()
+    .AND(tag(Tag.일반명사), forms(색상_NOUNS | {"색", "빛", "빛깔", "성격", "색채", "형태", "모양", "활기", "성질", "성향", "분위기", "관련", "폭력성", "성정", "살기", "홍조", "광기", "미소", "모습", "형체", "하락세", "상승세", "구조"})).context()
     .tag(Tag.여는부호).opt().context()
     .any().opt().context()
     .tag(Tag.닫는부호).opt().context()
@@ -1497,6 +1432,20 @@ _REP_VERBS = [
     .tag_form(Tag.동사불규칙활용, "짜집")
     .any()
     .msg('\'merge(("짜깁", "동사불규칙활용"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
+
+    *rule().id("REP_깨닫다")
+    .tag_form(Tag.동사, "깨닳")
+    .msg("'깨닫다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_꽂히다")
+    .tag_form(Tag.동사, "꽂이")
+    .any()
+    .msg('\'merge(("꽂히", "동사"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
+
+    *rule().id("REP_조그마하다")
+    .tag_form(Tag.형용사, "조그만하")
+    .any()
+    .msg('\'merge(("조그마", "어근"), ("하", "형용사파생접미사"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
 ]
 
 _REP_NNG = [
@@ -1674,17 +1623,20 @@ _REP_NNG = [
     *rule().id("REP_율_ㄴ받침")
     .batchim("ᆫ")
     .tag_form(Tag.명사파생접미사, "률")
-    .msg("'{dform[0]}율'의 오타가 아닌가요? ㄴ받침으로 끝나는 명사에는 '율'을 사용해야 합니다.").build(),
+    .msg("'{dform[0]}율'의 오타가 아닌가요?")
+    .detail("ㄴ받침으로 끝나는 명사에는 '율'을 사용해야 합니다.").build(),
     
     *rule().id("REP_율_받침없음")
     .no_batchim()
     .tag_form(Tag.명사파생접미사, "률")
-    .msg("'{dform[0]}율'의 오타가 아닌가요? 받침 없는 명사에는 '율'을 사용해야 합니다.").build(),
+    .msg("'{dform[0]}율'의 오타가 아닌가요?")
+    .detail("받침 없는 명사에는 '율'을 사용해야 합니다.").build(),
     
     *rule().id("REP_률")
     .AND(any_batchim(), NOT(batchim("ᆫ")))
     .tag_form(Tag.명사파생접미사, "율")
-    .msg("'{dform[0]}률'의 오타가 아닌가요? ㄴ받침 이외의 받침 있는 명사에는 '률'을 사용해야 합니다.").build(),
+    .msg("'{dform[0]}률'의 오타가 아닌가요?")
+    .detail("ㄴ받침 이외의 받침 있는 명사에는 '률'을 사용해야 합니다.").build(),
 
     *rule().id("REP_산 넘어 산")
     .tag_form(Tag.일반명사, "산").context()
@@ -1713,6 +1665,10 @@ _REP_NNG = [
     *rule().id("REP_비스름")
     .tag_form(Tag.일반명사, "비스무리")
     .msg("'비스무리'는 비표준어이므로 '비스름'으로 쓸 것을 권장합니다.").build(),
+    
+    *rule().id("REP_비스름_3")
+    .tag_form(Tag.일반명사, "비스무레")
+    .msg("'비스무리'의 오타가 아닌가요? '비스무리'는 비표준어이므로 '비스름'으로 쓸 것을 권장합니다.").build(),
     
     *rule().id("REP_꼴찌")
     .tag_form(Tag.일반명사, "꼴지")
@@ -1831,7 +1787,17 @@ _REP_NNG = [
     *rule().id("REP_추정")
     .tag_form(Tag.일반명사, "추청")
     .tag_form(Tag.동사파생접미사, "되").if_not_spaced().context()
-    .msG("'추정'의 오타가 아닌가요?").build(),
+    .msg("'추정'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_재갈")
+    .form("제갈")
+    .any().opt().context()
+    .AND(tag(Tag.동사), forms({"물리", "씌우"})).context()
+    .msg("'재갈'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_출몰")
+    .tag_form(Tag.일반명사, "출물")
+    .msg("'출몰'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -2843,12 +2809,28 @@ _LOANWORDS = [
     *rule().id("LW_점프슈트_1")
     .tag_form(Tag.일반명사, "점프")
     .tag_form(Tag.일반명사, "수트").if_not_spaced()
-    .msg("'점프슈트'가 올바른 표현입니다.").build(),
+    .msg("'점프슈트'가 올바른 표기입니다.").build(),
 
     *rule().id("LW_점프슈트_2")
     .tag_form(Tag.일반명사, "점프")
     .tag_form(Tag.일반명사, "수트").if_spaced()
-    .msg("'점프 슈트'가 올바른 표현입니다.").build(),
+    .msg("'점프 슈트'가 올바른 표기입니다.").build(),
+
+    *rule().id("LW_센티")
+    .tag_form(Tag.의존명사, "센치")
+    .msg("'센티'가 올바른 표기입니다.").build(),
+
+    *rule().id("LW_엘리트")
+    .tag_form(Tag.일반명사, "앨리트")
+    .msg("'엘리트'가 올바른 표기입니다.").build(),
+
+    *rule().id("LW_트래픽")
+    .tag_form(Tag.일반명사, "트레픽")
+    .msg("'트래픽'의 오타가 아닌가요?").build(),
+
+    *rule().id("LW_매크로")
+    .tag_form(Tag.일반명사, "메크로")
+    .msg("'매크로'가 올바른 표기입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:

@@ -4,7 +4,7 @@ from src.models.interface import Tag, TagGroup, SpellErrorType
 def rule() -> RuleBuilder:
     return RuleBuilder(SpellErrorType.MEANING)
 
-MEANING_CONFLICT_ERRORS: list[KoSpellRules] = [
+_MEANING_DUPLICATED: list[KoSpellRules] = [
     *rule().id("MEANING_미리_예")
     .tag_form(Tag.일반부사, "미리")
     .AND(tag(Tag.일반명사), forms({"예견", "예방", "예언", "예습", "예고", "예측", "예약", "예단", "예매"}))
@@ -68,4 +68,89 @@ MEANING_CONFLICT_ERRORS: list[KoSpellRules] = [
     .tag_form(Tag.일반명사, "백주")
     .tag_form(Tag.일반명사, "대낮")
     .msg("'백주(白晝)'와 '대낮'은 동의어입니다.").build(),
+]
+
+_GRAMMER_DUPLICATED = [
+    *rule().id("MEANING_잊히다")
+    .tag_form(Tag.동사, "잊히")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지")
+    .any()
+    .msg("'잊혀지다'는 이중 피동 표현이므로 'merge((\"잊히\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+
+    *rule().id("MEANING_갇히다")
+    .tag_form(Tag.동사, "갇히")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지")
+    .any()
+    .msg("'갇혀지다'는 이중 피동 표현이므로 'merge((\"갇히\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+    
+    *rule().id("MEANING_불리다")
+    .tag_form(Tag.동사, "불리우")
+    .any()
+    .msg("'불리우다'는 이중 피동 표현이므로 'merge((\"불리\", \"동사\"), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+    
+    *rule().id("MEANING_쓰이다")
+    .tag_form(Tag.동사, "쓰이")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지")
+    .any()
+    .msg("'쓰여지다'는 이중 피동 표현이므로 'merge((\"쓰이\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+    
+    *rule().id("MEANING_적히다")
+    .tag_form(Tag.동사, "적히")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지")
+    .any()
+    .msg("'적혀지다'는 이중 피동 표현이므로 'merge((\"적히\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+    
+    *rule().id("MEANING_믿기다")
+    .tag_form(Tag.동사, "믿기")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지")
+    .any()
+    .msg("'믿겨지다'는 이중 피동 표현이므로 'merge((\"믿\", \"동사\"), (\"어\", \"연결어미\"), (\"지\", \"연결어미\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+    
+    *rule().id("MEANING_짜이다")
+    .tag_form(Tag.동사, "짜이")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지")
+    .any()
+    .msg("'짜여지다'는 이중 피동 표현이므로 'merge((\"짜이\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+    
+    *rule().id("MEANING_설레다")
+    .tag_form(Tag.동사, "설레이")
+    .any()
+    .msg("'설레이다'는 이중 피동 표현이므로 'merge((\"설레\", \"동사\"), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+    
+    *rule().id("MEANING_덮이다")
+    .tag_form(Tag.동사, "덮이")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지")
+    .any()
+    .msg("'덮여지다'는 이중 피동 표현이므로 'merge((\"덮이\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+    
+    *rule().id("MEANING_씌다")
+    .tag_form(Tag.동사, "씌이")
+    .any()
+    .msg("'씌이다'는 이중 피동 표현이므로 'merge((\"씌\", \"동사\"), ({dform[1]}, {dtag[1]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+    
+    *rule().id("MEANING_담기다")
+    .tag_form(Tag.동사, "담기")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지")
+    .any()
+    .msg("'담겨지다'는 이중 피동 표현이므로 담아'(\"지\", \"연결어미\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+
+    *rule().id("MEANING_처하다")
+    .tag_form(Tag.동사, "처하")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지")
+    .any()
+    .msg("'처해지다'는 이중 피동 표현이므로 'merge((\"처하\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+]
+
+MEANING_ERRORS = [
+    *_MEANING_DUPLICATED,
+    *_GRAMMER_DUPLICATED,
 ]

@@ -26,7 +26,7 @@ SPELL_CHECK_RULES: list[KoSpellRules] = [
     *rule_spacing.GENERAL_SPACING_ERRORS,
     *rule_spacing.SPACING_ERRORS,
     *rule_spelling.SPELL_MISS_ERRORS,
-    *rule_meaning.MEANING_CONFLICT_ERRORS,
+    *rule_meaning.MEANING_ERRORS,
     *rule_specific.KIWI_EXCEPTION_ERRORS,
     *rule_complex.COMPLEX_ERRORS,
     *rule_proofread.PROOFREAD_ERRORS,
