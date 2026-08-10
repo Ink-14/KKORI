@@ -58,6 +58,11 @@ _MEANING_DUPLICATED: list[KoSpellRules] = [
     .any().context()
     .tag_form(Tag.보조사, "마다")
     .msg("'매(每)'에 이미 '마다'의 의미가 포함되어 있습니다.").build(),
+
+    *rule().id("MEANING_매일매일마다")
+    .tag_form(Tag.일반명사, "매일매일")
+    .tag_form(Tag.보조사, "마다")
+    .msg("'매(每)'에 이미 '마다'의 의미가 포함되어 있습니다.").build(),
     
     *rule().id("MEANING_당일 날")
     .tag_form(Tag.일반명사, "당일")
@@ -70,7 +75,7 @@ _MEANING_DUPLICATED: list[KoSpellRules] = [
     .msg("'백주(白晝)'와 '대낮'은 동의어입니다.").build(),
 ]
 
-_GRAMMER_DUPLICATED = [
+_GRAMMAR_DUPLICATED = [
     *rule().id("MEANING_잊히다")
     .tag_form(Tag.동사, "잊히")
     .tag_form(Tag.연결어미, "어")
@@ -148,9 +153,16 @@ _GRAMMER_DUPLICATED = [
     .tag_form(Tag.보조용언, "지")
     .any()
     .msg("'처해지다'는 이중 피동 표현이므로 'merge((\"처하\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+
+    *rule().id("MEANING_깃들어지다")
+    .tag_form(Tag.동사, "깃들")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "지")
+    .any()
+    .msg("'깃들어지다'는 이중 피동 표현이므로 'merge((\"깃들\", \"동사\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
 ]
 
 MEANING_ERRORS = [
     *_MEANING_DUPLICATED,
-    *_GRAMMER_DUPLICATED,
+    *_GRAMMAR_DUPLICATED,
 ]

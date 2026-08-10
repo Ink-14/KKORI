@@ -101,6 +101,22 @@ _SPELLING_SPACING = [
     *rule().id("COMPLEX_새어나가다 REP+띄어쓰기")
     .tag_form(Tag.동사, "세어나가")
     .msg("'새어 나가다'의 오타가 아닌가요?").build(),
+
+    *rule().id("COMPLEX_쯤 REP+띄어쓰기")
+    .tags({Tag.일반명사, Tag.의존명사, Tag.숫자, Tag.일련번호})
+    .tag_form(Tag.일반명사, "쯔음").if_spaced()
+    .msg("'쯤'이 올바른 표현입니다. 또한 앞 말과 붙여 써야 합니다.").build(),
+
+    *rule().id("COMPLEX_즈음 REP+띄어쓰기")
+    .tag(Tag.관형사형전성어미)
+    .tag_form(Tag.일반명사, "쯔음").if_not_spaced()
+    .msg("'즈음'이 올바른 표현입니다. 또한 앞 맢과 띄어 써야 합니다.").build(),
+    
+    *rule().id("COMPLEX_쳐들어가다 REP+띄어쓰기")
+    .tag_form(Tag.동사, "처들")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "가").if_spaced()
+    .msg("'쳐들어가다'로 써야 합니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [
