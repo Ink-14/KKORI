@@ -9,7 +9,7 @@ version = "0.1.0"
 [tool.setuptools.packages.find]
 where = [".."]
 include = ["KKORI*"]
-exclude = ["KKORIO.venv*", "KKORI.tests*"]
+exclude = ["KKORI.venv*", "KKORI.tests*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
