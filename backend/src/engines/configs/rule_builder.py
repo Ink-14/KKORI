@@ -257,7 +257,7 @@ class RuleBuilder:
         return self
     
     def lemma(self, lemma: str):
-        """표면형 조건. 인자로는 문자열을 받음."""
+        """원형 조건. 인자로는 문자열을 받음."""
         self.steps.append(_RuleStepData([LemmaCondition(lemma=lemma)]))
         return self
 
