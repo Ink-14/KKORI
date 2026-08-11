@@ -348,6 +348,15 @@ _REP = [
     .tag_form(Tag.부사격조사, "로써")
     .msg("'로서'로 써야 합니다.")
     .detail("'로서'는 자격, '로써'는 수단을 나타냅니다. '선생으로서의 의무'는 선생이라는 위치를 의미하므로 '로서'를 사용하여야 합니다. '매로써 학생들을 다스렸다'는 '매를 이용해서'를 의미하므로 '로써'를 사용하여야 합니다.").build(),
+
+    *rule().id("REP_로서_살기")
+    .tag(Tag.일반명사).context()
+    .tag_form(Tag.부사격조사, "로써")
+    .tag_form(Tag.동사, "살").context()
+    .tag_form(Tag.명사형전성어미, "기").context()
+    .tag_form(Tag.부사격조사, "로").context()
+    .tag_form(Tag.일반명사, "결심").context()
+    .msg("'로서'가 올바른 표현입니다.").build(),
     
     *rule().id("REP_이로써")
     .tag_form(Tag.대명사, "이")
@@ -419,11 +428,18 @@ _REP = [
     .msg("'든'이 올바른 표현입니다.")
     .detail("'든'은 선택의 가능성, '던'은 과거의 사실을 나타냅니다. '사과는 먹든지 말든지'의 경우는 선택을 나타내므로 '든', '내가 먹던 사과'는 과거의 일이므로 '던'을 사용해야 합니다.").build(),
 
-    *rule().id("REP_든_든 간에")
+    *rule().id("REP_든_6_든 간에")
     .tag(Tag.긍정지정사).context()
     .tag_form(Tag.관형사형전성어미, "던")
     .tag_form(Tag.의존명사, "간").context()
     .tag_form(Tag.부사격조사, "에").context()
+    .msg("'든'이 올바른 표현입니다.").build(),
+
+    *rule().id("REP_든_7_든 ~ 마음")
+    .tag_form(Tag.관형사형전성어미, "던")
+    .any().context()
+    .any().opt().context()
+    .AND(tag(Tag.일반명사), forms({"마음", "맘"})).context()
     .msg("'든'이 올바른 표현입니다.").build(),
 
     *rule().id("REP_든가_1_든가 하는 식")
@@ -867,6 +883,15 @@ _REP = [
     .tag_form(Tag.형용사, "똑같")
     .tag_form(Tag.관형격조사, "의")
     .msg("'똑같은'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_쌩O")
+    .tag_form(Tag.체언접두사, "쌩")
+    .tag(Tag.일반명사)
+    .msg("'생{dform[1]}'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
+    
+    *rule().id("REP_니까")
+    .tag_form(Tag.종결어미, "나끼")
+    .msg("'니까'의 오타가 아닌가요?").build(),
 ]
 
 _REP_VERBS = [
@@ -1562,6 +1587,11 @@ _REP_VERBS = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.보조용언, "나")
     .msg("'드러나다'가 올바른 표현입니다.").build(),
+    
+    *rule().id("REP_가냘프다")
+    .tag_form(Tag.형용사, "갸냘프")
+    .any()
+    .msg("'merge((\"가냘프\", \"형용사\"), ({dform[1]}, {dtag[1]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
 ]
 
 _REP_NNG = [
@@ -1958,6 +1988,15 @@ _REP_NNG = [
     *rule().id("REP_사태")
     .form("사테")
     .msg("'사태'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_마구잡이")
+    .tag_form(Tag.일반부사, "마구")
+    .tag_form(Tag.일반명사, "자비").if_not_spaced()
+    .msg("'마구잡이'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_물건")
+    .tag_form(Tag.일반명사, "몰건")
+    .msg("'물건'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -2137,12 +2176,21 @@ _MIF = [
     # .build(),
     
     *rule().id("MIF_형용사_~지 않은")
-    .tags({Tag.형용사, Tag.형용사불규칙활용})
-    .tag_form(Tag.연결어미, "지")
+    .tags({Tag.형용사, Tag.형용사불규칙활용}).context()
+    .tag_form(Tag.연결어미, "지").context()
     .tag_form(Tag.보조용언, "않")
     .form("는")
-    .msg("'merge(({dform[0]}, {dtag[0]}), (\"지\", \"연결어미\")) 않은'이 올바른 표현입니다.")
+    .msg("'않은'이 올바른 표현입니다.")
     .detail("형용사는 '~지 않은'의 형태로 써야 합니다.\n예시: 예쁘지 않은 꽃").build(),
+    
+    *rule().id("MIF_형용사_~지 않은_2")
+    .tag(Tag.어근).context()
+    .tag_form(Tag.형용사파생접미사, "하").context()
+    .tag_form(Tag.연결어미, "지").context()
+    .tag_form(Tag.보조용언, "않")
+    .form("는")
+    .msg("'않은'이 올바른 표현입니다.")
+    .detail("형용사는 '~지 않은'의 형태로 써야 합니다.\n예시: 흔치 않은 꽃").build(),
 
     *rule().id("MIF_형용사_은")
     .AND(tag(Tag.형용사), forms({"알맞"})) # form 지정하지 않을 시 엄청난 양의 오탐 발생('없은' 등)
@@ -2581,6 +2629,12 @@ _MIF = [
     .tag_form(Tag.동사파생접미사, "하")
     .tag_form(Tag.연결어미, "도")
     .msg("'해도'의 오타가 아닌가요?").build(),
+    
+    *rule().id("MIF_가냘프다")
+    .tag_form(Tag.일반명사, "가냘")
+    .tag_form(Tag.동사, "푸").if_not_spaced()
+    .any()
+    .msg('\'merge(("갸냘프", "형용사"), ({dform[2]}, {dtag[2]}))\'의 오타가 아닌가요?').build(),
 ]
 
 _JOSA = [

@@ -1710,7 +1710,7 @@ _NNG = [
     .msg("'검은건반'으로 붙여 써야 합니다.").build(),
     
     *rule().id("NNG_관형사아닌_물속_붙여쓰기")
-    .NOT(tags({Tag.관형사형전성어미, Tag.관형사})).context()
+    .NOT(tags({Tag.관형사형전성어미, Tag.관형사, Tag.일반명사})).context()
     .tag_form(Tag.일반명사, "물")
     .tag_form(Tag.일반명사, "속").if_spaced()
     .msg("'물속'으로 붙여 써야 합니다.").build(),
