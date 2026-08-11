@@ -247,6 +247,11 @@ _OM = [
     .tag_form(Tag.선어말어미, "었")
     .tag(Tag.의존명사).context()
     .msg('\'merge(({dform[0]}, {dtag[0]}), ("었", "선어말어미"), ("던", "관형사형전성어미"))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("OM_되었")
+    .tag_form(Tag.보조사, "도")
+    .tag_form(Tag.선어말어미, "었").context()
+    .msg("'되'의 오타가 아닌가요?").build(),
 ]
 
 _ADD = [
@@ -1949,6 +1954,10 @@ _REP_NNG = [
     *rule().id("REP_권유")
     .tag_form(Tag.일반명사, "건유")
     .msg("'권유'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_사태")
+    .form("사테")
+    .msg("'사태'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [

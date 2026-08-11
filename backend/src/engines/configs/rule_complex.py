@@ -117,6 +117,14 @@ _SPELLING_SPACING = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.보조용언, "가").if_spaced()
     .msg("'쳐들어가다'로 써야 합니다.").build(),
+    
+    *rule().id("COMPLEX_~자 말자 MIF+띄어쓰기")
+    .tag_form(Tag.일반부사, "다").context()
+    .tags(TagGroup.용언)
+    .tag_form(Tag.연결어미, "자")
+    .tag_form(Tag.보조용언, "말").if_spaced()
+    .tag_form(Tag.연결어미, "자")
+    .msg("'merge(({dform[0]}, {dtag[0]}), (\"자마자\", \"연결어미\"))'의 오타가 아닌가요?").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [

@@ -11,6 +11,7 @@ from src.models.spell_checker_classes import (
     TagAndFormCondition,
     FirstTokenCondition,
     LengthCondition,
+    LengthLongerCondition,
     NotCondition,
     AndCondition,
     OrCondition,
@@ -27,6 +28,7 @@ from src.engines.configs.rule_builder import (
     forms,
     tag_form,
     lemma,
+    length,
     longer,
     batchim,
     any_batchim,
@@ -107,10 +109,16 @@ class TestBasicConditions:
         rules = rule().first().msg("x").build()
         assert isinstance(first_cond(rules), FirstTokenCondition)
 
+    def test_length(self):
+        rules = rule().length(1).msg("x").build()
+        cond = first_cond(rules)
+        assert isinstance(cond, LengthCondition)
+        assert cond.length == 1
+
     def test_longer(self):
         rules = rule().longer(3).msg("x").build()
         cond = first_cond(rules)
-        assert isinstance(cond, LengthCondition)
+        assert isinstance(cond, LengthLongerCondition)
         assert cond.length == 3
 
 
@@ -354,9 +362,14 @@ class TestModuleHelpers:
         assert isinstance(c, LemmaCondition)
         assert c.lemma == "먹다"
 
+    def test_length(self):
+        c = length(2)
+        assert isinstance(c, LengthCondition)
+        assert c.length == 2
+
     def test_longer(self):
         c = longer(5)
-        assert isinstance(c, LengthCondition)
+        assert isinstance(c, LengthLongerCondition)
         assert c.length == 5
 
     def test_batchim(self):
