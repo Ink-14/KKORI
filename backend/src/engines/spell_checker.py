@@ -12,6 +12,7 @@ from _core import (
     AnyBatchimCondition as RustAnyBatchimCondition,
     BatchimCondition as RustBatchimCondition,
     LengthCondition as RustLengthCondition,
+    LengthLongerCondition as RustLengthLongerCondition,
     FirstTokenCondition as RustFirstTokenCondition,
     TagSetCondition as RustTagSetCondition,
     FormSetCondition as RustFormSetCondition,
@@ -25,7 +26,7 @@ from src.models.spell_checker_classes import (
     Condition,
     TagCondition, FormCondition, TagAndFormCondition, LemmaCondition,
     AnyCondition, AnyBatchimCondition, BatchimCondition,
-    LengthCondition, FirstTokenCondition,
+    LengthCondition, LengthLongerCondition, FirstTokenCondition,
     TagSetCondition, FormSetCondition,
     AndCondition, OrCondition, NotCondition,
 )
@@ -56,6 +57,8 @@ def _to_rust_condition(cond: Condition) -> object:
         return RustAnyCondition()
     if isinstance(cond, LengthCondition):
         return RustLengthCondition(length=cond.length)
+    if isinstance(cond, LengthLongerCondition):
+        return RustLengthLongerCondition(length=cond.length)
     if isinstance(cond, FirstTokenCondition):
         return RustFirstTokenCondition()
     if isinstance(cond, TagSetCondition):

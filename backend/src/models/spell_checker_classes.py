@@ -76,6 +76,13 @@ class LengthCondition(Condition):
     length: int
 
     def match(self, token: InternalToken) -> bool:
+        return token.len == self.length
+
+@dataclass(frozen=True, slots=True)
+class LengthLongerCondition(Condition):
+    length: int
+
+    def match(self, token: InternalToken) -> bool:
         return token.len >= self.length
     
 @dataclass(frozen=True, slots=True)

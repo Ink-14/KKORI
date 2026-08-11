@@ -294,9 +294,14 @@ class RuleBuilder:
         self.steps.append(_RuleStepData([FirstTokenCondition()]))
         return self
     
+    def length(self, n: int):
+        """토큰의 길이가 n인 경우 통과하는 조건. 인자로는 정수를 받음."""
+        self.steps.append(_RuleStepData([LengthCondition(length=n)]))
+        return self
+    
     def longer(self, n: int):
         """토큰의 길이가 n 이상인 경우 통과하는 조건. 인자로는 정수를 받음."""
-        self.steps.append(_RuleStepData([LengthCondition(length=n)]))
+        self.steps.append(_RuleStepData([LengthLongerCondition(length=n)]))
         return self
     
     def AND(self, *params: AndParam):
@@ -520,9 +525,13 @@ def lemma(l: str) -> LemmaCondition:
     """표면형 조건. 인자로는 문자열을 받음."""
     return LemmaCondition(lemma=l)
 
-def longer(n: int) -> LengthCondition:
-    """토큰의 길이가 n 이상인 경우 통과하는 조건. 인자로는 정수를 받음."""
+def length(n: int) -> LengthCondition:
+    """토큰의 길이가 n인 경우 통과하는 조건. 인자로는 정수를 받음."""
     return LengthCondition(length=n)
+
+def longer(n: int) -> LengthLongerCondition:
+    """토큰의 길이가 n 이상인 경우 통과하는 조건. 인자로는 정수를 받음."""
+    return LengthLongerCondition(length=n)
 
 def batchim(b: str) -> BatchimCondition:
     """받침 조건. 인자로는 조합형 자모를 받음."""

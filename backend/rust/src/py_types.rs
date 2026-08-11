@@ -98,6 +98,19 @@ impl LengthCondition {
 }
 
 #[pyclass]
+pub struct LengthLongerCondition {
+    pub length: u16,
+}
+
+#[pymethods]
+impl LengthLongerCondition {
+    #[new]
+    pub fn new(length: u16) -> Self {
+        LengthLongerCondition { length }
+    }
+}
+
+#[pyclass]
 pub struct FirstTokenCondition;
 
 #[pymethods]

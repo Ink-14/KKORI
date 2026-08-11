@@ -24,6 +24,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<AnyBatchimCondition>()?;
     m.add_class::<BatchimCondition>()?;
     m.add_class::<LengthCondition>()?;
+    m.add_class::<LengthLongerCondition>()?;
     m.add_class::<FirstTokenCondition>()?;
     m.add_class::<TagSetCondition>()?;
     m.add_class::<FormSetCondition>()?;

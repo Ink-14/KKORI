@@ -34,6 +34,9 @@ class BatchimCondition:
 class LengthCondition:
     def __new__(cls, length: int) -> "LengthCondition": ...
 
+class LengthLongerCondition:
+    def __new__(cls, length: int) -> "LengthLongerCondition": ...
+    
 class FirstTokenCondition:
     def __new__(cls) -> "FirstTokenCondition": ...
 
@@ -90,7 +93,7 @@ class SpellError:
 _RustCondition = (
     TagCondition | FormCondition | TagAndFormCondition | LemmaCondition |
     AnyCondition | AnyBatchimCondition | BatchimCondition |
-    LengthCondition | FirstTokenCondition | TagSetCondition | FormSetCondition |
+    LengthCondition | LengthLongerCondition | FirstTokenCondition | TagSetCondition | FormSetCondition |
     AndCondition | OrCondition | NotCondition
 )
 

@@ -434,6 +434,10 @@ impl RuleCheckerBuilder {
             return Ok(Condition::Length(c.borrow().length));
         }
 
+        if let Ok(c) = obj.downcast::<LengthLongerCondition>() {
+            return Ok(Condition::LengthLonger(c.borrow().length));
+        }
+
         if let Ok(c) = obj.downcast::<TagSetCondition>() {
             let tags = c.borrow().tags.iter()
                 .map(|t| TAG2IDX.get(t.as_str()).copied()
