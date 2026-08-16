@@ -10,6 +10,7 @@ CHOSEONG_IDX_POINT = JUNGSEONG_IDX_POINT * JONGSEONG_IDX_POINT
 CHO_LIST = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
 JUNG_LIST = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ']
 JONG_LIST = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
+NORMAL_BATCHIM_LIST = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', "ㄶ", 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
 BATCHIM_LIST = ['', 'ᆨ', 'ᆩ', 'ᆪ', 'ᆫ', 'ᆬ', 'ᆭ', 'ᆮ', 'ᆯ', 'ᆰ', 'ᆱ', 'ᆲ', 'ᆳ', 'ᆴ', 'ᆵ', 'ᆶ', 'ᆷ', 'ᆸ', 'ᆹ', 'ᆺ', 'ᆻ', 'ᆼ', 'ᆽ', 'ᆾ', 'ᆿ', 'ᇀ', 'ᇁ', 'ᇂ']
 BATCHIM_DICT = {"__UNK__": 0}
 for i in BATCHIM_LIST:
@@ -54,6 +55,23 @@ def is_compatible_jamo(char: str) -> bool:
     if char in BATCHIM_DICT.keys():
         return True
     return False
+
+def get_normal_batchim(char: str) -> str:
+    """받침을 글자로 반환해 주는 함수.
+
+    한글 아닐 경우에는 문자열 '0', 한글일 경우에는 받침을 반환.
+
+    Args:
+        char (str): 받침을 판별할 글자. 1글자만 입력되어야 함.
+
+    Returns:
+        str: 완성형 한글일 경우 조합형 자모로 이루어진 받침 문자, 그 이외에는 문자열 '0'.
+    """
+    charpoint = ord(char)
+    if HANGUL_COMP_START <= charpoint <= HANGUL_COMP_END:
+        return NORMAL_BATCHIM_LIST[(charpoint - HANGUL_COMP_START) % JONGSEONG_IDX_POINT]
+    else:
+        return '0'
 
 def get_compatible_batchim(char: str) -> str:
     """받침을 조합형 자모로 반환해 주는 함수.

@@ -4,7 +4,7 @@ from pathlib import Path
 from kiwipiepy import Kiwi
 
 from src.utils.file_io import get_all_file_paths, make_dictionary_list, make_termbase_list, make_pre_analyzed_dict_list, make_word_and_score_list
-from src.tokenizations.utils import make_없다_VA_MAG_words
+from src.tokenizations.utils import make_없다_VA_MAG_words, make_들다_complex_verbs
 from src.models.interface import Tag
 from src.utils.paths import backend_resource_path
 
@@ -15,6 +15,7 @@ class KoTokenizer(Kiwi):
     DEFAULT_KO_DICT_FILE_NAME = "ko_dictionary"
     DEFAULT_PRE_ANALYZED_DICT_FILE_NAME = "ko_preanalyzed"
     없다_WORDS_FILE_NAME = "없다_words"
+    들다_COMPLEX_VERBS_FILE_NAME = "들다_complex_verbs"
 
     def __new__(cls):
         if cls._instance is None:
@@ -39,6 +40,16 @@ class KoTokenizer(Kiwi):
         words = make_word_and_score_list(없다_word_file)
         for word, tag, score in make_없다_VA_MAG_words(words):
             self.add_user_word(word=word, tag=tag, score=score)
+
+        들다_word_file = self.DEFAULT_DICTIONARY_PATH / f"{self.들다_COMPLEX_VERBS_FILE_NAME}.csv"
+        word_lists = make_word_and_score_list(들다_word_file)
+
+        for word_tuple, morphs in make_들다_complex_verbs((word_lists)):
+            word, tag, score = word_tuple
+            self.add_user_word(word=word, tag=tag, score=score)
+
+            for morph in morphs:
+                self.add_pre_analyzed_word(morph.word, morph.elements, morph.score)
     
         pre_analyzed_file = self.DEFAULT_DICTIONARY_PATH / f"{self.DEFAULT_PRE_ANALYZED_DICT_FILE_NAME}.csv"
         for words in make_pre_analyzed_dict_list(pre_analyzed_file):
