@@ -550,6 +550,248 @@ class TestMessageDedup:
         assert any(e.error_message == "출력" for e in errors)
         assert any(e.error_message == "출력2" for e in errors)
 
+# ── 겹침 억제 (priority / SUPPRESS_ALL) ──
+# 규칙: 쌍(pairwise)으로 구간이 조금이라도 교차하는 매치끼리만 비교.
+#   - SUPPRESS_ALL: 자신은 출력되지 않고, 겹치는 상대를 무조건 억제.
+#   - priority가 더 높은(숫자가 작은) 쪽이 이기고, 겹치는 상대를 억제.
+#   - priority가 동률이면 서로 억제하지 않음 (둘 다 출력).
+#   - 애초에 구간이 겹치지 않으면 비교 자체를 하지 않음 (둘 다 출력).
+
+def rule_type(error_type: SpellErrorType) -> RuleBuilder:
+    return RuleBuilder(error_type)
+
+SUPPRESS_ALL_ONLY = [
+    *rule_type(SpellErrorType.SUPPRESS_ALL)
+    .form("S")
+    .msg("suppress_all 자체 출력")
+    .build(),
+]
+
+SUPPRESS_ALL_VS_NORMAL = [
+    *rule_type(SpellErrorType.SUPPRESS_ALL)
+    .form("A")
+    .form("B")
+    .msg("억제자")
+    .build(),
+
+    *rule_type(SpellErrorType.SPELLING)
+    .form("B")
+    .form("C")
+    .msg("억제당함")
+    .build(),
+]
+
+SUPPRESS_ALL_NON_OVERLAPPING = [
+    *rule_type(SpellErrorType.SUPPRESS_ALL)
+    .form("A")
+    .form("B")
+    .msg("억제자")
+    .build(),
+
+    *rule_type(SpellErrorType.SPELLING)
+    .form("X")
+    .form("Y")
+    .msg("무관한 규칙")
+    .build(),
+]
+
+COMPLEX_VS_SPELLING = [
+    *rule_type(SpellErrorType.COMPLEX)
+    .form("A")
+    .form("B")
+    .msg("COMPLEX 승리")
+    .build(),
+
+    *rule_type(SpellErrorType.SPELLING)
+    .form("B")
+    .form("C")
+    .msg("SPELLING 패배")
+    .build(),
+]
+
+SAME_PRIORITY_OVERLAP = [
+    *rule_type(SpellErrorType.SPELLING)
+    .form("A")
+    .form("B")
+    .msg("SPELLING 동시출력")
+    .build(),
+
+    *rule_type(SpellErrorType.SPACING)
+    .form("B")
+    .form("C")
+    .msg("SPACING 동시출력")
+    .build(),
+]
+
+# 기본 priority는 둘 다 2(동률)라 겹쳐도 함께 살아남지만,
+# 한쪽에 .rank()로 더 높은 우선순위(작은 숫자)를 줘서 결과를 뒤집는다.
+RANK_OVERRIDE_FLIPS_RESULT = [
+    *rule_type(SpellErrorType.SPELLING)
+    .form("A")
+    .form("B")
+    .rank(0)
+    .msg("rank로 승격된 SPELLING")
+    .build(),
+
+    *rule_type(SpellErrorType.SPACING)
+    .form("B")
+    .form("C")
+    .msg("기본 우선순위 SPACING")
+    .build(),
+]
+
+ADJACENT_NOT_OVERLAPPING = [
+    *rule_type(SpellErrorType.COMPLEX)
+    .form("A")
+    .form("B")
+    .msg("COMPLEX 인접")
+    .build(),
+
+    *rule_type(SpellErrorType.SPELLING)
+    .form("C")
+    .form("D")
+    .msg("SPELLING 인접")
+    .build(),
+]
+
+CONTAINED_OVERLAP = [
+    *rule_type(SpellErrorType.SPELLING)
+    .form("A")
+    .form("B")
+    .form("C")
+    .form("D")
+    .msg("SPELLING 전체포함")
+    .build(),
+
+    *rule_type(SpellErrorType.COMPLEX)
+    .form("B")
+    .form("C")
+    .msg("COMPLEX 내부포함")
+    .build(),
+]
+
+CHAIN_PAIRWISE_RULES = [
+    *rule_type(SpellErrorType.SPELLING)
+    .form("A")
+    .form("B")
+    .msg("A_체인")
+    .build(),
+
+    *rule_type(SpellErrorType.COMPLEX)
+    .form("B")
+    .form("C")
+    .msg("B_체인")
+    .build(),
+
+    *rule_type(SpellErrorType.SPELLING)
+    .form("C")
+    .form("D")
+    .msg("C_체인")
+    .build(),
+]
+
+class TestOverlapSuppression:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.checker = SpellChecker()
+
+    def test_suppress_all_never_emitted_alone(self):
+        self.checker.add_rule_from_list(SUPPRESS_ALL_ONLY)
+        tokens = build_tokens(("S", Tag.일반명사))
+        errors = list(self.checker.check(tokens))
+        assert_empty(errors)
+
+    def test_suppress_all_suppresses_overlapping_rule(self):
+        self.checker.add_rule_from_list(SUPPRESS_ALL_VS_NORMAL)
+        # A(0,1) B(1,2) -> 억제자 span(0,2), C(2,3) -> 억제당함 span(1,3), 서로 교차
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사), ("C", Tag.일반명사))
+        errors = list(self.checker.check(tokens))
+        assert_empty(errors)
+
+    def test_suppress_all_does_not_affect_non_overlapping_rule(self):
+        self.checker.add_rule_from_list(SUPPRESS_ALL_NON_OVERLAPPING)
+        tokens = build_tokens(
+            ("A", Tag.일반명사), ("B", Tag.일반명사),
+            ("X", Tag.일반명사), ("Y", Tag.일반명사),
+        )
+        errors = list(self.checker.check(tokens))
+        assert_found(errors, "무관한 규칙", 2, 4)
+        assert all(e.error_message != "억제자" for e in errors)
+
+    def test_higher_priority_suppresses_lower(self):
+        self.checker.add_rule_from_list(COMPLEX_VS_SPELLING)
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사), ("C", Tag.일반명사))
+        errors = list(self.checker.check(tokens))
+        assert_found(errors, "COMPLEX 승리", 0, 2)
+        assert all(e.error_message != "SPELLING 패배" for e in errors)
+
+    def test_same_priority_both_survive(self):
+        self.checker.add_rule_from_list(SAME_PRIORITY_OVERLAP)
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사), ("C", Tag.일반명사))
+        errors = list(self.checker.check(tokens))
+        assert_found(errors, "SPELLING 동시출력", 0, 2)
+        assert_found(errors, "SPACING 동시출력", 1, 3)
+
+    def test_rank_override_flips_suppression_result(self):
+        # 둘 다 기본 priority(2)였다면 동률로 공존했겠지만, SPELLING 쪽에
+        # rank(0)을 줘서 겹치는 SPACING을 억제하도록 뒤집는다.
+        self.checker.add_rule_from_list(RANK_OVERRIDE_FLIPS_RESULT)
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사), ("C", Tag.일반명사))
+        errors = list(self.checker.check(tokens))
+        assert_found(errors, "rank로 승격된 SPELLING", 0, 2)
+        assert all(e.error_message != "기본 우선순위 SPACING" for e in errors)
+
+    def test_adjacent_non_overlapping_both_survive(self):
+        # A(0,1) B(1,2) -> span(0,2), C(2,3) D(3,4) -> span(2,4). 경계가 맞닿을 뿐 교차하지 않음.
+        self.checker.add_rule_from_list(ADJACENT_NOT_OVERLAPPING)
+        tokens = build_tokens(
+            ("A", Tag.일반명사), ("B", Tag.일반명사),
+            ("C", Tag.일반명사), ("D", Tag.일반명사),
+        )
+        errors = list(self.checker.check(tokens))
+        assert_found(errors, "COMPLEX 인접", 0, 2)
+        assert_found(errors, "SPELLING 인접", 2, 4)
+
+    def test_fully_contained_overlap_is_compared(self):
+        # SPELLING span(0,4)이 COMPLEX span(1,3)을 완전히 포함 -> 교차로 간주, priority 낮은 SPELLING 억제
+        self.checker.add_rule_from_list(CONTAINED_OVERLAP)
+        tokens = build_tokens(
+            ("A", Tag.일반명사), ("B", Tag.일반명사),
+            ("C", Tag.일반명사), ("D", Tag.일반명사),
+        )
+        errors = list(self.checker.check(tokens))
+        assert_found(errors, "COMPLEX 내부포함", 1, 3)
+        assert all(e.error_message != "SPELLING 전체포함" for e in errors)
+
+    def test_pairwise_chain_not_transitive(self):
+        # A_체인(0,2)-B_체인(1,3) 교차 -> B(COMPLEX)가 이겨서 A 억제
+        # B_체인(1,3)-C_체인(2,4) 교차 -> B(COMPLEX)가 이겨서 C 억제
+        # A_체인과 C_체인은 서로 교차하지 않으므로 직접 비교되지 않음 (결과에 영향 없음, 어차피 둘 다 B에 의해 죽음)
+        self.checker.add_rule_from_list(CHAIN_PAIRWISE_RULES)
+        tokens = build_tokens(
+            ("A", Tag.일반명사), ("B", Tag.일반명사),
+            ("C", Tag.일반명사), ("D", Tag.일반명사),
+        )
+        errors = list(self.checker.check(tokens))
+        assert_found(errors, "B_체인", 1, 3)
+        assert all(e.error_message != "A_체인" for e in errors)
+        assert all(e.error_message != "C_체인" for e in errors)
+
+    def test_check_batch_applies_same_suppression(self):
+        self.checker.add_rule_from_list(SUPPRESS_ALL_VS_NORMAL)
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사), ("C", Tag.일반명사))
+        batch_errors = self.checker.check_batch([tokens])
+        assert_empty(batch_errors[0])
+
+    def test_check_batch_keeps_same_priority_pair(self):
+        self.checker.add_rule_from_list(SAME_PRIORITY_OVERLAP)
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사), ("C", Tag.일반명사))
+        batch_errors = self.checker.check_batch([tokens])
+        errors = batch_errors[0]
+        assert_found(errors, "SPELLING 동시출력", 0, 2)
+        assert_found(errors, "SPACING 동시출력", 1, 3)
+
+
 # ── 스트레스 & 성능 벤치마크 테스트 ──
 
 STRESS_RULES = [

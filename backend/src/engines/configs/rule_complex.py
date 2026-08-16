@@ -126,11 +126,21 @@ _SPELLING_SPACING = [
     .tag_form(Tag.연결어미, "자")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"자마자\", \"연결어미\"))'의 오타가 아닌가요?").build(),
 
-    *rule().id("COMPLEX_발 붙히다 MIF+띄어쓰기") # 충돌 있음
+    *rule().id("COMPLEX_발 붙히다 MIF+띄어쓰기")
     .tag_form(Tag.일반명사, "발")
     .tag_form(Tag.동사, "붙히").if_spaced()
     .msg("'발붙이다'가 올바른 표현입니다.").build(),
-
+    
+    *rule().id("COMPLEX_오활용+오어미")
+    .tag_form(Tag.동사, "치루")
+    .AND(tag(Tag.연결어미), forms({"ᆯ려고", "ᆯ라고"}))
+    .msg("'merge((\"치르\", \"동사\"), (\"려고\", \"연결어미\"))'가 올바른 표현입니다.").build(),
+    
+    *rule().id("COMPLEX_새어 나오다_REP+띄어쓰기").rank(1)
+    .tag_form(Tag.동사, "세")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.동사, "나오").if_not_spaced()
+    .msg("'새어 나오다'의 오타가 아닌가요?").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [

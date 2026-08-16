@@ -1607,6 +1607,11 @@ _REP_VERBS = [
     .any()
     .msg("'merge((\"가냘프\", \"형용사\"), ({dform[1]}, {dtag[1]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
 
+    *rule().id("REP_새다").rank(2)
+    .tag_form(Tag.동사, "세")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.동사, "나오").context()
+    .msg("'새어'의 오타가 아닌가요?").build(),
 ]
 
 _REP_NNG = [
@@ -2912,6 +2917,11 @@ _Z_CODA = [
     .tag_form(Tag.일반명사, "시계")
     .tag_form(Tag.일반명사, "바늘")
     .msg("'시곗바늘'이 올바른 표현입니다.").build(),
+    
+    *rule().id("Z_CODA_귓속").rank(2)
+    .tag_form(Tag.일반명사, "귀")
+    .tag_form(Tag.일반명사, "속")
+    .msg("'귀의 안'이라면 '귓속'이 올바른 표현입니다.").build(),
 ]
 
 _RECOMMENDED = [

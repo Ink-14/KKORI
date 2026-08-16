@@ -492,16 +492,17 @@ class TestBuildOutput:
         assert isinstance(rules, list)
         assert len(rules) >= 1
 
-    def test_each_rule_is_5_tuple(self):
+    def test_each_rule_is_6_tuple(self):
         rules = rule().form("A").msg("x").build()
         for r in rules:
-            assert len(r) == 5
-            steps, msg, err_type, rule_id, detailed_msg = r
+            assert len(r) == 6
+            steps, msg, err_type, rule_id, detailed_msg, priority = r
             assert isinstance(steps, list)
             assert isinstance(msg, CompiledMessage)
             assert isinstance(err_type, SpellErrorType)
             assert isinstance(rule_id, str)
             assert detailed_msg is None or isinstance(detailed_msg, str)
+            assert isinstance(priority, int)
 
     def test_each_step_is_4_tuple(self):
         rules = rule().form("A").form("B").msg("x").build()
@@ -551,6 +552,44 @@ class TestErrorTypeAndId:
             .build()
         )
         assert rules[0][3] == "R-42"
+
+
+# ── rank (priority override) ──
+
+class TestRank:
+    def test_default_priority_follows_error_type(self):
+        from src.models.interface import SPELL_ERROR_TYPE_PRIORITY
+
+        rules = RuleBuilder(SpellErrorType.SPELLING).form("A").msg("x").build()
+        assert rules[0][5] == SPELL_ERROR_TYPE_PRIORITY[SpellErrorType.SPELLING]
+
+    def test_complex_default_priority_is_1(self):
+        rules = RuleBuilder(SpellErrorType.COMPLEX).form("A").msg("x").build()
+        assert rules[0][5] == 2
+
+    def test_rank_overrides_default_priority(self):
+        rules = (
+            RuleBuilder(SpellErrorType.SPELLING)
+            .form("A")
+            .msg("x")
+            .rank(0)
+            .build()
+        )
+        assert rules[0][5] == 0
+
+    def test_rank_on_suppress_all_raises(self):
+        with pytest.raises(ValueError):
+            (
+                RuleBuilder(SpellErrorType.SUPPRESS_ALL)
+                .form("A")
+                .msg("x")
+                .rank(5)
+                .build()
+            )
+
+    def test_suppress_all_without_rank_builds_successfully(self):
+        rules = RuleBuilder(SpellErrorType.SUPPRESS_ALL).form("A").msg("x").build()
+        assert rules[0][5] == 0
 
 
 # ── 통합 (복합 시나리오) ──

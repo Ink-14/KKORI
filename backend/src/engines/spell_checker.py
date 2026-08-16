@@ -1,4 +1,5 @@
 ﻿from __future__ import annotations
+import heapq
 from typing import Iterator
 from dataclasses import dataclass
 
@@ -38,6 +39,7 @@ class RuleMetaData:
     msg: CompiledMessage
     rule_id: str
     detail: DetailedMessage
+    priority: int
     debug_path: str | None = None
 
 def _to_rust_condition(cond: Condition) -> object:
@@ -108,13 +110,13 @@ class SpellChecker:
         if self._builder is None:
             raise RuntimeError("You cannot add rules after calling 'check' function.")
 
-        steps, msg, error_type, rule_id, detail = rules
+        steps, msg, error_type, rule_id, detail, priority = rules
         if not steps:
             return
 
         rust_steps = []
         path = []
-        
+
         for cond, spacing, is_optional, is_context in steps:
             if self._debug:
                 path.append(f"{cond}, {spacing}, {is_optional}, {is_context}")
@@ -125,7 +127,7 @@ class SpellChecker:
 
         uid = len(self._registry)
         debug_path = "  →  ".join(path) if self._debug else None
-        self._registry.append(RuleMetaData(error_type, msg, rule_id, detail, debug_path))
+        self._registry.append(RuleMetaData(error_type, msg, rule_id, detail, priority, debug_path))
 
         self._builder.add_rule(steps=rust_steps, match_id=uid)
         self._has_rules = True
@@ -168,6 +170,7 @@ class SpellChecker:
             end_index=end,
             rule_id=meta.rule_id,
             detailed=meta.detail,
+            priority=meta.priority,
             debug_path=meta.debug_path,
         )
         
@@ -175,12 +178,13 @@ class SpellChecker:
 
         return error, dedup_key
 
-    def _iter_deduped_errors(
+    def _deduped_errors(
         self,
         tokens: list[KoToken],
         rust_errors,
-    ) -> Iterator[SpellError]:
+    ) -> list[SpellError]:
         seen: set[tuple[int, int, str]] = set()
+        result: list[SpellError] = []
 
         for match_id, start_index, end_index in rust_errors:
             error, key = self._make_spell_error(
@@ -194,7 +198,38 @@ class SpellChecker:
                 continue
 
             seen.add(key)
-            yield error
+            result.append(error)
+
+        return result
+
+    @staticmethod
+    def _suppress_overlaps(errors: list[SpellError]) -> list[SpellError]:
+        n = len(errors)
+        priorities = [e.priority for e in errors]
+        suppressed = [e.error_type == SpellErrorType.SUPPRESS_ALL for e in errors]
+
+        order = sorted(range(n), key=lambda i: errors[i].start_index)
+        active: list[tuple[int, int]] = []
+
+        for i in order:
+            start_i = errors[i].start_index
+
+            while active and active[0][0] <= start_i:
+                heapq.heappop(active)
+
+            for _, j in active:
+                is_suppress_all = suppressed[i] or suppressed[j]
+                if is_suppress_all:
+                    suppressed[i] = True
+                    suppressed[j] = True
+                elif priorities[i] < priorities[j]:
+                    suppressed[j] = True
+                elif priorities[j] < priorities[i]:
+                    suppressed[i] = True
+
+            heapq.heappush(active, (errors[i].end_index, i))
+
+        return [e for e, is_suppressed in zip(errors, suppressed) if not is_suppressed]
 
     def check(self, tokens: list[KoToken]) -> Iterator[SpellError]:
         """토큰을 검사하는 함수.
@@ -216,7 +251,8 @@ class SpellChecker:
 
         rust_errors = self._checker.check(tokens)
 
-        yield from self._iter_deduped_errors(tokens, rust_errors)
+        errors = self._deduped_errors(tokens, rust_errors)
+        yield from self._suppress_overlaps(errors)
 
     def check_batch(self, batch: list[list[KoToken]]) -> list[list[SpellError]]:
         """병렬 검사용 함수."""
@@ -233,10 +269,10 @@ class SpellChecker:
 
         rust_batch = self._checker.check_batch_tuples(tuple_batch)
         result = []
-        
+
         for tokens, rust_errors in zip(batch, rust_batch):
-            errors = list(self._iter_deduped_errors(tokens, rust_errors))
-            result.append(errors)
+            errors = self._deduped_errors(tokens, rust_errors)
+            result.append(self._suppress_overlaps(errors))
 
         return result
     

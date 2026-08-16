@@ -4,12 +4,13 @@ from dataclasses import dataclass
 import warnings
 
 from src.models.spell_checker_classes import *
-from src.models.interface import SpellErrorType, Tag, RuleId, DetailedMessage
+from src.models.interface import SpellErrorType, Tag, RuleId, DetailedMessage, SPELL_ERROR_TYPE_PRIORITY
 from src.engines.configs.rule_builder_parser import MessageTokenizer, MessageParser, TagNode, TextNode, MethodNode, QuotedNode, MESSAGE_METHODS
 
 ErrorMessage: TypeAlias = str
 RuleSteps: TypeAlias = list[tuple[Condition, SpacingRule, bool, bool]]
-KoSpellRules: TypeAlias = tuple[RuleSteps, "CompiledMessage", SpellErrorType, RuleId, DetailedMessage]
+Priority: TypeAlias = int
+KoSpellRules: TypeAlias = tuple[RuleSteps, "CompiledMessage", SpellErrorType, RuleId, DetailedMessage, Priority]
 AndParam: TypeAlias = "Condition | _TagSet | _FormSet"
 MessagePart: TypeAlias = str | Callable[[list], str]
 
@@ -235,6 +236,7 @@ class RuleBuilder:
         self.error_type: SpellErrorType = error_type
         self.rule_id: str = ""
         self.detailed_message: str = ""
+        self.rank_override: int | None = None
 
     def tag(self, tag: Tag):
         """tag 조건. 인자로는 Tag enum을 받음."""
@@ -402,12 +404,29 @@ class RuleBuilder:
         self.detailed_message = detail
         return self
 
+    def rank(self, priority: int):
+        """겹치는 다른 규칙과 비교할 출력 우선순위를 개별 지정하는 함수입니다.
+
+        지정하지 않으면 error_type의 기본 우선순위(SPELL_ERROR_TYPE_PRIORITY)를 따릅니다.
+        SUPPRESS_ALL 타입 규칙에는 사용할 수 없습니다(build 시점에 에러).
+
+        Args:
+            priority (int): 숫자가 작을수록 우선순위가 높음.
+        """
+        self.rank_override = priority
+        return self
+
     def _validate_buildable(self):
         errors = []
         if not self.steps:
             errors.append("At least one condition must be added.")
         if self.message is None:
             errors.append("Error message must be set using msg().")
+        if self.rank_override is not None and self.error_type == SpellErrorType.SUPPRESS_ALL:
+            errors.append(
+                "rank() cannot be used with SUPPRESS_ALL error type: "
+                "SUPPRESS_ALL always suppresses overlapping matches unconditionally."
+            )
         if self.error_type == SpellErrorType.NOT_SET:
             errors.append("Error type has not been set. Use errtype() to set it.")
         elif self.error_type == SpellErrorType.NEED_ML_JUDGE and self.rule_id == "":
@@ -490,6 +509,12 @@ class RuleBuilder:
         if parsed_msg is None:
             parsed_msg = parser.parse(tokenizer.tokenize(self.message), source=self.message)
 
+        priority = (
+            self.rank_override
+            if self.rank_override is not None
+            else SPELL_ERROR_TYPE_PRIORITY[self.error_type]
+        )
+
         results: list[KoSpellRules] = []
         for combo in product(*(step.conditions for step in self.steps)):
             rule_steps: RuleSteps = [
@@ -497,7 +522,7 @@ class RuleBuilder:
                 for cond, step in zip(combo, self.steps)
             ]
             compiled_msg = compile_message(parsed_msg, combo, source=self.message)
-            results.append((rule_steps, compiled_msg, self.error_type, self.rule_id, self.detailed_message))
+            results.append((rule_steps, compiled_msg, self.error_type, self.rule_id, self.detailed_message, priority))
 
         return results
 

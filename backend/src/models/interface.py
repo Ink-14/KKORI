@@ -25,21 +25,40 @@ class SpellErrorType(Enum):
     WARNING = auto()
     NEED_ML_JUDGE = auto()
     WHITELIST = auto()
-    
+
+    SUPPRESS_ALL = auto()  # 겹치는 다른 모든 규칙의 출력을 무조건 억제하는 0순위 전용 타입. 개별 규칙에서만 명시적으로 사용.
+
     TEST = auto()
+
+# error_type별 출력 우선순위. 숫자가 작을수록 우선.
+# 겹치는 매치 중 SUPPRESS_ALL은 다른 모든 매치를 억제하고,
+# 그 외는 우선순위가 더 높은(숫자가 작은) 쪽만 남김 (동률이면 둘 다 유지).
+SPELL_ERROR_TYPE_PRIORITY: dict[SpellErrorType, int] = {
+    SpellErrorType.SUPPRESS_ALL: 0,
+    SpellErrorType.COMPLEX: 2,
+}
+_DEFAULT_PRIORITY = 3
+
+for _t in SpellErrorType:
+    SPELL_ERROR_TYPE_PRIORITY.setdefault(_t, _DEFAULT_PRIORITY)
+del _t
+
+assert len(SPELL_ERROR_TYPE_PRIORITY) == len(SpellErrorType), (
+    "SPELL_ERROR_TYPE_PRIORITY must cover every SpellErrorType member."
+)
 
 @dataclass(frozen=True, slots=True)
 class SpellError:
-    
     """
     검사 결과를 담는 데이터 구조입니다.
-    
+
         error_type (SpellErrorType): 발생한 오류의 종류.
         error_message (str): 발생한 에러에 대한 상세 메시지.
         start_index (int): 에러가 발생한 부분의 시작 인덱스.
         end_index (int): 에러가 발생한 부분의 끝 인덱스.
         rule_id (str): 규칙의 id.
         detailed (str): 규칙에 대한 세부 설명.
+        priority (int): 겹치는 다른 매치와 비교할 출력 우선순위. 숫자가 작을수록 우선.
         debug_path (str | None): NFA 엔진 경로 추적용 속성.
 
     """
@@ -49,6 +68,7 @@ class SpellError:
     end_index: int
     rule_id: str
     detailed: DetailedMessage
+    priority: int
     debug_path: str | None = None
 
 class Tag(StrEnum):
