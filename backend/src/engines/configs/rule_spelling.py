@@ -357,6 +357,12 @@ _REP = [
     .tag_form(Tag.부사격조사, "로").context()
     .tag_form(Tag.일반명사, "결심").context()
     .msg("'로서'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_로서는")
+    .tag_form(Tag.일반명사, "당시").context()
+    .tag_form(Tag.부사격조사, "로써")
+    .tag_form(Tag.보조사, "는")
+    .msg("'로서는'이 올바른 표현입니다.").build(),
     
     *rule().id("REP_이로써")
     .tag_form(Tag.대명사, "이")
@@ -436,6 +442,7 @@ _REP = [
     .msg("'든'이 올바른 표현입니다.").build(),
 
     *rule().id("REP_든_7_든 ~ 마음")
+    .tags(TagGroup.용언).context()
     .tag_form(Tag.관형사형전성어미, "던")
     .any().context()
     .any().opt().context()
@@ -462,6 +469,16 @@ _REP = [
     .tag(Tag.선어말어미).opt().context()
     .AND(tags({Tag.연결어미, Tag.종결어미}), forms({"던가", "던지", "던가요"}))
     .msg("'든'이 올바른 표현입니다.").build(),
+
+    *rule().id("REP_든가_하는 걸 보면")
+    .tag_form(Tag.연결어미, "ᆫ다던가")
+    .tag_form(Tag.동사, "하").context()
+    .tag_form(Tag.관형사형전성어미, "는").context()
+    .AND(tag(Tag.의존명사), forms({"거", "것"})).context()
+    .tag(Tag.목적격조사).context()
+    .tag_form(Tag.동사, "보").context()
+    .tag_form(Tag.연결어미, "면").context()
+    .msg("'든가'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_다든지_1")
     .tag_form(Tag.종결어미, "다")
@@ -655,12 +672,23 @@ _REP = [
     .tag_form(Tag.일반명사, "멀끄러미")
     .msg("'물끄러미'가 올바른 표현입니다.").build(),
     
-    *rule().id("REP_채")
+    *rule().id("REP_일반부사_채")
     .form("체")
     .form("안").context()
     .form("되").context()
     .tags({Tag.연결어미, Tag.선어말어미}).context()
     .msg("'현저히 모자라다'의 의미로는 '채'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_의존명사_채")
+    .AND(tag(Tag.동사), forms({"남기"})).context()
+    .tag_form(Tag.관형사형전성어미, "ᆫ").context()
+    .tag_form(Tag.의존명사, "체")
+    .msg("'채'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_의존명사_채_2")
+    .tag_form(Tag.의존명사, "체")
+    .tag_form(Tag.부사격조사, "로").context()
+    .msg("'채'의 오타가 아닌가요?").build(),
     
     *rule().id("REP_~인 양")
     .tag_form(Tag.관형사형전성어미, "ᆫ")
@@ -698,12 +726,6 @@ _REP = [
     *rule().id("REP_마저")
     .tag_form(Tag.보조사, "마져")
     .msg("'마저'가 올바른 표현입니다.").build(),
-
-    *rule().id("REP_로서")
-    .tag_form(Tag.일반명사, "당시").context()
-    .tag_form(Tag.부사격조사, "로써")
-    .tag_form(Tag.보조사, "는")
-    .msg("'로서는'이 올바른 표현입니다.").build(),
     
     *rule().id("REP_꽤나")
     .tag_form(Tag.일반부사, "꾀나")
@@ -713,11 +735,6 @@ _REP = [
     .tag_form(Tag.연결어미, "히")
     .tag(Tag.종결어미)
     .msg("'merge((\"하\", \"동사\"), ({dform[1]}, \"종결어미\"))'의 오타가 아닌가요?").build(),
-
-    *rule().id("REP_채")
-    .tag_form(Tag.의존명사, "체")
-    .tag_form(Tag.부사격조사, "로").context()
-    .msg("'채'의 오타가 아닌가요?").build(),
 
     *rule().id("REP_량")
     .tag(Tag.관형사형전성어미).context()
@@ -828,11 +845,6 @@ _REP = [
     .tag_form(Tag.부사파생접미사, "히")
     .msg("'고이'가 올바른 표현입니다.").build(),
 
-    *rule().id("REP_쯤")
-    .tag_form(Tag.일반명사, "때").context()
-    .tag_form(Tag.의존명사, "즈음").if_not_spaced()
-    .msg("'쯤'이 올바른 표현입니다.").build(),
-
     *rule().id("REP_나지막이")
     .AND(tag(Tag.일반부사), forms({"나지막히", "나즈막이", "나즈막히"}))
     .msg("'나지막이'가 올바른 표현입니다.").build(),
@@ -892,6 +904,16 @@ _REP = [
     *rule().id("REP_니까")
     .tag_form(Tag.종결어미, "나끼")
     .msg("'니까'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_먼저")
+    .tag_form(Tag.일반부사, "먼져")
+    .msg("'먼저'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_~도 있다")
+    .tags(TagGroup.용언)
+    .tag_form(Tag.보조사, "도")
+    .tag_form(Tag.형용사, "있").context()
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("고", "연결어미"))\'의 오타가 아닌가요?').build(),
 ]
 
 _REP_VERBS = [
@@ -947,7 +969,7 @@ _REP_VERBS = [
     .msg("'켜다'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_깨닫다")
-    .tag_form(Tag.동사, "깨닿")
+    .AND(tag(Tag.동사), forms({"깨닿", "깨닳"}))
     .msg("'깨닫다'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_내팽개치다")
@@ -987,10 +1009,6 @@ _REP_VERBS = [
     *rule().id("REP_널따랗다")
     .tag_form(Tag.형용사규칙활용, "넓다랗")
     .msg("'널따랗다'가 올바른 표현입니다.").build(),
-
-    *rule().id("REP_널찍하다")
-    .tag_form(Tag.일반명사, "넓직")
-    .msg("'널찍하다'가 올바른 표현입니다.").build(),
     
     *rule().id("REP_꺼메지다_or_까매지다")
     .tag_form(Tag.동사, "꺼매지")
@@ -1520,10 +1538,6 @@ _REP_VERBS = [
     .any()
     .msg('\'merge(("짜깁", "동사불규칙활용"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
 
-    *rule().id("REP_깨닫다")
-    .tag_form(Tag.동사, "깨닳")
-    .msg("'깨닫다'가 올바른 표현입니다.").build(),
-
     *rule().id("REP_꽂히다")
     .tag_form(Tag.동사, "꽂이")
     .any()
@@ -1592,6 +1606,7 @@ _REP_VERBS = [
     .tag_form(Tag.형용사, "갸냘프")
     .any()
     .msg("'merge((\"가냘프\", \"형용사\"), ({dform[1]}, {dtag[1]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
+
 ]
 
 _REP_NNG = [
@@ -1752,11 +1767,6 @@ _REP_NNG = [
     .tag_form(Tag.일반명사, "홧병")
     .msg("'화병'이 올바른 표현입니다.").build(),
 
-    *rule().id("REP_며칠")
-    .tag_form(Tag.관형사, "몇")
-    .tag_form(Tag.의존명사, "일")
-    .msg("'며칠'이 올바른 표현입니다.").build(),
-
     *rule().id("REP_회귀")
     .tag_form(Tag.일반명사, "회기")
     .AND(tags({Tag.동사, Tag.동사파생접미사}), form("하")).context()
@@ -1832,10 +1842,6 @@ _REP_NNG = [
     *rule().id("REP_지우개")
     .tag_form(Tag.일반명사, "지우게")
     .msg("'지우개'의 오타가 아닌가요?").build(),
-
-    *rule().id("REP_베개")
-    .tag_form(Tag.일반명사, "배게")
-    .msg("'베개'의 오타가 아닌가요?").build(),
 
     *rule().id("REP_날아차기")
     .tag_form(Tag.동사, "나르")
@@ -1914,12 +1920,6 @@ _REP_NNG = [
     .AND(tags({Tag.동사파생접미사, Tag.동사}), form("하")).context()
     .msg("'한몫'의 오타가 아닌가요?").build(),
     
-    *rule().id("REP_채")
-    .AND(tag(Tag.동사), forms({"남기"})).context()
-    .tag_form(Tag.관형사형전성어미, "ᆫ").context()
-    .tag_form(Tag.의존명사, "체")
-    .msg("'채'의 오타가 아닌가요?").build(),
-    
     *rule().id("REP_피라미")
     .tag_form(Tag.일반명사, "피래미")
     .msg("'피라미'가 올바른 표현입니다.").build(),
@@ -1970,6 +1970,11 @@ _REP_NNG = [
     .tag_form(Tag.일반명사, "쯔음").if_not_spaced()
     .msg("'쯤'이 올바른 표현입니다.").build(),
 
+    *rule().id("REP_쯤_2")
+    .tag_form(Tag.일반명사, "때").context()
+    .tag_form(Tag.의존명사, "즈음")
+    .msg("'쯤'이 올바른 표현입니다.").build(),
+
     *rule().id("REP_즈음")
     .tag(Tag.관형사형전성어미).context()
     .tag_form(Tag.일반명사, "쯔음").if_spaced()
@@ -1997,6 +2002,14 @@ _REP_NNG = [
     *rule().id("REP_물건")
     .tag_form(Tag.일반명사, "몰건")
     .msg("'물건'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_요소")
+    .tag_form(Tag.일반명사, "요쇼")
+    .msg("'요소'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_제출")
+    .tag_form(Tag.일반명사, "재출")
+    .msg("'제출'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -2253,13 +2266,13 @@ _MIF = [
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"려고\", \"연결어미\"))'가 올바른 표현입니다.").build(),
 
     *rule().id("MIF_려는")
-    .tags({Tag.동사, Tag.동사불규칙활용, Tag.동사규칙활용, Tag.동사파생접미사, Tag.보조용언})
+    .tags(TagGroup.용언)
     .tag_form(Tag.관형사형전성어미, "ᆯ")
     .AND(tag(Tag.연결어미), forms({"려는"}))
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"려는\", \"연결어미\"))'이 올바른 표현입니다.").build(),
     
     *rule().id("MIF_려는_2")
-    .tags({Tag.동사, Tag.동사불규칙활용, Tag.동사규칙활용, Tag.동사파생접미사, Tag.보조용언})
+    .tags(TagGroup.용언)
     .tag_form(Tag.관형사형전성어미, "ᆯ려는")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"려는\", \"연결어미\"))'이 올바른 표현입니다.").build(),
     
@@ -2299,23 +2312,29 @@ _MIF = [
     .msg('\'merge(({dform[0]}, {dtag[0]}), ("으려고", "연결어미"))\' 또는 \'merge(({dform[0]}, {dtag[0]}), ("으라고", "연결어미"))\'의 오타가 아닌가요?').build(),
 
     *rule().id("MIF_려면")
-    .tags({Tag.동사, Tag.동사불규칙활용, Tag.동사규칙활용, Tag.동사파생접미사})
+    .tags(TagGroup.용언)
     .AND(tag(Tag.연결어미), forms({"ᆯ려면", "ᆯ라면"}))
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"려면\", \"연결어미\"))'이 올바른 표현입니다.").build(),
 
     *rule().id("MIF_려나")
-    .tags({Tag.동사, Tag.동사불규칙활용, Tag.동사규칙활용, Tag.동사파생접미사})
+    .tags(TagGroup.용언)
     .tag_form(Tag.종결어미, "ᆯ려나")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"려나\", \"종결어미\"))'가 올바른 표현입니다.").build(),
 
     *rule().id("MIF_려던")
-    .tags({Tag.동사, Tag.동사불규칙활용, Tag.동사규칙활용, Tag.동사파생접미사})
+    .tags(TagGroup.용언)
     .tag_form(Tag.관형사형전성어미, "ᆯ")
     .tag_form(Tag.관형사형전성어미, "려던")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"려던\", \"연결어미\"))'이 올바른 표현입니다.").build(),
 
+    *rule().id("MIF_려던_2")
+    .tags(TagGroup.용언)
+    .tag_form(Tag.관형사형전성어미, "을")
+    .tag_form(Tag.관형사형전성어미, "려던")
+    .msg("'merge(({dform[0]}, {dtag[0]}), (\"으려던\", \"연결어미\"))'이 올바른 표현입니다.").build(),
+
     *rule().id("MIF_려다")
-    .tags({Tag.동사, Tag.동사불규칙활용, Tag.동사규칙활용, Tag.동사파생접미사})
+    .tags(TagGroup.용언)
     .tag_form(Tag.관형사형전성어미, "ᆯ")
     .tag_form(Tag.연결어미, "려다")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"려다\", \"연결어미\"))'이 올바른 표현입니다.").build(),
@@ -2635,6 +2654,11 @@ _MIF = [
     .tag_form(Tag.동사, "푸").if_not_spaced()
     .any()
     .msg('\'merge(("갸냘프", "형용사"), ({dform[2]}, {dtag[2]}))\'의 오타가 아닌가요?').build(),
+    
+    *rule().id("MIF_휩쓸려")
+    .tag_form(Tag.동사, "휩쓸")
+    .tag_form(Tag.연결어미, "여")
+    .msg("'휩쓸려'가 올바른 표현입니다.").build(),
 ]
 
 _JOSA = [

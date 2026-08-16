@@ -98,3 +98,12 @@ class TestSpellChecker:
             assert_error(errors, tokens)
             if c.error_type:
                 check_error_type(errors, c.error_type)
+
+    def test_rule_id_duplicate(self, configured_checker):
+        __tracebackhide__ = True
+        duplicate = configured_checker.detect_rule_id_dup()
+
+        for i in duplicate:
+            print(f"rule id duplicated! {i}")
+
+        assert len(duplicate) == 0

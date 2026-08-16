@@ -125,6 +125,12 @@ _SPELLING_SPACING = [
     .tag_form(Tag.보조용언, "말").if_spaced()
     .tag_form(Tag.연결어미, "자")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"자마자\", \"연결어미\"))'의 오타가 아닌가요?").build(),
+
+    *rule().id("COMPLEX_발 붙히다 MIF+띄어쓰기") # 충돌 있음
+    .tag_form(Tag.일반명사, "발")
+    .tag_form(Tag.동사, "붙히").if_spaced()
+    .msg("'발붙이다'가 올바른 표현입니다.").build(),
+
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [
