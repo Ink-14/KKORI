@@ -83,6 +83,27 @@ class SpellChecker:
         self._registry: list[RuleMetaData] = []
         self.total_steps: int = 0
 
+    def detect_rule_id_dup(self) -> list[str]:
+        rule_id_set = set()
+        rule_id_set.add(self._registry[0].rule_id)
+        result = []
+
+        for i in range(1, len(self._registry)):
+            current = self._registry[i]
+            before = self._registry[i-1]
+
+            if current.rule_id == before.rule_id: # todo - suffix 공유해서 최적화하면 삭제할 부분
+                continue
+
+            if current.rule_id == "":
+                continue
+            elif current.rule_id in rule_id_set:
+                result.append(current.rule_id)
+            else:
+                rule_id_set.add(current.rule_id)
+
+        return result
+
     def _add_rule(self, rules: KoSpellRules) -> None:
         if self._builder is None:
             raise RuntimeError("You cannot add rules after calling 'check' function.")

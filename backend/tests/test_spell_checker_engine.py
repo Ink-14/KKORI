@@ -608,9 +608,12 @@ class TestEnginePerformanceWithDefaultConfig:
         
         end_time = time.perf_counter()
         elapsed = end_time - start_time
-        
+
+        total_rule_id = {i.rule_id for i in self.checker._registry}
+
         print(f"{self.checker.stats()}")
-        print(f"규칙 개수: {len(self.checker._registry)}개")
+        print(f"규칙 id 개수: {len(total_rule_id)}")
+        print(f"빌드 후의 규칙 개수: {len(self.checker._registry)}개")
         print(f"규칙당 평균 조건 개수: {self.checker.total_steps / len(self.checker._registry)}개")
         print(f"[내장 규칙 성능 벤치마크] 토큰 {TOKEN_COUNT}개 처리 소요 시간: {elapsed:.4f}초")
         print(f"[내장 규칙 성능 벤치마크] 검출된 에러 개수: {len(errors)}개")
