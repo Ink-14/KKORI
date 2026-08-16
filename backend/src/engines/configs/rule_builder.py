@@ -420,7 +420,7 @@ class RuleBuilder:
         errors = []
         if not self.steps:
             errors.append("At least one condition must be added.")
-        if self.message is None:
+        if self.error_type != SpellErrorType.SUPPRESS_ALL and self.message is None:
             errors.append("Error message must be set using msg().")
         if self.rank_override is not None and self.error_type == SpellErrorType.SUPPRESS_ALL:
             errors.append(
@@ -507,7 +507,11 @@ class RuleBuilder:
 
         parsed_msg = getattr(self, "_parsed_msg_cache", None)
         if parsed_msg is None:
-            parsed_msg = parser.parse(tokenizer.tokenize(self.message), source=self.message)
+            parsed_msg = (
+                parser.parse(tokenizer.tokenize(self.message), source=self.message)
+                if self.message is not None
+                else []
+            )
 
         priority = (
             self.rank_override

@@ -4577,6 +4577,32 @@ _MAG = [
     .tag_form(Tag.보조용언, "두").context()
     .tag_form(Tag.연결어미, "어서").context()
     .msg("'한번'으로 붙여 써야 합니다.").build(),
+    
+    *rule().id("MAG_한번_OO 보는 것도 좋다_붙여쓰기")
+    .tag_form(Tag.관형사, "한")
+    .tag_form(Tag.의존명사, "번").if_spaced()
+    .tags(TagGroup.용언).context()
+    .tag_form(Tag.연결어미, "어").context()
+    .tag_form(Tag.보조용언, "보").context()
+    .tag_form(Tag.관형사형전성어미, "는").context()
+    .tag_form(Tag.의존명사, "것").context()
+    .tag_form(Tag.보조사, "도").context()
+    .tag_form(Tag.형용사, "좋").context()
+    .msg("'한번'으로 붙여 써야 합니다.").build(),
+    
+    *rule().id("MAG_한번_OO해 보는 것도 좋다_붙여쓰기")
+    .tag_form(Tag.관형사, "한")
+    .tag_form(Tag.의존명사, "번").if_spaced()
+    .tag(Tag.체언접두사).opt().context()
+    .tag(Tag.일반명사).context()
+    .tag(Tag.동사파생접미사).context()
+    .tag_form(Tag.연결어미, "어").context()
+    .tag_form(Tag.보조용언, "보").context()
+    .tag_form(Tag.관형사형전성어미, "는").context()
+    .tag_form(Tag.의존명사, "것").context()
+    .tag_form(Tag.보조사, "도").context()
+    .tag_form(Tag.형용사, "좋").context()
+    .msg("'한번'으로 붙여 써야 합니다.").build(),
 
     *rule().id("MAG_명사_깊이_띄어쓰기")
     .tag(Tag.일반명사)

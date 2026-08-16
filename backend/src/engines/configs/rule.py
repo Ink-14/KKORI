@@ -1,6 +1,6 @@
 from src.engines.configs.rule_builder import *
 from src.models.interface import Tag, TagGroup, SpellErrorType
-from src.engines.configs import rule_meaning, rule_spacing, rule_specific, rule_spelling, rule_warning, rule_complex, rule_proofread, rule_model
+from src.engines.configs import rule_meaning, rule_spacing, rule_specific, rule_spelling, rule_warning, rule_complex, rule_proofread, rule_model, rule_suppress
 from src.engines.configs.rule_constants import *
 
 # 규칙 작성 예시
@@ -23,6 +23,7 @@ ML_LABELINGS = [
 ]
 
 SPELL_CHECK_RULES: list[KoSpellRules] = [
+    *rule_suppress.SUPRESS_RULES,
     *rule_spacing.GENERAL_SPACING_ERRORS,
     *rule_spacing.SPACING_ERRORS,
     *rule_spelling.SPELL_MISS_ERRORS,
