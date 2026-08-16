@@ -206,7 +206,8 @@ class SpellChecker:
     def _suppress_overlaps(errors: list[SpellError]) -> list[SpellError]:
         n = len(errors)
         priorities = [e.priority for e in errors]
-        suppressed = [e.error_type == SpellErrorType.SUPPRESS_ALL for e in errors]
+        is_suppress_all_type = [e.error_type == SpellErrorType.SUPPRESS_ALL for e in errors]
+        suppressed = list(is_suppress_all_type)
 
         order = sorted(range(n), key=lambda i: errors[i].start_index)
         active: list[tuple[int, int]] = []
@@ -218,8 +219,7 @@ class SpellChecker:
                 heapq.heappop(active)
 
             for _, j in active:
-                is_suppress_all = suppressed[i] or suppressed[j]
-                if is_suppress_all:
+                if is_suppress_all_type[i] or is_suppress_all_type[j]:
                     suppressed[i] = True
                     suppressed[j] = True
                 elif priorities[i] < priorities[j]:
