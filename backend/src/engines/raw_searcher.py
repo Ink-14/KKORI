@@ -27,16 +27,16 @@ class RawStringSearcher:
         self.white_searcher: _InnerRawSearcher = _InnerRawSearcher()
         self._has_white: bool = False
 
-    def add_word_from_list(self, rule_list: list[tuple[list[tuple[tuple[str, ...], str]], SpellErrorType, str]]):
+    def add_word_from_list(self, rule_list: list[tuple[list[tuple[tuple[str, ...], str]], SpellErrorType, str]]) -> None:
         self.black_searcher.add_word_from_list(rule_list)
 
-    def add_whitelist_word(self, word):
+    def add_whitelist_word(self, word: str) -> None:
         self.white_searcher.add_word_from_list(
             [([((word,), "")], SpellErrorType.WHITELIST, "")]
         )
         self._has_white = True
 
-    def _filter(self, black_result, white_result) -> list[SpellError]:
+    def _filter(self, black_result: list[SpellError], white_result: list[SpellError]) -> list[SpellError]:
         white_result.sort(key=lambda x: x[2])
 
         running_max = float('-inf')
@@ -64,7 +64,7 @@ class RawStringSearcher:
             ))
         return result
 
-    def _to_spell_errors(self, black_result) -> list[SpellError]:
+    def _to_spell_errors(self, black_result: list[SpellError]) -> list[SpellError]:
         return [
             SpellError(
                 error_type=SpellErrorType[r[0]],
