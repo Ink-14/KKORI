@@ -73,8 +73,23 @@ def _merge_strings(parts: list[MessagePart]) -> list[MessagePart]:
             merged.append(part)
     return merged
 
+def _iter_forms(cond) -> list[str]:
+    if isinstance(cond, (TagAndFormCondition, FormCondition)):
+        return [cond.form]
+    if isinstance(cond, AndCondition):
+        out = []
+        for c in cond.conditions:
+            out.extend(_iter_forms(c))
+        return out
+    return []  # OrCondition/NotCondition 등은 form을 확정할 수 없으므로 제외
+
+def _step_form_count(step) -> int:
+    per_branch = [len(_iter_forms(c)) for c in step.conditions]
+    # 모든 OR 분기가 form을 만들 때만 "보장"으로 인정
+    return min(per_branch) if per_branch and all(n >= 1 for n in per_branch) else 0
+
 def compile_message(parsed_msg: list, combo: tuple[Condition, ...], source: str = "") -> CompiledMessage:
-    form_vals = [c.form for c in combo if isinstance(c, (TagAndFormCondition, FormCondition))]
+    form_vals = [f for c in combo for f in _iter_forms(c)]
 
     result: list[MessagePart] = []
     for node in parsed_msg:
@@ -447,17 +462,10 @@ class RuleBuilder:
         if parsed_msg is not None and self.steps:
             max_form, max_dform, max_dtag = _collect_index_refs(parsed_msg)
 
-            # form[i]: 모든 combo에서 보장되는 form 개수 (해당 step의
-            # 모든 OR 분기가 form을 만들어내는 조건일 때만 카운트)
-            form_types = (TagAndFormCondition, FormCondition)
-            guaranteed_form_count = sum(
-                1 for s in self.steps
-                if s.conditions and all(isinstance(c, form_types) for c in s.conditions)
-            )
-            # 참고: 어떤 combo에서 form이 만들어질 수 있는 최대치
+            guaranteed_form_count = sum(_step_form_count(s) for s in self.steps)
             possible_form_count = sum(
-                1 for s in self.steps
-                if any(isinstance(c, form_types) for c in s.conditions)
+                max((len(_iter_forms(c)) for c in s.conditions), default=0)
+                for s in self.steps
             )
 
             if max_form >= guaranteed_form_count:
