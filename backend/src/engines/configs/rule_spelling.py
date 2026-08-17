@@ -318,10 +318,22 @@ _ADD = [
     .tags(TagGroup.용언)
     .tag_form(Tag.관형사형전성어미, "ᆫ")
     .tag_form(Tag.종결어미, "는다")
-    .msg('\'merge(({dform[0]}, {dtag[0]}), ("ᆫ", "관형사형전성어미"), ("다", "종결어미"))\'의 오타가 아닌가요?').build()
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("ᆫ", "관형사형전성어미"), ("다", "종결어미"))\'의 오타가 아닌가요?').build(),
+
+    *rule().id("ADD_~하지 말라는")
+    .tags(TagGroup.용언)
+    .tag_form(Tag.연결어미, "ᆯ지")
+    .tag_form(Tag.동사, "말").context()
+    .tag_form(Tag.연결어미, "라는").context()
+    .msg('\'merge(({dform[0]}, {dtag[0]}), ("지", "연결어미"))\'의 오타가 아닌가요?').build(),
 ]
 
 _REP = [
+    *rule().id("REP_였")
+    .tag_form(Tag.부사격조사, "같이").context()
+    .tag_form(Tag.선어말어미, "었")
+    .msg("'였'으로 써야 합니다.").build(),
+
     *rule().id("REP_으로써")
     .tags(TagGroup.용언).context()
     .AND(tag(Tag.명사형전성어미), forms({"ᆷ", "음"})).context()
@@ -479,6 +491,16 @@ _REP = [
     .tag_form(Tag.동사, "보").context()
     .tag_form(Tag.연결어미, "면").context()
     .msg("'든가'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_든지_아니면 O이라도")
+    .AND(tag(Tag.연결어미), forms({"던지", "던가", "ᆫ다던가", "는다던가", "ᆫ다던지", "다던지", "라던지"}))
+    .tag(Tag.부정지정사).context()
+    .tag_form(Tag.연결어미, "면").context()
+    .any().context()
+    .any().opt().context()
+    .tag(Tag.긍정지정사).context()
+    .tag_form(Tag.연결어미, "라도").context()
+    .msg("'든지'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_다든지_1")
     .tag_form(Tag.종결어미, "다")
@@ -654,6 +676,14 @@ _REP = [
     .tag_form(Tag.관형사형전성어미, "는").context()
     .tag_form(Tag.의존명사, "데")
     .tag_form(Tag.부사격조사, "로")
+    .msg("'대로'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_대로_3_살다")
+    .tag(Tag.관형사형전성어미).context()
+    .tag_form(Tag.의존명사, "데")
+    .tag_form(Tag.부사격조사, "로")
+    .tag_form(Tag.동사, "살").context()
+    .tag_form(Tag.연결어미, "고").context()
     .msg("'대로'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_~께")
@@ -1123,6 +1153,12 @@ _REP_VERBS = [
     .AND(tag(Tag.일반부사), forms({"그토록"})).context()
     .tag_form(Tag.동사, "바래")
     .msg("'원하다'의 의미로는 '바라다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_바라 오다")
+    .tag_form(Tag.동사, "바래")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "오").context()
+    .msg("'원하다'의 의미로는 '바라다'가 올바른 표현입니다.").build(),
     
     *rule().id("REP_바람_1")
     .tag_form(Tag.동사, "하").context()
@@ -1408,13 +1444,14 @@ _REP_VERBS = [
     .any().opt().context()
     .tag_form(Tag.동사, "붙이")
     .msg("'{form[0]}에 부치다'가 올바른 표현입니다.").build(),
-
-    *rule().id("REP_건드리다_1")
-    .tag_form(Tag.동사, "건들리")
-    .any()
-    .msg("'merge((\"건드리\", \"동사\"), ({dform[1]}, {dtag[1]}))'의 오타가 아닌가요?").build(),
     
-    *rule().id("REP_건드리다_2")
+    *rule().id("REP_건드리다_1_건들리다")
+    .tag_form(Tag.동사, "건들리")
+    .tag_form(Tag.연결어미, "지")
+    .tag_form(Tag.보조용언, "못하").context()
+    .msg("'건드리지'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_건드리다_2_건들이다")
     .tag_form(Tag.동사, "건들이")
     .any()
     .msg("'merge((\"건드리\", \"동사\"), ({dform[1]}, {dtag[1]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
@@ -1612,6 +1649,19 @@ _REP_VERBS = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.동사, "나오").context()
     .msg("'새어'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_일으키다")
+    .tag_form(Tag.동사, "이르키")
+    .msg("'일으키다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_앓다")
+    .tag_form(Tag.동사, "앎")
+    .any()
+    .msg("'merge((\"앓\", \"동사\"), ({dform[1]}, {dtag[1]}))'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_처넣다")
+    .tag_form(Tag.동사, "쳐넣")
+    .msg("'쳐서 넣다'인 경우, '쳐 넣다'로 띄어 써야 합니다. '마구 넣다'의 의미인 경우, '처넣다'가 올바른 표현입니다.").build(),
 ]
 
 _REP_NNG = [
@@ -2015,6 +2065,11 @@ _REP_NNG = [
     *rule().id("REP_제출")
     .tag_form(Tag.일반명사, "재출")
     .msg("'제출'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_갖가지").rank(2)
+    .tag_form(Tag.관형사, "각")
+    .tag_form(Tag.의존명사, "가지").if_not_spaced()
+    .msg("'갖가지'의 오타가 아닌가요? '가지마다'의 의미라면 '각 가지'로 띄어 써야 합니다.").build(),    
 ]
 
 _MIF = [
@@ -2535,6 +2590,12 @@ _MIF = [
     .any().context().opt()
     .tag_form(Tag.동사, "피").if_spaced()
     .msg("'{form[0]}batchim(\"을\", \"를\") 피우다'가 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_피우다_2")
+    .tag_form(Tag.동사, "피")
+    .tag_form(Tag.연결어미, "고")
+    .tag_form(Tag.동사, "들어오").context()
+    .msg("'피우고'가 올바른 표현입니다.").build(),
 
     *rule().id("MIF_펴다")
     .AND(tag(Tag.일반명사), forms(펴다_TARGETS)).context()
@@ -2664,6 +2725,35 @@ _MIF = [
     .tag_form(Tag.동사, "휩쓸")
     .tag_form(Tag.연결어미, "여")
     .msg("'휩쓸려'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_~해 뒀던 것")
+    .tag_form(Tag.선어말어미, "었").context()
+    .tag_form(Tag.연결어미, "건")
+    .tag_form(Tag.의존명사, "것").context()
+    .msg("'던'의 오타가 아닌가요?").build(),
+
+    *rule().id("MIF_한 맺힌")
+    .form("한").context()
+    .tag_form(Tag.동사, "맺")
+    .tag_form(Tag.관형사형전성어미, "은")
+    .msg("'맺힌'의 오타가 아닌가요?").build(),
+
+    *rule().id("MIF_즐겨워하다")
+    .tag_form(Tag.동사, "즐기")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.일반명사, "워")
+    .msg("'즐거워' 또는 '즐겨'의 오타가 아닌가요?").build(),
+
+    *rule().id("MIF_확고히")
+    .tag_form(Tag.어근, "확고")
+    .tag_form(Tag.부사파생접미사, "이").if_not_spaced()
+    .msg("'확고히'가 올바른 표현입니다.").build(),
+    
+    *rule().id("MIF_왜냐면").rank(2)
+    .tag_form(Tag.일반부사, "왜")
+    .tag_form(Tag.동사, "나").if_not_spaced()
+    .tag_form(Tag.연결어미, "면")
+    .msg("'왜냐면'의 오타가 아닌가요?").build(),
 ]
 
 _JOSA = [

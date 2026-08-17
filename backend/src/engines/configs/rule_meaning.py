@@ -59,6 +59,11 @@ _MEANING_DUPLICATED: list[KoSpellRules] = [
     .tag_form(Tag.보조사, "마다")
     .msg("'매(每)'에 이미 '마다'의 의미가 포함되어 있습니다.").build(),
 
+    *rule().id("MEANING_매화마다")
+    .tag_form(Tag.일반명사, "매화")
+    .tag_form(Tag.보조사, "마다")
+    .msg("'화마다'의 의미라면, '매 화'로 띄어 써야 합니다. 또한 '매(每)'에 이미 '마다'의 의미가 포함되어 있습니다.").build(),
+
     *rule().id("MEANING_매일매일마다")
     .tag_form(Tag.일반명사, "매일매일")
     .tag_form(Tag.보조사, "마다")

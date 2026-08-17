@@ -18,8 +18,8 @@ _SPELLING_SPACING = [
 
     *rule().id("COMPLEX_파투 나다")
     .tag_form(Tag.일반명사, "파토")
-    .tag_form(Tag.동사, "나").if_not_spaced()
-    .msg("'파투 나다'가 올바른 표현입니다.").build(),
+    .AND(tag(Tag.동사), forms({"나", "내"})).if_not_spaced()
+    .msg("'파투 {form[1]}다'가 올바른 표현입니다.").build(),
 
     *rule().id("COMPLEX_흩트리+보조용언")
     .tag_form(Tag.동사, "흐트리")
@@ -141,6 +141,18 @@ _SPELLING_SPACING = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.동사, "나오").if_not_spaced()
     .msg("'새어 나오다'의 오타가 아닌가요?").build(),
+
+    *rule().id("COMPLEX_체하다_REP+띄어쓰기")
+    .tag(Tag.관형사형전성어미)
+    .tag_form(Tag.의존명사, "채").if_not_spaced()
+    .tag_form(Tag.동사, "하").if_not_spaced().context()
+    .msg("'체하다'의 오타가 아닌가요? 또한 '체하다'든, '채'든 앞 말과 띄어 써야 합니다.").build(),
+    
+    *rule().id("COMPLEX_헤쳐 나가다 REP+띄어쓰기")
+    .tag_form(Tag.동사, "해치")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "나가").if_not_spaced()
+    .msg("'헤쳐 나가다'의 오타가 아닌가요?").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [

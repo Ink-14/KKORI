@@ -9,6 +9,11 @@ _SPACING = [
     .tag_form(Tag.일반명사, "눈")
     .tag_form(Tag.일반부사, "깜짝")
     .tag_form(Tag.동사파생접미사, "하").if_not_spaced().build(),
+
+    *rule().id("SUP_O형제/자매 간")
+    .tags({Tag.수사, Tag.관형사})
+    .forms({"형제", "자매"})
+    .tag_form(Tag.의존명사, "간").if_spaced().build(),
 ]
 
 SUPRESS_RULES = [
