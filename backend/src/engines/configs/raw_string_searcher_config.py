@@ -169,7 +169,7 @@ _SPELL_MISS_LIST: list[tuple[list[str], str]] = [
     (["잿밥"], "'제삿밥'의 의미로는 '젯밥'이 올바른 표현입니다."),
     (["에벌"], "'애벌'이 올바른 표현입니다."),
     (["돌맹이"], "'돌멩이'가 올바른 표현입니다."),
-    (["제작년"], "'재작년'이 올바른 표현입니다."),
+    (["제작년"], "'재작년'이 올바른 표현입니다."), # todo - '제작년도'에서 충돌
     (["느즈막"], "'느지막하다'가 올바른 표현입니다."),
     (["귀뜸"], "'귀띔'이 올바른 표현입니다."),
     (["헤롱"], "'해롱'이 올바른 표현입니다."),
@@ -441,6 +441,7 @@ _LOANWORDS_SPELLING = [
     (["스폐셜"], "'스페셜(Special)'이 올바른 표기입니다."),
     (["엘레베이터"], "'엘리베이터(Elevator)'가 올바른 표기입니다."),
     (["프로잭트"], "'프로젝트(Project)'가 올바른 표기입니다."),
+    (["슛팅"], "'슈팅(Shooting)'이 올바른 표기입니다."),
     (["프렌차이즈"], "'프랜차이즈(Franchise)'가 올바른 표기입니다."),
     
     (["파티셰", "파티쉐"], "'파티시에'가 올바른 표기입니다."),
@@ -585,4 +586,8 @@ RAW_STRING_RULES: tuple[list, SpellErrorType, str] = [
     (_LOANWORDS_SPELLING, SpellErrorType.SPELLING_RAW, ""),
     (_LOANWORDS_SPACING, SpellErrorType.SPACING_RAW, ""),
     (_SINGLE_CHARACTERS, SpellErrorType.SPELLING_RAW, ""),
+]
+
+RAW_WHITELISTS = [
+    "됫박"
 ]

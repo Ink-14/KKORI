@@ -65,8 +65,8 @@ _SPELLING_SPACING = [
     .msg("'뜬금'이 올바른 표현입니다. 또한 '뜬금없이'로 붙여 써야 합니다.").build(),
 
     *rule().id("COMPLEX_피우다_오타+띄어쓰기_1")
-    .AND(tag(Tag.일반명사), forms(피우다_TARGETS)).context()
-    .any().opt().context()
+    .AND(tag(Tag.일반명사), forms(피우다_TARGETS))
+    .any().opt()
     .tag_form(Tag.동사, "피").if_not_spaced()
     .msg("'{form[0]}batchim(\"을\", \"를\") 피우다'가 올바른 표현입니다. 또한 앞 말과 띄어 써야 합니다.").build(),
     
@@ -235,6 +235,13 @@ _SPELLING_SPACING = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.보조용언, "나가").if_not_spaced()
     .msg("'뛰쳐 나가다'의 오타가 아닌가요?").build(),
+
+    *rule().id("COMPLEX_급한 대로_REP+띄어쓰기")
+    .tag_form(Tag.형용사, "급하").context()
+    .tag_form(Tag.관형사형전성어미, "ᆫ")
+    .tag_form(Tag.의존명사, "데").if_not_spaced()
+    .tag_form(Tag.부사격조사, "로").context()
+    .msg("'데'를 앞 말과 띄어 써야 합니다. '급하지만'의 의미인 경우, '급한 대로'가 올바른 표현입니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [

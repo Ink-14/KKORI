@@ -17,6 +17,10 @@ SAMPLE = [
 ]
 
 TEST_SPELL_CHECK_RULES = [
+    *rule().id("MIF_려면")
+    .tags(TagGroup.용언)
+    .AND(tag(Tag.연결어미), form("을려면"))
+    .msg("'merge(({dform[0]}, {dtag[0]}), (\"으려면\", \"연결어미\"))'이 올바른 표현입니다.").build(),
 ]
 
 ML_LABELINGS = [

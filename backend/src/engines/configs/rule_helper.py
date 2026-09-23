@@ -101,4 +101,17 @@ def 로서_combinations(jkb_target_value: str, jkb_target_tag: Tag, following_wo
     if following_word_value is not None:
         result.tag_form(following_word_tag, following_word_value).context()
 
-    return result.msg("'로서'로 써야 합니다.").detail("'으로서'는 자격, '으로써'는 수단을 나타냅니다. '선생으로서의 의무'는 선생이라는 위치를 의미하므로 '으로서'를 사용하여야 합니다. '매로써 학생들을 다스렸다'는 '매를 이용해서'를 의미하므로 '으로써'를 사용하여야 합니다.").build()
+    return result.msg("'로서'로 써야 합니다.").detail("'로서'는 자격, '로써'는 수단을 나타냅니다. '선생으로서의 의무'는 선생이라는 위치를 의미하므로 '으로서'를 사용하여야 합니다. '매로써 학생들을 다스렸다'는 '매를 이용해서'를 의미하므로 '로써'를 사용하여야 합니다.").build()
+
+def 으로서_combinations(jkb_target_value: str, jkb_target_tag: Tag, following_word_value: str = None, following_word_tag: Tag = None):
+    """
+    '으로서'가 쓰여야 하는 곳에 '으로써'가 쓰인 경우를 감지하는 규칙을 만들어 주는 헬퍼입니다.
+    jkb_target_value, jkb_target_tag: '으로서' 앞에 위치한 토큰.
+    following_word_value, following_word_tag: '으로서' 뒤에 위치한 토큰.
+    """
+    result = RuleBuilder(SpellErrorType.SPELLING).id(f"으로서_combinations_{jkb_target_value}_으로서_{following_word_value}").tag_form(jkb_target_tag, jkb_target_value).context().tag_form(Tag.부사격조사, "으로써")
+
+    if following_word_value is not None:
+        result.tag_form(following_word_tag, following_word_value).context()
+
+    return result.msg("'으로서'로 써야 합니다.").detail("'으로서'는 자격, '으로써'는 수단을 나타냅니다. '선생으로서의 의무'는 선생이라는 위치를 의미하므로 '으로서'를 사용하여야 합니다. '매로써 학생들을 다스렸다'는 '매를 이용해서'를 의미하므로 '으로써'를 사용하여야 합니다.").build()
