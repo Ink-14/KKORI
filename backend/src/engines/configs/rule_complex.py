@@ -225,9 +225,11 @@ _SPELLING_SPACING = [
     
     *rule().id("COMPLEX_켜다_REP+띄어쓰기")
     .AND(tag(Tag.일반명사), forms(켜다_TARGETS))
+    .tag_form(Tag.명사파생접미사, "들").opt().context()
+    .tags({Tag.보조사}).opt().context()
     .tag_form(Tag.동사, "키").if_not_spaced()
     .any()
-    .msg("'{form[0]} merge((\"켜\", \"동사\"), ({dform[2]}, {dtag[2]}))'batchim(\"이\", \"가\") 올바른 표현입니다.").build(),
+    .msg("'{form[0]}batchim(\"을\", \"를\") 켜다'가 올바른 표현입니다.").build(),
     
     *rule().id("COMPLEX_뛰쳐 나가다_REP+띄어쓰기")
     .tag_form(Tag.동사, "뛰")
@@ -242,6 +244,12 @@ _SPELLING_SPACING = [
     .tag_form(Tag.의존명사, "데").if_not_spaced()
     .tag_form(Tag.부사격조사, "로").context()
     .msg("'데'를 앞 말과 띄어 써야 합니다. '급하지만'의 의미인 경우, '급한 대로'가 올바른 표현입니다.").build(),
+
+    *rule().id("COMPLEX_몰아붙이다_REP+띄어쓰기")
+    .tag_form(Tag.동사, "몰")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.동사, "붙히").if_spaced()
+    .msg("'몰아붙이다'가 올바른 표현입니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [

@@ -94,7 +94,7 @@ class SpellChecker:
             current = self._registry[i]
             before = self._registry[i-1]
 
-            if current.rule_id == before.rule_id: # todo - suffix 공유해서 최적화하면 삭제할 부분
+            if current.rule_id == before.rule_id: # TODO - suffix 공유해서 최적화하면 삭제할 부분
                 continue
 
             if current.rule_id == "":
