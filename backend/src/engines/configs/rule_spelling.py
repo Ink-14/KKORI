@@ -44,14 +44,7 @@ _CERTAINS: list[KoSpellRules] = [
     .tag_form(Tag.선어말어미, "엇")
     .msg("'있었'의 오타가 아닌가요?")
     .build(),
-    
-    *rule()
-    .tag_form(Tag.동사, "되")
-    .tag_form(Tag.종결어미, "어")
-    .tag_form(Tag.인용격조사, "라고")
-    .msg("'되라고'의 오타가 아닌가요?")
-    .build(),
-    
+        
     *rule()
     .AND(tag(Tag.동사), forms({"헤어나", "벗어나"}))
     .tag_form(Tag.선어말어미, "엇")
@@ -62,14 +55,6 @@ _CERTAINS: list[KoSpellRules] = [
     .tag_form(Tag.보조용언, "않")
     .tag_form(Tag.동사, "되")
     .msg("'안 돼'의 오타가 아닌가요?")
-    .build(),
-
-    *rule()
-    .tag_form(Tag.일반명사, "끈")
-    .tag_form(Tag.주격조사, "이")
-    .tag_form(Tag.명사형전성어미, "ᆷ")
-    .OR(tag_form(Tag.일반부사, "없이"), tag_form(Tag.형용사, "없"))
-    .msg("'끊임없이'의 오타가 아닌가요?")
     .build(),
     
     *rule()
@@ -122,7 +107,8 @@ _CERTAINS: list[KoSpellRules] = [
     .id("MIF_쓰라는")
     .tag_form(Tag.동사, "쓰")
     .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.연결어미, "라는")
+    .tag(Tag.긍정지정사)
+    .tag_form(Tag.관형사형전성어미, "라는")
     .msg("'쓰라는'이 올바른 표현입니다.").build(),
 
     *rule()
@@ -293,6 +279,13 @@ _OM = [
     .tag(Tag.일반명사).context()
     .tag(Tag.주격조사).context()
     .msg("'하면'의 오타가 아닌가요?").build(),
+
+    *rule().id("OM_끊임없이")
+    .tag_form(Tag.일반명사, "끈")
+    .tag(Tag.긍정지정사)
+    .tag_form(Tag.명사형전성어미, "ᆷ")
+    .OR(tag_form(Tag.일반부사, "없이"), tag_form(Tag.형용사, "없"))
+    .msg("'끊임없이'의 오타가 아닌가요?").build(),
 ]
 
 _ADD = [
@@ -333,7 +326,7 @@ _ADD = [
     .build(),
 
     *rule().id("ADD_웃어른")
-    .tag_form(Tag.일반명사, "윗")
+    .tag_form(Tag.관형사, "윗")
     .tag_form(Tag.일반명사, "어른")
     .msg("'웃어른'이 올바른 표현입니다.").build(),
 
@@ -878,9 +871,9 @@ _REP = [
     .msg("'꽤나'의 오타가 아닌가요?").build(),
 
     *rule().id("REP_힌다")
-    .tag_form(Tag.연결어미, "히")
-    .tag(Tag.종결어미)
-    .msg("'merge((\"하\", \"동사\"), ({dform[1]}, \"종결어미\"))'의 오타가 아닌가요?").build(),
+    .tag(Tag.연결어미).context()
+    .form("힌다")
+    .msg("'한다'의 오타가 아닌가요?").build(),
 
     *rule().id("REP_량")
     .tag(Tag.관형사형전성어미).context()
@@ -1518,9 +1511,7 @@ _REP_VERBS = [
     .msg("'지껄이다'가 올바른 표현입니다.").build(),
     
     *rule().id("REP_지껄이다_2")
-    .tag_form(Tag.대명사, "지")
-    .tag_form(Tag.동사, "꺼리")
-    .if_not_spaced()
+    .tag_form(Tag.동사, "지꺼리")
     .msg("'지껄이다'의 오타가 아닌가요?")
     .build(),
     
@@ -1536,7 +1527,7 @@ _REP_VERBS = [
     
     *rule().id("REP_멋쩍다")
     .tag_form(Tag.동사, "멎")
-    .tag_form(Tag.형용사파생접미사, "쩍").if_not_spaced()
+    .AND(tags({Tag.형용사파생접미사, Tag.일반부사}), form("쩍")).if_not_spaced()
     .msg("'멋쩍다'가 올바른 표기입니다.").build(),
 
     *rule().id("REP_메꾸다")
@@ -2714,7 +2705,7 @@ _MIF = [
     
     *rule().id("MIF_말이야")
     .AND(tags({Tag.보조용언, Tag.동사, Tag.일반명사}), form("말"))
-    .AND(tags({Tag.연결어미, Tag.종결어미}), form("야")).if_not_spaced()
+    .AND(tags({Tag.연결어미, Tag.종결어미, Tag.일반명사}), form("야")).if_not_spaced()
     .msg("'말이야'를 '말야'로 줄여 쓸 수 없습니다.").build(),
     
     *rule().id("MIF_려고")
@@ -2877,6 +2868,18 @@ _MIF = [
     .tag_form(Tag.동사, "되")
     .tag_form(Tag.연결어미, "야")
     .msg("'돼야'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_되라고")
+    .tag_form(Tag.동사, "되")
+    .tag_form(Tag.종결어미, "어")
+    .tag_form(Tag.인용격조사, "라고")
+    .msg("'되라고'의 오타가 아닌가요?").build(),
+
+    *rule().id("MIF_되라고_2")
+    .tag_form(Tag.동사, "되")
+    .tag_form(Tag.종결어미, "어라")
+    .tag_form(Tag.인용격조사, "고")
+    .msg("'되라고'의 오타가 아닌가요?").build(),
 
     *rule().id("MIF_된")
     .AND(tags({Tag.동사, Tag.동사파생접미사}), form("되"))
