@@ -2161,6 +2161,10 @@ _NNG = [
     .AND(longer(2), tag(Tag.일반명사))
     .tag_form(Tag.일반명사, "밖").if_not_spaced()
     .msg("'{dform[0]} 밖'으로 띄어 써야 합니다.").build(),
+
+    *rule().id("NNG_남 일_띄어쓰기")
+    .tag_form(Tag.일반명사, "남일")
+    .msg("'남의 일'의 의미인 경우, '남 일'로 띄어 써야 합니다.").build(),
 ]
 
 _NNG_SINGLE_WORDS = [
@@ -3819,6 +3823,13 @@ _VV = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.보조용언, "가").if_not_spaced()
     .msg("'빨려 들어가다'로 띄어 써야 합니다.").build(),
+
+    *rule().id("VV_한잔하다_붙여쓰기")
+    .NOT(tags({Tag.일반명사, Tag.고유명사, Tag.명사파생접미사})).context()
+    .tag_form(Tag.관형사, "한")
+    .tag_form(Tag.일반명사, "잔")
+    .tag_form(Tag.동사, "하").if_spaced()
+    .msg("'한잔하다'로 붙여 써야 합니다.").build(),
 ]
 
 _MAG_VV = [
@@ -4330,6 +4341,7 @@ _VX = [
     .msg("'않다'를 앞 말과 띄어 써야 합니다.").build(),
 
     *rule().id("VX_지 않다_2_띄어쓰기")
+    .NOT(tags(TagGroup.용언)).context()
     .tag_form(Tag.동사, "하").context()
     .tag_form(Tag.연결어미, "지")
     .tag_form(Tag.보조용언, "않").if_not_spaced()

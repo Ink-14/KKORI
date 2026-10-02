@@ -47,7 +47,7 @@ PROOFREAD_ERRORS = [
     *rule().id("PRFR_~을 있기에")
     .tags(TagGroup.체언)
     .tag(Tag.목적격조사)
-    .tag_form(Tag.동사, "있").context()
+    .tag_form(Tag.형용사, "있").context()
     .tag_form(Tag.연결어미, "기에").context()
     .msg("'{dform[0]}batchim(\"이\", \"가\") 있기에'의 잘못이 아닌가요?").build(),
 

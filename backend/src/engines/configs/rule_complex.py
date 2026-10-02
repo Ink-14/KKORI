@@ -99,10 +99,10 @@ _SPELLING_SPACING = [
     *rule().id("COMPLEX_ㄴ다잖아_MIF+띄어쓰기")
     .tags(TagGroup.용언)
     .tag_form(Tag.관형사형전성어미, "ᆫ")
-    .tag_form(Tag.의존명사, "대").if_spaced()
-    .tag(Tag.긍정지정사)
+    .AND(tags({Tag.의존명사, Tag.동사}), form("대")).if_spaced()
+    .tag(Tag.긍정지정사).opt()
     .tag_form(Tag.종결어미, "잖아")
-    .msg("'merge(({dform[0]}, {dtag[0]}), (\"다\", \"연결어미\"))잖아'가 올바른 표현입니다.").build(),
+    .msg("'merge(({dform[0]}, {dtag[0]}), (\"ᆫ\", \"관형사형전성어미\"), (\"다\", \"연결어미\"))잖아'가 올바른 표현입니다.").build(),
 
     *rule().id("COMPLEX_쯤")
     .tag_form(Tag.일반명사, "때").context()
@@ -233,7 +233,7 @@ _SPELLING_SPACING = [
     
     *rule().id("COMPLEX_뛰쳐 나가다_REP+띄어쓰기")
     .tag_form(Tag.동사, "뛰")
-    .tag_form(Tag.보조용언, "지")
+    .tag_form(Tag.동사, "지")
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.보조용언, "나가").if_not_spaced()
     .msg("'뛰쳐 나가다'의 오타가 아닌가요?").build(),
