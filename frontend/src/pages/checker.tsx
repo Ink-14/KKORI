@@ -68,6 +68,9 @@ function Checker() {
   function renderHighlighted(text: string, errs: SpellErrorResponse[]) {
     if (!errs.length) return <span>{text}</span>
 
+    // Match the backend's Unicode code point offsets (not UTF-16 code units).
+    const characters = Array.from(text)
+
     const sorted = [...errs].sort((a, b) => a.start_index - b.start_index || a.end_index - b.end_index)
     const groups: SpellErrorResponse[][] = []
     let groupEnd = -Infinity
@@ -89,9 +92,9 @@ function Checker() {
       const start = group[0].start_index
       const end = Math.max(...group.map(e => e.end_index))
       if (start < cursor) continue
-      if (start >= text.length) break
+      if (start >= characters.length) break
 
-      if (cursor < start) parts.push(<span key={cursor}>{text.slice(cursor, start)}</span>)
+      if (cursor < start) parts.push(<span key={cursor}>{characters.slice(cursor, start).join('')}</span>)
 
       const tooltipText = group.map(e => `[${e.error_type}]\n${e.error_message}`).join('\n\n')
       parts.push(
@@ -101,13 +104,13 @@ function Checker() {
           onMouseEnter={(ev) => showTooltip(ev, tooltipText)}
           onMouseLeave={hideTooltip}
         >
-          {text.slice(start, end)}
+          {characters.slice(start, end).join('')}
         </span>
       )
       cursor = end
     }
 
-    if (cursor < text.length) parts.push(<span key={cursor}>{text.slice(cursor)}</span>)
+    if (cursor < characters.length) parts.push(<span key={cursor}>{characters.slice(cursor).join('')}</span>)
     return <>{parts}</>
   }
 
