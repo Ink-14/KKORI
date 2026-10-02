@@ -3,7 +3,7 @@ from src.engines.configs.rule_constants import 모음연결어미_FORMS, 모음�
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 def word_3(word1: str, tag1: Tag, word2: str, tag2: Tag, word3: str, tag3: Tag, spacing_rule: SpacingRule, message: str):
-    rule = RuleBuilder(SpellErrorType.SPACING).tag_form(tag1, word1).tag_form(tag2, word2).tag_form(tag3, word3)
+    rule = RuleBuilder(SpellErrorType.SPACING).id(f"word_3_{word1}_{word2}_{word3}").tag_form(tag1, word1).tag_form(tag2, word2).tag_form(tag3, word3)
 
     if spacing_rule == SpacingRule.SPACED:
         return rule.if_not_spaced().msg(f"'{message}'batchim(\"으로\",\"로\") 띄어 써야 합니다.").build()
