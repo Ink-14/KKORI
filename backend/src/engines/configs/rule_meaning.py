@@ -11,11 +11,11 @@ _MEANING_DUPLICATED: list[KoSpellRules] = [
     .msg("'미리'에 이미 '예(豫)'의 의미가 포함되어 있습니다.").build(),
 
     *rule().id("MEANING_부상_입다")
-    .tag_form(Tag.일반명사, "부상")
-    .any().opt()
-    .any().opt()
+    .tag_form(Tag.일반명사, "부상").context()
+    .any().opt().context()
+    .any().opt().context()
     .tag_form(Tag.동사불규칙활용, "입")
-    .msg("'부상'에 '입다'의 뜻이 포함되어 있습니다. '부상 당하다' 등으로 쓸 것을 권장합니다.").build(),
+    .msg("'부상'에 '입다'의 뜻이 포함되어 있습니다. '부상당하다' 등으로 쓸 것을 권장합니다.").build(),
     
     *rule().id("MEANING_OO_소리")
     .AND(tag(Tag.일반명사), forms({"비명", "신음", "함성"}))
@@ -150,7 +150,7 @@ _GRAMMAR_DUPLICATED = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.보조용언, "지")
     .any()
-    .msg("'담겨지다'는 이중 피동 표현이므로 담아'(\"지\", \"연결어미\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
+    .msg("'담겨지다'는 이중 피동 표현이므로 'merge((\"담기\", \"동사\"), ({dform[3]}, {dtag[3]}))' 또는 '담아merge((\"지\", \"연결어미\"), ({dform[3]}, {dtag[3]}))'batchim(\"으로\", \"로\") 쓸 것을 권장합니다.").build(),
 
     *rule().id("MEANING_처하다")
     .tag_form(Tag.동사, "처하")

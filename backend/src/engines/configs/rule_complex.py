@@ -104,11 +104,6 @@ _SPELLING_SPACING = [
     .tag_form(Tag.종결어미, "잖아")
     .msg("'merge(({dform[0]}, {dtag[0]}), (\"ᆫ\", \"관형사형전성어미\"), (\"다\", \"연결어미\"))잖아'가 올바른 표현입니다.").build(),
 
-    *rule().id("COMPLEX_쯤")
-    .tag_form(Tag.일반명사, "때").context()
-    .tag_form(Tag.의존명사, "즈음").if_spaced()
-    .msg("'쯤'이 올바른 표현입니다. 또한 '쯤'을 앞 말에 붙여 써야 합니다.").build(),
-
     *rule().id("COMPLEX_선어말어미+을 게")
     .tag(Tag.선어말어미).context()
     .tag_form(Tag.종결어미, "을께")
@@ -119,6 +114,11 @@ _SPELLING_SPACING = [
     .msg("'새어 나가다'의 오타가 아닌가요?").build(),
 
     *rule().id("COMPLEX_쯤 REP+띄어쓰기")
+    .tag_form(Tag.일반명사, "때")
+    .tag_form(Tag.의존명사, "즈음").if_spaced()
+    .msg("'쯤'이 올바른 표현입니다. 또한 '쯤'을 앞 말에 붙여 써야 합니다.").build(),
+    
+    *rule().id("COMPLEX_쯤 REP+띄어쓰기_2")
     .tags({Tag.일반명사, Tag.의존명사, Tag.숫자, Tag.일련번호})
     .tag_form(Tag.일반명사, "쯔음").if_spaced()
     .msg("'쯤'이 올바른 표현입니다. 또한 앞 말과 붙여 써야 합니다.").build(),
@@ -250,6 +250,27 @@ _SPELLING_SPACING = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.동사, "붙히").if_spaced()
     .msg("'몰아붙이다'가 올바른 표현입니다.").build(),
+    
+    *rule().id("COMPLEX_쑤다").rank(2)
+    .tag_form(Tag.일반명사, "죽").context()
+    .tag_form(Tag.동사, "쓰").if_not_spaced()
+    .msg("'죽 쑤다'가 올바른 표현입니다.").build(),
+    
+    *rule().id("COMPLEX_새_REP+띄어쓰기").rank(2)
+    .tag(Tag.관형사형전성어미).context()
+    .tag_form(Tag.일반명사, "세").if_not_spaced()
+    .tag_form(Tag.일반부사, "없이").context()
+    .msg("'사이'의 의미라면 '새'가 올바른 표현입니다. 또한 앞 말과 띄어 써야 합니다.").build(),
+    
+    *rule().id("COMPLEX_제때_REP+띄어쓰기")
+    .tag_form(Tag.체언접두사, "재")
+    .tag_form(Tag.일반명사, "때").if_spaced()
+    .msg("'제때'의 오타가 아닌가요?").build(),
+    
+    *rule().id("COMPLEX_휘둥그레지다")
+    .forms({"휘동그레", "휘동그래", "휘둥그래"})
+    .tag_form(Tag.동사, "지")
+    .msg("'휘둥그레지다'가 올바른 표현입니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [

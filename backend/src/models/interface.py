@@ -13,6 +13,7 @@ class SpellErrorType(Enum):
     SPACING_RAW = auto()
     MEANING_RAW = auto()
     LOANWORD_RAW = auto()
+    COMPLEX_RAW = auto()
 
     SPACING = auto()
     MEANING = auto()

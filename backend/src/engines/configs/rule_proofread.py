@@ -78,4 +78,24 @@ PROOFREAD_ERRORS = [
     .tag_form(Tag.관형사형전성어미, "는")
     .tag_form(Tag.의존명사, "것").context()
     .msg("'만'의 잘못이 아닌가요?").build(),
+    
+    *rule().id("PRFR_~에 왈가왈부하다")
+    .tag(Tag.목적격조사)
+    .tag_form(Tag.일반명사, "왈가왈부").context()
+    .msg("'에'의 잘못이 아닌가요?").build(),
+    
+    *rule().id("PRFR_자동사로 쓸 수 없는 명사")
+    .tag(Tag.목적격조사).context()
+    .AND(tag(Tag.일반명사), forms({"폭발", "폭팔"}))
+    .AND(tags({Tag.동사, Tag.동사파생접미사, Tag.보조용언}), form("하"))
+    .msg("'~을 {form[0]}시키다'의 잘못이 아닌가요?").build(),
+    
+    *rule().id("PRFR_~~한 뒤")
+    .tag_form(Tag.동사파생접미사, "하")
+    .tag_form(Tag.관형사형전성어미, "ᆯ")
+    .tag_form(Tag.일반명사, "뒤").context()
+    .tag(Tag.어근).context()
+    .tag_form(Tag.형용사파생접미사, "하").context()
+    .tag_form(Tag.연결어미, "게").context()
+    .msg("'한'의 잘못이 아닌가요?").build(),
 ]
