@@ -129,7 +129,7 @@ _OM = [
     .tag_form(Tag.일반명사, "가능")
     .tag_form(Tag.형용사파생접미사, "하")
     .tag_form(Tag.관형사형전성어미, "ᆫ")
-    .AND(tag(Tag.일반부사), NOT(form("이른바")))
+    .AND(tag(Tag.일반부사), NOT(forms({"이른바", "거의"})))
     .msg("'가능한 한 {dform[3]}'batchim(\"으로\", \"로\") 써야 합니다.").build(),
     
         *rule().id("OM_가능한 한_SUP").sup_all()
@@ -1261,6 +1261,14 @@ _REP = [
     *rule().id("REP_MAG_거저")
     .tag_form(Tag.일반부사, "거져")
     .msg("'거저'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_XR_추레")
+    .tag_form(Tag.어근, "추례")
+    .msg("'추레'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_MAG_상당히")
+    .tag_form(Tag.일반부사, "상당희")
+    .msg("'상당히'의 오타가 아닌가요?").build(),
 ]
 
 _REP_VERBS = [
@@ -1833,6 +1841,16 @@ _REP_VERBS = [
     .tag(Tag.주격조사).context()
     .tag_form(Tag.동사, "쌔")
     .msg("'세다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_세다_강하다_2_3")
+    .tag_form(Tag.일반명사, "힘").context()
+    .tag_form(Tag.형용사, "쌔").if_not_spaced()
+    .msg("'힘세다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_세다_강하다_2_4")
+    .tag_form(Tag.일반명사, "힘").context()
+    .form("쌘").if_not_spaced()
+    .msg("'힘센'이 올바른 표현입니다.").build(),
 
     *rule().id("REP_세다_금액")
     .AND(tag(Tag.일반명사), forms({"돈", "액수"})).context()
@@ -3278,7 +3296,7 @@ _MIF = [
 
     *rule().id("MIF_하는구나")
     .tags({Tag.보조사}).context()
-    .AND(tags({Tag.동사, Tag.보조용언}), form("하"))
+    .AND(tags({Tag.동사}), form("하"))
     .tag_form(Tag.종결어미, "구나")
     .msg('동사에는 \'는구나\'가 결합하므로, \'merge(({dform[0]}, {dtag[0]}), ("는구나", "종결어미"))\'로 써야 합니다.').build(),
     
@@ -3916,6 +3934,17 @@ _MIF = [
     .tag_form(Tag.동사, "푸").if_not_spaced()
     .tag_form(Tag.연결어미, "어서")
     .msg("'아파서'의 오타가 아닌가요?").build(),
+
+    *rule().id("MIF_움츠러들다").rank(2)
+    .tag_form(Tag.동사, "움츠리")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "들").if_not_spaced().context()
+    .msg("'움츠러들다'가 올바른 표현입니다.").build(),
+
+    *rule().id("MIF_거머쥐다")
+    .tag_form(Tag.동사, "거머주")
+    .any()
+    .msg('\'merge(("거머쥐", "동사"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
 ]
 
 _JOSA = [
@@ -4451,6 +4480,14 @@ _LOANWORDS = [
     *rule().id("LW_소켓")
     .form("소캣")
     .msg("'소켓(Sokect)'이 올바른 표기입니다.").build(),
+
+    *rule().id("LW_이펙트")
+    .form("이팩트")
+    .msg("'이펙트(Effect)'가 올바른 표기입니다.").build(),
+
+    *rule().id("LW_시니어")
+    .tag_form(Tag.일반명사, "시너어")
+    .msg("'시니어(Senior)'가 올바른 표기입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:

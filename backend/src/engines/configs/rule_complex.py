@@ -267,10 +267,26 @@ _SPELLING_SPACING = [
     .tag_form(Tag.일반명사, "때").if_spaced()
     .msg("'제때'의 오타가 아닌가요?").build(),
     
-    *rule().id("COMPLEX_휘둥그레지다")
+    *rule().id("COMPLEX_휘둥그레지다_REP+띄어쓰기")
     .forms({"휘동그레", "휘동그래", "휘둥그래"})
     .tag_form(Tag.동사, "지")
     .msg("'휘둥그레지다'가 올바른 표현입니다.").build(),
+
+    *rule().id("COMPLEX_세다_REP+띄어쓰기")
+    .tag_form(Tag.일반명사, "힘")
+    .tag_form(Tag.형용사, "쌔").if_spaced()
+    .msg("'힘세다'가 올바른 표현입니다.").build(),
+
+    *rule().id("COMPLEX_세다_REP+띄어쓰기_2")
+    .tag_form(Tag.일반명사, "힘")
+    .form("쌘").if_spaced()
+    .msg("'힘센'이 올바른 표현입니다.").build(),
+
+    *rule().id("COMPLEX_움츠러들다_MIF+띄어쓰기")
+    .tag_form(Tag.동사, "움츠리")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.보조용언, "들").if_spaced()
+    .msg("'움츠러들다'가 올바른 표현입니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [
