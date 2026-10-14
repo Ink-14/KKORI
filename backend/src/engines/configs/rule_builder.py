@@ -419,15 +419,19 @@ class RuleBuilder:
         self.detailed_message = detail
         return self
     
+    def sup(self, rank: int):
+        """자신은 출력하지 않고, 겹치는 규칙 중 rank 숫자가 더 큰 규칙만 억제합니다."""
+        self.errtype(SpellErrorType.SUPPRESS)
+        return self.rank(rank)
+
     def sup_all(self):
-        self.errtype(SpellErrorType.SUPPRESS_ALL)
-        return self
+        """sup(0)의 편의 메서드. rank 0인 상대는 억제하지 않습니다."""
+        return self.sup(0)
 
     def rank(self, priority: int):
         """겹치는 다른 규칙과 비교할 출력 우선순위를 개별 지정하는 함수입니다.
 
         지정하지 않으면 error_type의 기본 우선순위(SPELL_ERROR_TYPE_PRIORITY)를 따릅니다.
-        SUPPRESS_ALL 타입 규칙에는 사용할 수 없습니다(build 시점에 에러).
 
         Args:
             priority (int): 숫자가 작을수록 우선순위가 높음.
@@ -439,13 +443,8 @@ class RuleBuilder:
         errors = []
         if not self.steps:
             errors.append("At least one condition must be added.")
-        if self.error_type != SpellErrorType.SUPPRESS_ALL and self.message is None:
+        if self.error_type != SpellErrorType.SUPPRESS and self.message is None:
             errors.append("Error message must be set using msg().")
-        if self.rank_override is not None and self.error_type == SpellErrorType.SUPPRESS_ALL:
-            errors.append(
-                "rank() cannot be used with SUPPRESS_ALL error type: "
-                "SUPPRESS_ALL always suppresses overlapping matches unconditionally."
-            )
         if self.error_type == SpellErrorType.NOT_SET:
             errors.append("Error type has not been set. Use errtype() to set it.")
         elif self.error_type == SpellErrorType.NEED_ML_JUDGE and self.rule_id == "":

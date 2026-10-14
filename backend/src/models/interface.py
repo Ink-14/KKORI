@@ -27,15 +27,15 @@ class SpellErrorType(Enum):
     NEED_ML_JUDGE = auto()
     WHITELIST = auto()
 
-    SUPPRESS_ALL = auto()  # 겹치는 다른 모든 규칙의 출력을 무조건 억제하는 0순위 전용 타입. 개별 규칙에서만 명시적으로 사용.
+    SUPPRESS = auto()  # 자신은 출력하지 않고, 겹치는 하위 우선순위 규칙만 억제.
 
     TEST = auto()
 
 # error_type별 출력 우선순위. 숫자가 작을수록 우선.
-# 겹치는 매치 중 SUPPRESS_ALL은 다른 모든 매치를 억제하고,
-# 그 외는 우선순위가 더 높은(숫자가 작은) 쪽만 남김 (동률이면 둘 다 유지).
+# 겹치는 매치는 우선순위가 더 높은(숫자가 작은) 쪽이 상대를 억제 (동률이면 유지).
+# SUPPRESS는 우선순위 비교에는 참여하지만 결과로 출력하지 않음.
 SPELL_ERROR_TYPE_PRIORITY: dict[SpellErrorType, int] = {
-    SpellErrorType.SUPPRESS_ALL: 0,
+    SpellErrorType.SUPPRESS: 0,
     SpellErrorType.COMPLEX: 2,
 }
 _DEFAULT_PRIORITY = 3

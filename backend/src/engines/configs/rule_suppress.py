@@ -2,7 +2,7 @@ from src.engines.configs.rule_builder import RuleBuilder, AND, OR, NOT, tag, tag
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 def rule() -> RuleBuilder: # type: ignore
-    return RuleBuilder(SpellErrorType.SUPPRESS_ALL)
+    return RuleBuilder(SpellErrorType.SUPPRESS)
 
 _SPACING = [
     *rule().id("SUP_눈 깜짝할 사이")

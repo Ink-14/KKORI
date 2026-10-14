@@ -183,7 +183,9 @@ class SpellChecker:
         tokens: list[KoToken],
         rust_errors,
     ) -> list[SpellError]:
-        seen: set[tuple[int, int, str]] = set()
+        # SUP는 메시지와 무관하게 같은 구간의 최소 rank만 보존합니다.
+        # 일반 출력과는 키를 분리하고, 일반 중복도 가장 높은 우선순위를 보존합니다.
+        positions: dict[tuple[int, int, str | None], int] = {}
         result: list[SpellError] = []
 
         for match_id, start_index, end_index in rust_errors:
@@ -194,10 +196,18 @@ class SpellChecker:
                 end_index,
             )
 
-            if key in seen:
+            dedup_key = (
+                (error.start_index, error.end_index, None)
+                if error.error_type == SpellErrorType.SUPPRESS
+                else key
+            )
+            if dedup_key in positions:
+                index = positions[dedup_key]
+                if error.priority < result[index].priority:
+                    result[index] = error
                 continue
 
-            seen.add(key)
+            positions[dedup_key] = len(result)
             result.append(error)
 
         return result
@@ -206,8 +216,9 @@ class SpellChecker:
     def _suppress_overlaps(errors: list[SpellError]) -> list[SpellError]:
         n = len(errors)
         priorities = [e.priority for e in errors]
-        is_suppress_all_type = [e.error_type == SpellErrorType.SUPPRESS_ALL for e in errors]
-        suppressed = list(is_suppress_all_type)
+        # 출력 제외 여부와 비교 참여 여부는 별개입니다.
+        # 상위 규칙에 억제된 매치도 계속 하위 규칙을 억제합니다.
+        suppressed = [e.error_type == SpellErrorType.SUPPRESS for e in errors]
 
         order = sorted(range(n), key=lambda i: errors[i].start_index)
         active: list[tuple[int, int]] = []
@@ -219,10 +230,7 @@ class SpellChecker:
                 heapq.heappop(active)
 
             for _, j in active:
-                if is_suppress_all_type[i] or is_suppress_all_type[j]:
-                    suppressed[i] = True
-                    suppressed[j] = True
-                elif priorities[i] < priorities[j]:
+                if priorities[i] < priorities[j]:
                     suppressed[j] = True
                 elif priorities[j] < priorities[i]:
                     suppressed[i] = True

@@ -1,4 +1,6 @@
 ﻿import time
+import random
+from itertools import permutations
 
 import pytest
 
@@ -21,6 +23,13 @@ def assert_empty(errors: list):
 
 def rule() -> RuleBuilder:
     return RuleBuilder(SpellErrorType.TEST)
+
+
+def make_ranked_error(name, start, end, rank, sup=False):
+    return SpellError(
+        SpellErrorType.SUPPRESS if sup else SpellErrorType.TEST,
+        name, start, end, name, "", rank,
+    )
 
 # ── 띄어쓰기 판정 ──
 
@@ -550,9 +559,9 @@ class TestMessageDedup:
         assert any(e.error_message == "출력" for e in errors)
         assert any(e.error_message == "출력2" for e in errors)
 
-# ── 겹침 억제 (priority / SUPPRESS_ALL) ──
+# ── 겹침 억제 (priority / SUPPRESS) ──
 # 규칙: 쌍(pairwise)으로 구간이 조금이라도 교차하는 매치끼리만 비교.
-#   - SUPPRESS_ALL: 자신은 출력되지 않고, 겹치는 상대를 무조건 억제.
+#   - SUPPRESS: 자신은 출력되지 않고, 겹치는 하위 우선순위 상대만 억제.
 #   - priority가 더 높은(숫자가 작은) 쪽이 이기고, 겹치는 상대를 억제.
 #   - priority가 동률이면 서로 억제하지 않음 (둘 다 출력).
 #   - 애초에 구간이 겹치지 않으면 비교 자체를 하지 않음 (둘 다 출력).
@@ -561,14 +570,14 @@ def rule_type(error_type: SpellErrorType) -> RuleBuilder:
     return RuleBuilder(error_type)
 
 SUPPRESS_ALL_ONLY = [
-    *rule_type(SpellErrorType.SUPPRESS_ALL)
+    *rule_type(SpellErrorType.SUPPRESS)
     .form("S")
     .msg("suppress_all 자체 출력")
     .build(),
 ]
 
 SUPPRESS_ALL_VS_NORMAL = [
-    *rule_type(SpellErrorType.SUPPRESS_ALL)
+    *rule_type(SpellErrorType.SUPPRESS)
     .form("A")
     .form("B")
     .msg("억제자")
@@ -582,7 +591,7 @@ SUPPRESS_ALL_VS_NORMAL = [
 ]
 
 SUPPRESS_ALL_NON_OVERLAPPING = [
-    *rule_type(SpellErrorType.SUPPRESS_ALL)
+    *rule_type(SpellErrorType.SUPPRESS)
     .form("A")
     .form("B")
     .msg("억제자")
@@ -790,6 +799,135 @@ class TestOverlapSuppression:
         errors = batch_errors[0]
         assert_found(errors, "SPELLING 동시출력", 0, 2)
         assert_found(errors, "SPACING 동시출력", 1, 3)
+
+
+class TestSuppressRank:
+    @pytest.mark.parametrize("rank", [0, 1, 2, 5])
+    def test_sup_builds_without_message(self, rank):
+        built = rule().sup(rank).form("A").build()[0]
+        assert built[2] == SpellErrorType.SUPPRESS
+        assert built[5] == rank
+        assert built[1].render([]) == ""
+
+
+    def test_sup_all_sets_rank_zero_even_after_rank_override(self):
+        built = rule().rank(5).sup_all().form("A").build()[0]
+        assert built[2] == SpellErrorType.SUPPRESS
+        assert built[5] == 0
+
+
+    @pytest.mark.parametrize("normal_rank", [0, 1, 2, 3])
+    @pytest.mark.parametrize("reverse", [False, True])
+    def test_ranked_sup_single_and_batch(self, normal_rank, reverse):
+        rules = [
+            *rule().sup(2).form("A").form("B").build(),
+            *rule().rank(normal_rank).form("B").form("C").msg("normal").build(),
+        ]
+        checker = SpellChecker()
+        checker.add_rule_from_list(rules[::-1] if reverse else rules)
+        tokens = build_tokens(*[(c, Tag.일반명사) for c in "ABC"])
+        expected = ["normal"] if normal_rank <= 2 else []
+        single = list(checker.check(tokens))
+        assert [e.error_message for e in single] == expected
+        assert checker.check_batch([tokens, tokens]) == [single, single]
+
+
+    def test_sup_all_keeps_rank_zero_normal_rule(self):
+        checker = SpellChecker()
+        checker.add_rule_from_list([
+            *rule().sup_all().form("A").form("B").build(),
+            *rule().rank(0).form("B").msg("normal").build(),
+        ])
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사))
+        assert [e.error_message for e in checker.check(tokens)] == ["normal"]
+
+
+    @pytest.mark.parametrize("middle_is_sup", [False, True])
+    def test_suppressed_match_retains_suppression_power(self, middle_is_sup):
+        a = make_ranked_error("A", 0, 2, 0)
+        s = make_ranked_error("S", 1, 3, 1, sup=middle_is_sup)
+        b = make_ranked_error("B", 2, 4, 2)
+        for matches in permutations([a, s, b]):
+            assert SpellChecker._suppress_overlaps(list(matches)) == [a]
+
+
+    def test_suppressed_sup_retains_power_through_rust_matches(self):
+        checker = SpellChecker()
+        checker.add_rule_from_list([
+            *rule().rank(0).form("A").form("B").msg("winner").build(),
+            *rule().sup(1).form("B").form("C").build(),
+            *rule().rank(2).form("C").form("D").msg("loser").build(),
+        ])
+        tokens = build_tokens(*[(c, Tag.일반명사) for c in "ABCD"])
+        single = list(checker.check(tokens))
+        assert [e.error_message for e in single] == ["winner"]
+        assert checker.check_batch([tokens]) == [single]
+
+
+    @pytest.mark.parametrize("span, suppressed", [
+        ((0, 2), False), ((4, 6), False), ((6, 8), False),
+        ((1, 3), True), ((3, 5), True), ((0, 6), True), ((2, 3), True),
+    ])
+    def test_sup_overlap_boundaries(self, span, suppressed):
+        normal = make_ranked_error("N", *span, 3)
+        sup = make_ranked_error("S", 2, 4, 1, sup=True)
+        assert SpellChecker._suppress_overlaps([normal, sup]) == ([] if suppressed else [normal])
+
+
+    @pytest.mark.parametrize("reverse", [False, True])
+    def test_dedup_sup_uses_span_and_minimum_rank(self, reverse):
+        checker = SpellChecker()
+        # Supply Rust-like matches directly: identical-pattern overwrite in Rust
+        # is intentionally outside this Python-only change.
+        checker.add_rule_from_list([
+            *rule().sup(3).form("A").msg("weak").build(),
+            *rule().sup(1).form("A").msg("strong").build(),
+            *rule().rank(0).form("A").msg("strong").build(),
+            *rule().sup(2).form("B").build(),
+        ])
+        matches = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (3, 1, 1)]
+        tokens = build_tokens(("A", Tag.일반명사), ("B", Tag.일반명사))
+        result = checker._deduped_errors(tokens, matches[::-1] if reverse else matches)
+        sups = [e for e in result if e.error_type == SpellErrorType.SUPPRESS]
+        normals = [e for e in result if e.error_type != SpellErrorType.SUPPRESS]
+        assert sorted((e.start_index, e.end_index, e.priority) for e in sups) == [(0, 1, 1), (1, 2, 2)]
+        assert len(normals) == 1
+        assert normals[0].priority == 0
+
+
+    @pytest.mark.parametrize("sup", [False, True])
+    @pytest.mark.parametrize("reverse", [False, True])
+    def test_same_message_dedup_preserves_strongest_rank(self, sup, reverse):
+        checker = SpellChecker(debug=True)
+        builders = [rule().rank(3), rule().rank(1)]
+        if sup:
+            builders = [rule().sup(3), rule().sup(1)]
+        checker.add_rule_from_list([r for b in builders for r in b.form("A").msg("same").build()])
+        matches = [(0, 0, 0), (1, 0, 0)]
+        tokens = build_tokens(("A", Tag.일반명사))
+        result = checker._deduped_errors(tokens, matches[::-1] if reverse else matches)
+        assert len(result) == 1
+        assert result[0].priority == 1
+
+
+    def test_sweep_matches_pairwise_reference(self):
+        rng = random.Random(42)
+        for _ in range(100):
+            matches = []
+            for i in range(rng.randrange(30)):
+                start = rng.randrange(20)
+                matches.append(make_ranked_error(str(i), start, start + rng.randrange(1, 8), rng.randrange(5), bool(rng.randrange(2))))
+            expected = [
+                e for e in matches
+                if e.error_type != SpellErrorType.SUPPRESS
+                and not any(
+                    other.start_index < e.end_index
+                    and e.start_index < other.end_index
+                    and other.priority < e.priority
+                    for other in matches
+                )
+            ]
+            assert SpellChecker._suppress_overlaps(matches) == expected
 
 
 # ── 스트레스 & 성능 벤치마크 테스트 ──

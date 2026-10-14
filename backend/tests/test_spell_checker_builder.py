@@ -577,18 +577,12 @@ class TestRank:
         )
         assert rules[0][5] == 0
 
-    def test_rank_on_suppress_all_raises(self):
-        with pytest.raises(ValueError):
-            (
-                RuleBuilder(SpellErrorType.SUPPRESS_ALL)
-                .form("A")
-                .msg("x")
-                .rank(5)
-                .build()
-            )
+    def test_rank_on_suppress_builds_successfully(self):
+        rules = RuleBuilder(SpellErrorType.SUPPRESS).form("A").rank(5).build()
+        assert rules[0][5] == 5
 
     def test_suppress_all_without_rank_builds_successfully(self):
-        rules = RuleBuilder(SpellErrorType.SUPPRESS_ALL).form("A").msg("x").build()
+        rules = RuleBuilder(SpellErrorType.SUPPRESS).form("A").msg("x").build()
         assert rules[0][5] == 0
 
 
