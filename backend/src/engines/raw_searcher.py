@@ -30,11 +30,12 @@ class RawStringSearcher:
     def add_word_from_list(self, rule_list: list[tuple[list[tuple[tuple[str, ...], str]], SpellErrorType, str]]) -> None:
         self.black_searcher.add_word_from_list(rule_list)
 
-    def add_whitelist_word(self, word: str) -> None:
-        self.white_searcher.add_word_from_list(
-            [([((word,), "")], SpellErrorType.WHITELIST, "")]
-        )
-        self._has_white = True
+    def add_whitelist_word(self, list: list[str]) -> None:
+        for word in list:
+            self.white_searcher.add_word_from_list(
+                [([((word,), "")], SpellErrorType.WHITELIST, "")]
+            )
+            self._has_white = True
 
     def _filter(self, black_result: list[SpellError], white_result: list[SpellError]) -> list[SpellError]:
         white_result.sort(key=lambda x: x[2])

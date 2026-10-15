@@ -78,6 +78,20 @@ _MEANING_DUPLICATED: list[KoSpellRules] = [
     .tag_form(Tag.일반명사, "백주")
     .tag_form(Tag.일반명사, "대낮")
     .msg("'백주(白晝)'와 '대낮'은 동의어입니다.").build(),
+
+    *rule().id("MEANING_위에 상술")
+    .AND(tag(Tag.일반명사), forms({"위", "앞"}))
+    .AND(tag(Tag.부사격조사), forms({"에", "에서"}))
+    .tag_form(Tag.일반명사, "상술")
+    .tag_form(Tag.동사파생접미사, "하").context()
+    .msg("'상술'에 이미 '{form[0]}'의 의미가 포함되어 있습니다.").build(),
+
+    *rule().id("MEANING_뒤에 후술/하술")
+    .AND(tag(Tag.일반명사), forms({"뒤", "나중"}))
+    .AND(tag(Tag.부사격조사), forms({"에", "에서"}))
+    .AND(tag(Tag.일반명사), forms({"후술", "하술"}))
+    .AND(tags({Tag.동사, Tag.동사파생접미사}), form("하")).context()
+    .msg("'{form[2]}'에 이미 '{form[0]}'의 의미가 포함되어 있습니다.").build(),
 ]
 
 _GRAMMAR_DUPLICATED = [

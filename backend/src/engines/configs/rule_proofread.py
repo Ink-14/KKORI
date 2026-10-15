@@ -98,4 +98,24 @@ PROOFREAD_ERRORS = [
     .tag_form(Tag.형용사파생접미사, "하").context()
     .tag_form(Tag.연결어미, "게").context()
     .msg("'한'의 잘못이 아닌가요?").build(),
+
+    *rule().id("PRFR_줄이다")
+    .tag(Tag.목적격조사).context()
+    .any().context()
+    .any().context().opt()
+    .any().context().opt()
+    .tag_form(Tag.부사격조사, "으로").context()
+    .tag_form(Tag.동사, "줄")
+    .tag_form(Tag.연결어미, "어야")
+    .tag_form(Tag.보조용언, "하").context()
+    .msg("'줄여야'의 잘못이 아닌가요?").build(),
+    
+    *rule().id("PRFR_~이 OO져")
+    .tag(Tag.일반명사)
+    .tag(Tag.목적격조사)
+    .tag(Tag.동사).context()
+    .tag_form(Tag.연결어미, "어").context()
+    .tag_form(Tag.보조용언, "지").context()
+    .tag_form(Tag.연결어미, "어").context()
+    .msg("'{dform[0]}batchim(\"이\", \"가\")'의 오타가 아닌가요?").build(),
 ]
