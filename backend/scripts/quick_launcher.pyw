@@ -118,6 +118,7 @@ class Api:
         self._spell.add_rule_from_list(_spell_cfg.SPELL_CHECK_RULES)
         self._spell.add_rule_from_list(_spell_cfg.TEST_SPELL_CHECK_RULES)
         self._raw.add_word_from_list(_raw_cfg.RAW_STRING_RULES)
+        self._raw.add_whitelist_word(_raw_cfg.RAW_WHITELISTS)
 
     # ── 토크나이저 API ──────────────────────────────────────────
 
@@ -497,6 +498,7 @@ class Api:
                 importlib.reload(_raw_cfg)
                 raw = RawStringSearcher()
                 raw.add_word_from_list(_raw_cfg.RAW_STRING_RULES)
+                raw.add_whitelist_word(_raw_cfg.RAW_WHITELISTS)
 
             dedup_msg = state.get("dedup_msg")
             seen_msgs: set[str] = set()
@@ -607,6 +609,7 @@ class Api:
             importlib.reload(_raw_cfg)
             raw = RawStringSearcher()
             raw.add_word_from_list(_raw_cfg.RAW_STRING_RULES)
+            raw.add_whitelist_word(_raw_cfg.RAW_WHITELISTS)
 
             # 전역(파일 간 포함) dedup
             seen_hashes: set[int] = set()
@@ -740,6 +743,7 @@ class Api:
             importlib.reload(_raw_cfg)
             raw = RawStringSearcher()
             raw.add_word_from_list(_raw_cfg.RAW_STRING_RULES)
+            raw.add_whitelist_word(_raw_cfg.RAW_WHITELISTS)
 
             texts: list[str] = []
             meta: list[dict] = []
