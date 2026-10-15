@@ -312,6 +312,11 @@ _OM = [
 ]
 
 _ADD = [
+    *rule().id("ADD_ㄹ_이르르다")
+    .tag_form(Tag.동사, "이르르")
+    .tags(TagGroup.어미)
+    .msg('\'merge(("이르", "동사"), ({dform[1]}, {dtag[1]}))\'batchim("이", "가") 올바른 표현입니다.').build(),
+
     *rule().id("ADD_ㄹ_으며")
     .tag_form(Tag.형용사, "힘들")
     .tag_form(Tag.연결어미, "으며")
@@ -389,6 +394,12 @@ _ADD = [
     .tag_form(Tag.관형사형전성어미, "ᆯ")
     .tag_form(Tag.연결어미, "더라도")
     .msg("'하더라도'의 오타가 아닌가요?").build(),
+
+    *rule().id("ADD_~어 있다")
+    .AND(tag(Tag.동사), forms({"달리", "알리"}))
+    .tag_form(Tag.연결어미, "어서")
+    .tag_form(Tag.보조용언, "있").if_not_spaced()
+    .msg('\'merge(({form[0]}, "동사"), ("어", "연결어미")) 있다\'의 오타가 아닌가요?').build(),
 ]
 
 _REP = [
@@ -944,9 +955,21 @@ _REP = [
     .msg("'려다'의 오타가 아닌가요?").build(),
 
     *rule().id("REP_~어져")
-    .tag_form(Tag.연결어미, "어").context()
+    .AND(tags({Tag.연결어미, Tag.종결어미}), form("어")).context()
     .tag_form(Tag.관형사, "저").if_not_spaced()
     .tags(TagGroup.용언).context()
+    .msg("'져'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_~어져_2")
+    .tag_form(Tag.일반명사, "빠").context()
+    .tag_form(Tag.관형사, "저").if_not_spaced()
+    .tag_form(Tag.보조용언, "있").context()
+    .msg("'져'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_~어져_3")
+    .tag_form(Tag.일반부사, "이어").context()
+    .tag_form(Tag.관형사, "저").if_not_spaced()
+    .tag_form(Tag.형용사, "있").context()
     .msg("'져'의 오타가 아닌가요?").build(),
 
     *rule().id("REP_끝없이")
@@ -1661,7 +1684,7 @@ _REP_VERBS = [
     .NOT(tag_form(Tag.일반부사, "없이")).context()
     .msg("'문제에 대한 답' 또는 '목표물'을 지칭하는 경우, '맞히다'가 올바른 표현입니다.").build(),
     
-        *rule().id("REP_맞히다_2_SUP").sup_all()
+        *rule().id("REP_맞히다_2_SUP").sup(2)
         .tag_form(Tag.일반명사, "퍼즐").context()
         .tag(Tag.목적격조사).context()
         .tag_form(Tag.동사, "맞추").build(),
@@ -1681,13 +1704,20 @@ _REP_VERBS = [
     .tag_form(Tag.동사, "맞")
     .tag_form(Tag.동사, "치")
     .tag_form(Tag.연결어미, "어")
-    .msg("'맞춰' 혹은 '맞혀'의 오기가 아닌지요?").build(),
+    .msg("'맞춰' 혹은 '맞혀'의 오타가 아닌가요?")
+    .detail("'문제에 대한 답' 또는 '목표물'을 지칭하는 경우, '맞히다'가 올바른 표현입니다. '대조해 보다', '퍼즐을 맞추다' 등의 의미인 경우, '맞추다'가 올바른 표현입니다.").build(),
 
-    *rule().id("MIF_맞히다_or_맞추다")
+    *rule().id("MIF_맞히다_or_맞추다_2")
     .tag_form(Tag.동사, "맞")
     .tag_form(Tag.동사, "치")
     .tag_form(Tag.관형사형전성어미, "는")
-    .msg("'맞히는' 혹은 '맞추는'의 오기가 아닌지요?").build(),
+    .msg("'맞히는' 혹은 '맞추는'의 오타가 아닌가요?")
+    .detail("'문제에 대한 답' 또는 '목표물'을 지칭하는 경우, '맞히다'가 올바른 표현입니다. '대조해 보다', '퍼즐을 맞추다' 등의 의미인 경우, '맞추다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_맞히다_or_맞추다_3")
+    .tag_form(Tag.동사, "마추")
+    .msg("'맞히다' 혹은 '맞추다'의 오타가 아닌가요?")
+    .detail("'문제에 대한 답' 또는 '목표물'을 지칭하는 경우, '맞히다'가 올바른 표현입니다. '대조해 보다', '퍼즐을 맞추다' 등의 의미인 경우, '맞추다'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_빗맞히다")
     .tag_form(Tag.동사, "빗맞추")
@@ -3060,6 +3090,15 @@ _REP_NNG = [
     *rule().id("REP_혐오") # OOV 탐지에 맡김
     .tag_form(Tag.일반명사, "혐호")
     .msg("'혐오'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_제출")
+    .tag_form(Tag.일반명사, "재출")
+    .msg("'제출'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_제시간")
+    .tag_form(Tag.체언접두사, "재")
+    .tag_form(Tag.일반명사, "시간").if_not_spaced()
+    .msg("'제시간'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -4488,6 +4527,18 @@ _LOANWORDS = [
     *rule().id("LW_시니어")
     .tag_form(Tag.일반명사, "시너어")
     .msg("'시니어(Senior)'가 올바른 표기입니다.").build(),
+
+    *rule().id("LW_드레스")
+    .form("드래스")
+    .msg("'드레스(Dress)'가 올바른 표기입니다.").build(),
+
+    *rule().id("LW_어드레스")
+    .form("어드래스")
+    .msg("'어드레스(Address)'가 올바른 표기입니다.").build(),
+
+    *rule().id("LW_패러디")
+    .form("페러디")
+    .msg("'패러디(Parody)'의 오타가 아닌가요?").build(),
 ]
 
 def rule() -> RuleBuilder:
