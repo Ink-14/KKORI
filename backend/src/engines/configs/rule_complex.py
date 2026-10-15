@@ -231,12 +231,12 @@ _SPELLING_SPACING = [
     .any()
     .msg("'{form[0]}batchim(\"을\", \"를\") 켜다'가 올바른 표현입니다.").build(),
     
-    *rule().id("COMPLEX_뛰쳐 나가다_REP+띄어쓰기")
+    *rule().id("COMPLEX_뛰쳐나가다_REP+띄어쓰기")
     .tag_form(Tag.동사, "뛰")
     .tag_form(Tag.동사, "지")
     .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.보조용언, "나가").if_not_spaced()
-    .msg("'뛰쳐 나가다'의 오타가 아닌가요?").build(),
+    .tag_form(Tag.보조용언, "나가").if_spaced()
+    .msg("'뛰쳐나가다'의 오타가 아닌가요?").build(),
 
     *rule().id("COMPLEX_급한 대로_REP+띄어쓰기")
     .tag_form(Tag.형용사, "급하").context()
@@ -287,6 +287,12 @@ _SPELLING_SPACING = [
     .tag_form(Tag.연결어미, "어")
     .tag_form(Tag.보조용언, "들").if_spaced()
     .msg("'움츠러들다'가 올바른 표현입니다.").build(),
+
+    *rule().id("COMPLEX_때려 맞히다")
+    .tag_form(Tag.동사, "때리")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.동사, "맞추").if_not_spaced()
+    .msg("'때려 맞히다'가 올바른 표현입니다.").build(),
 ]
 
 COMPLEX_ERRORS: list[KoSpellRules] = [
