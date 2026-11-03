@@ -299,6 +299,13 @@ _NNB = [
     .tag_form(Tag.연결어미, "라도").context()
     .msg("'한 번'으로 띄어 써야 합니다.").build(),
 
+    *rule().id("NNB_한 번_OO 한 번 없이_띄어쓰기")
+    .tag(Tag.일반명사).context()
+    .tag_form(Tag.관형사, "한")
+    .tag_form(Tag.의존명사, "번").if_not_spaced()
+    .tag_form(Tag.일반부사, "없이").context()
+    .msg("'한 번'으로 띄어 써야 합니다.").build(),
+
     *rule().id("NNB_명사_외_띄어쓰기")
     .tags({Tag.일반명사, Tag.대명사, Tag.고유명사})
     .tag_form(Tag.의존명사, "외").if_not_spaced()
@@ -428,7 +435,7 @@ _NNB = [
     .msg("'것'을 앞 말과 띄어 써야 합니다.").build(),
     
     *rule().id("NNB_것_4_띄어쓰기")
-    .NOT(forms({"이", "그", "저"}))
+    .NOT(forms({"이", "그", "저", "(", "'"}))
     .tag_form(Tag.의존명사, "것").if_not_spaced()
     .tags({Tag.부사격조사, Tag.목적격조사, Tag.보조사, Tag.접속조사, Tag.부정지정사}).context()
     .msg("'것'을 앞 말과 띄어 써야 합니다.").build(),
@@ -3143,7 +3150,7 @@ _VV = [
     # .msg("'하다'를 앞 말과 띄어 써야 합니다.").build(),
 
     *rule().id("VV_연결어미_하다_띄어쓰기")
-    .AND(tag(Tag.연결어미), forms({"ᆯ라고", "ᆯ려고", "ᆯ려", "라"}))
+    .AND(tag(Tag.연결어미), forms({"ᆯ라고", "ᆯ려고", "ᆯ려"}))
     .AND(tags({Tag.동사, Tag.보조용언}), form("하"), longer(1)).if_not_spaced()
     .msg("'하다'를 앞 말과 띄어 써야 합니다.").build(),
 
@@ -5093,7 +5100,7 @@ _VA = [
     .msg("'큰 {form[2]} 없다'로 띄어 써야 합니다.").build(),
 
     *rule().id("VA_없다_의존명사_띄어쓰기")
-    .tag(Tag.의존명사).context()
+    .tag(Tag.의존명사)
     .OR(tag_form(Tag.형용사, "없"), tag_form(Tag.일반부사, "없이")).if_not_spaced()
     .msg("'없다'를 앞 말과 띄어 써야 합니다.").build(),
 
@@ -6212,6 +6219,15 @@ _JX = [
     .tag_form(Tag.부사격조사, "에").if_not_spaced()
     .tag_form(Tag.형용사, "없").context()
     .tag_form(Tag.연결어미, "으며").context()
+    .msg("'밖에'를 앞 말과 붙여 써야 합니다.").build(),
+ 
+    *rule().id("JX_밖에_~밖에 안 되는_붙여쓰기")
+    .tag(Tag.일반명사)
+    .tag_form(Tag.일반명사, "밖").if_spaced()
+    .tag_form(Tag.부사격조사, "에")
+    .tag_form(Tag.일반부사, "안").context()
+    .tag_form(Tag.동사, "되").context()
+    .tag_form(Tag.관형사형전성어미, "는").context()
     .msg("'밖에'를 앞 말과 붙여 써야 합니다.").build(),
  
     *rule().id("JX_에서밖에_붙여쓰기")

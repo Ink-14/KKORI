@@ -3418,6 +3418,10 @@ _REP_NNG = [
     *rule().id("REP_역량") # OOV 탐지에 맡김
     .tag_form(Tag.일반명사, "역랑")
     .msg("'역량'의 오타가 아닌가요?").build(),
+    
+    *rule().id("REP_위험")
+    .tag_form(Tag.일반명사, "위혐")
+    .msg("'위험' 또는 '위협'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -4446,6 +4450,12 @@ _MIF = [
     .AND(tags({Tag.형용사, Tag.보조용언}), form("없"))
     .tag_form(Tag.대명사, "느").if_not_spaced()
     .msg("'없는'의 오타가 아닌가요?").build(),
+    
+    *rule().id("MIF_바뀌었")
+    .tag_form(Tag.동사, "바뀌")
+    .tag_form(Tag.긍정지정사, "이")
+    .tag_form(Tag.선어말어미, "었")
+    .msg("'바뀌었'의 오타가 아닌가요?").build(),
 ]
 
 _JOSA = [
