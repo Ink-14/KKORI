@@ -79,7 +79,7 @@ async def lifespan(app: FastAPI):
     _tokenizer.tokenize("")
     
     for entry in _get_active_words(_load_user_data()):
-        _raw_searcher.add_whitelist_word(entry["word"])
+        _raw_searcher.add_whitelist_word([entry["word"]])
         _tokenizer.add_user_word(entry["word"], Tag[entry["tag"]])
 
     _spell_checker = SpellChecker()
@@ -176,7 +176,7 @@ def _apply_user_words_to_tokenizer(words: list[dict], score: float = 0.0) -> Non
     global _raw_searcher
     _tokenizer = KoTokenizer.reset()
     for entry in words:
-        _raw_searcher.add_whitelist_word(entry["word"])
+        _raw_searcher.add_whitelist_word([entry["word"]])
         _tokenizer.add_user_word(entry["word"], Tag[entry["tag"]], score)
 
 
