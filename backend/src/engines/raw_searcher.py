@@ -37,6 +37,16 @@ class RawStringSearcher:
             )
             self._has_white = True
 
+    def set_whitelist_words(self, words: list[str]) -> None:
+        """기존 화이트리스트를 새 검색기로 교체한다. 빈 목록은 필터를 해제한다."""
+        white_searcher = _InnerRawSearcher()
+        for word in words:
+            white_searcher.add_word_from_list(
+                [([((word,), "")], SpellErrorType.WHITELIST, "")]
+            )
+        self.white_searcher = white_searcher
+        self._has_white = bool(words)
+
     def _filter(self, black_result: list[SpellError], white_result: list[SpellError]) -> list[SpellError]:
         white_result.sort(key=lambda x: x[2])
 

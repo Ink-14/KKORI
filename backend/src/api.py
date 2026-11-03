@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from src.engines.configs.raw_string_searcher_config import RAW_STRING_RULES
+from src.engines.configs.raw_string_searcher_config import RAW_STRING_RULES, RAW_WHITELISTS
 from src.engines.configs.rule import SPELL_CHECK_RULES
 from src.engines.raw_searcher import RawStringSearcher
 from src.engines.spell_checker import SpellChecker
@@ -78,8 +78,9 @@ async def lifespan(app: FastAPI):
     _tokenizer = KoTokenizer()
     _tokenizer.tokenize("")
     
-    for entry in _get_active_words(_load_user_data()):
-        _raw_searcher.add_whitelist_word([entry["word"]])
+    words = _get_active_words(_load_user_data())
+    _raw_searcher.set_whitelist_words([*RAW_WHITELISTS, *(entry["word"] for entry in words)])
+    for entry in words:
         _tokenizer.add_user_word(entry["word"], Tag[entry["tag"]])
 
     _spell_checker = SpellChecker()
@@ -175,8 +176,8 @@ def _apply_user_words_to_tokenizer(words: list[dict], score: float = 0.0) -> Non
     global _tokenizer
     global _raw_searcher
     _tokenizer = KoTokenizer.reset()
+    _raw_searcher.set_whitelist_words([*RAW_WHITELISTS, *(entry["word"] for entry in words)])
     for entry in words:
-        _raw_searcher.add_whitelist_word([entry["word"]])
         _tokenizer.add_user_word(entry["word"], Tag[entry["tag"]], score)
 
 
