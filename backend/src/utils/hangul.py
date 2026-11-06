@@ -151,3 +151,54 @@ def replace_batchim(char: str, jamo: str) -> str:
     base_code = ord(remove_batchim(char))
     jong_idx = JONG_LIST.index(jamo)
     return chr(base_code + jong_idx)
+
+def number_last_char(value: int | str) -> str:
+    """숫자를 한글로 읽었을 때의 마지막 글자를 반환한다."""
+    text = str(value).strip().replace(",", "")
+
+    if text.startswith(("+", "-")):
+        text = text[1:]
+
+    numbers = "영일이삼사오육칠팔구"
+
+    # 소수부는 숫자를 하나씩 읽음.
+    if "." in text:
+        integer, _, fraction = text.partition(".")
+
+        # ".5"는 허용하고, "1."은 허용하지 않음.
+        if (
+            not fraction
+            or any(ch not in "0123456789" for ch in integer + fraction)
+        ):
+            raise ValueError("숫자를 입력해 주세요.")
+
+        return numbers[int(fraction[-1])]
+
+    # 여기부터 기존 정수 처리
+    if not text or any(ch not in "0123456789" for ch in text):
+        raise ValueError("숫자를 입력해 주세요.")
+
+    text = text.lstrip("0")
+    if not text:
+        return "영"
+
+    units = ("", "만", "억", "조", "경")
+    group_index = 0
+
+    while text:
+        group = int(text[-4:])
+        text = text[:-4]
+
+        if group:
+            if group_index:
+                return units[min(group_index, len(units) - 1)]
+
+            if group % 10:
+                return numbers[group % 10]
+            if group % 100:
+                return "십"
+            if group % 1000:
+                return "백"
+            return "천"
+
+        group_index += 1

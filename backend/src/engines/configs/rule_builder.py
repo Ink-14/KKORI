@@ -6,6 +6,7 @@ import warnings
 from src.models.spell_checker_classes import *
 from src.models.interface import SpellErrorType, Tag, RuleId, DetailedMessage, SPELL_ERROR_TYPE_PRIORITY
 from src.engines.configs.rule_builder_parser import MessageTokenizer, MessageParser, TagNode, TextNode, MethodNode, QuotedNode, MESSAGE_METHODS
+from src.utils.hangul import number_last_char
 
 ErrorMessage: TypeAlias = str
 RuleSteps: TypeAlias = list[tuple[Condition, SpacingRule, bool, bool]]
@@ -46,8 +47,14 @@ class CompiledMessage:
 
 def _last_hangul(s: str) -> str:
     for ch in reversed(s):
-        if '가' <= ch <= '힣':
+        if "가" <= ch <= "힣":
             return ch
+
+    try:
+        return number_last_char(s)
+    except ValueError:
+        pass
+
     return ""
 
 def _select_josa(a: str, b: str, last_char: str) -> str:
