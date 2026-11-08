@@ -304,6 +304,16 @@ _SPELLING_SPACING = [
     .tag_form(Tag.동사, "태").if_not_spaced()
     .tag_form(Tag.연결어미, "면")
     .msg("'테면'이 올바른 표현입니다. 또한 앞 말과 띄어 써야 합니다.").build(),
+    
+    *rule().id("COMPLEX_줄_SHIFT+띄어쓰기")
+    .tag(Tag.관형사형전성어미)
+    .tag_form(Tag.의존명사, "쭐").if_not_spaced()
+    .msg("'줄'의 오타가 아닌가요? 또한 앞 말과 띄어 써야 합니다.").build(),
+    
+    *rule().id("REP_밤을 새다")
+    .tag_form(Tag.일반명사, "밤")
+    .tag_form(Tag.동사, "새").if_spaced()
+    .msg("'밤새우다'가 올바른 표현입니다.").build(),
 ]
 
 COMPLEX_LOANWORD = [
