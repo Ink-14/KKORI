@@ -2,9 +2,9 @@ from src.engines.configs.rule_builder import RuleBuilder, AND, OR, NOT, tag, tag
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
 def rule() -> RuleBuilder: # type: ignore
-    return RuleBuilder(SpellErrorType.SUPPRESS)
+    return RuleBuilder(SpellErrorType.SUPPRESS).rank(2)
 
-_SPACING = [
+_SPACING_2 = [
     *rule().id("SUP_눈 깜짝할 사이")
     .tag_form(Tag.일반명사, "눈")
     .tag_form(Tag.일반부사, "깜짝")
@@ -30,8 +30,13 @@ _SPACING = [
     .tag_form(Tag.일반명사, "길").context()
     .tag_form(Tag.부사격조사, "로").context()
     .tag_form(Tag.동사, "돌아가").context().build(),
+
+    *rule().id("SUP_개작살 내다")
+    .tag_form(Tag.일반명사, "개")
+    .tag_form(Tag.일반명사, "작살").if_not_spaced()
+    .tag_form(Tag.동사, "내").if_spaced().build(),
 ]
 
 SUPRESS_RULES = [
-    *_SPACING,
+    *_SPACING_2,
 ]

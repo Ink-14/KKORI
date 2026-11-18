@@ -1,5 +1,5 @@
 ﻿from src.engines.configs.rule_builder import RuleBuilder, AND, OR, NOT, tag, tags, tag_form, form, forms, lemma, batchim, no_batchim, any_batchim, longer, length, SpacingRule, KoSpellRules
-from src.engines.configs.rule_helper import abbr_vowel_ending_connectives, 로서_combinations, 으로서_combinations
+from src.engines.configs.rule_helper import abbr_vowel_ending_connectives, 로서_combinations, 으로서_combinations, nng_컨대
 from src.engines.configs.rule_constants import 모음연결어미_FORMS, ㄹ사용불가_연결어미_FORMS, JOSA_TARGETS, 피우다_TARGETS, 펴다_TARGETS, 색상_ADJ_FORMS, 색상_NOUNS, 켜다_TARGETS, 띠다_TARGETS, 단위의존명사_FORMS, 단위일반명사_FORMS, 맞히다_TARGETS, 부치다_TARGETS
 from src.models.interface import Tag, TagGroup, SpellErrorType
 
@@ -72,13 +72,6 @@ _CERTAINS: list[KoSpellRules] = [
     .tag_form(Tag.동사, "대")
     .tag_form(Tag.연결어미, "고")
     .msg("'얻다 대고'가 올바른 표현입니다.")
-    .build(),
-
-    *rule()
-    .tag_form(Tag.동사파생접미사, "하")
-    .tag_form(Tag.연결어미, "어")
-    .tag_form(Tag.동사, "매")
-    .msg("'헤매다'가 올바른 표현입니다.")
     .build(),
 
     *rule()
@@ -1729,16 +1722,28 @@ _REP_VERBS = [
     .msg("'눌어붙다'가 올바른 표현입니다.").build(),
 
     *rule().id("REP_헤매다_1")
+    .tag_form(Tag.동사파생접미사, "하")
+    .tag_form(Tag.연결어미, "어")
+    .tag_form(Tag.동사, "매")
+    .msg("'헤매다'가 올바른 표현입니다.")
+    .build(),
+
+    *rule().id("REP_헤매다_2")
     .tag_form(Tag.동사, "해매")
     .msg("'헤매다'의 오타가 아닌가요?").build(),
 
-    *rule().id("REP_헤매다_2")
+    *rule().id("REP_헤매다_3")
     .tag_form(Tag.동사, "해매이")
     .msg("'헤매다'의 오타가 아닌가요? 또한, '헤매다'에는 '-이-'가 결합할 수 없습니다.").build(),
 
-    *rule().id("REP_헤매다_3")
+    *rule().id("REP_헤매다_4")
     .tag_form(Tag.동사, "헤메")
     .msg("'헤매다'가 올바른 표현입니다.").build(),
+
+    *rule().id("REP_헤매다_5")
+    .tag_form(Tag.고유명사, "해매")
+    .tag_form(Tag.보조사, "는").context()
+    .msg("'헤매는'의 오타가 아닌가요?").build(),
 
     *rule().id("REP_없앨_1")
     .tag_form(Tag.일반명사, "업앨")
@@ -2783,6 +2788,12 @@ _REP_VERBS = [
     *rule().id("REP_재빠르다")
     .tag_form(Tag.형용사, "제빠르")
     .msg("'재빠르다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_바치다")
+    .forms({"돈", "충성"}).context()
+    .any().context()
+    .tag_form(Tag.동사 ,"받치")
+    .msg("'{form[0]}batchim(\"을\", \"를\") 바치다'가 올바른 표현입니다.").build(),
 ]
 
 _REP_NNG = [
@@ -3534,6 +3545,16 @@ _REP_NNG = [
     .tag_form(Tag.일반명사, "변역")
     .tag(Tag.동사파생접미사).context()
     .msg("'번역'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_뺨")
+    .tag_form(Tag.일반명사, "빰")
+    .tag_form(Tag.동사, "치")
+    .msg("'뺨치다'의 오타가 아닌가요?").build(),
+
+    *rule().id("REP_유래")
+    .forms({"유례", "유레"})
+    .tag_form(Tag.동사파생접미사, "되").context()
+    .msg("'유래'의 오타가 아닌가요?").build(),
 ]
 
 _MIF = [
@@ -3542,6 +3563,8 @@ _MIF = [
     *abbr_vowel_ending_connectives("서둘", Tag.형용사, "서두르", Tag.형용사),
     *abbr_vowel_ending_connectives("내딛", Tag.동사불규칙활용, "내디디", Tag.동사),
     *abbr_vowel_ending_connectives("쏴붙이", Tag.동사, "쏘아붙이", Tag.동사),
+
+    *nng_컨대("추정"),
 
     *rule().id("MIF_어간에 어 없이 바로 결합한 경우")
     .AND(tag(Tag.동사), forms({"쬐"}))
@@ -4941,9 +4964,13 @@ _RECOMMENDED = [
     .tag_form(Tag.동사, "후달리")
     .msg("'후달리다'는 비표준어이므로 '모자라다' 또는 '부족하다'로 쓸 것을 권장합니다.").build(),
 
-    *rule().id("REP_깝죽거리다")
+    *rule().id("RECOMMEND_깝죽거리다")
     .tag_form(Tag.동사, "깝치")
-    .msg("'깝치다'는 비표준어이므로 '깝죽거리다' 또는 '까불다'로 쓸 것을 권장합니다.").build(),
+    .msg("'깝치다'는 비표준어이므로 '깝죽거리다', '까불다', '나대다'로 쓸 것을 권장합니다.").build(),
+
+    *rule().id("RECOMMEND_낑기다")
+    .tag_form(Tag.동사, "낑기")
+    .msg("'낑기다'는 비표준어이므로 '끼이다'로 쓸 것을 권장합니다.").build(),
 ]
 
 _NOT_CERTAINS = [
@@ -5260,6 +5287,19 @@ _LOANWORDS = [
     *rule().id("LW_카테고리") # OOV 탐지에 맡김
     .tag_form(Tag.일반명사, "카데고리")
     .msg("'카테고리(Category)'가 올바른 표현입니다.").build(),
+
+    *rule().id("LW_로터리")
+    .tag_form(Tag.일반명사, "로타리")
+    .msg("'로터리(Rotary)'가 올바른 표현입니다.").build(),
+
+    *rule().id("LW_피겨스케이팅")
+    .tag_form(Tag.일반명사, "피규어")
+    .tag_form(Tag.일반명사, "스케이팅")
+    .msg("'피겨 스케이팅(Figure skating)'이 올바른 표현입니다.").build(),
+
+    *rule().id("LW_커스터드")
+    .forms({"카스타드"})
+    .msg("'커스터드(Custard)'가 올바른 표현입니다.").build(),
 ]
 
 def rule() -> RuleBuilder:

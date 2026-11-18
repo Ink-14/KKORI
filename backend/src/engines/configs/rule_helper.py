@@ -115,3 +115,6 @@ def 으로서_combinations(jkb_target_value: str, jkb_target_tag: Tag, following
         result.tag_form(following_word_tag, following_word_value).context()
 
     return result.msg("'으로서'로 써야 합니다.").detail("'으로서'는 자격, '으로써'는 수단을 나타냅니다. '선생으로서의 의무'는 선생이라는 위치를 의미하므로 '으로서'를 사용하여야 합니다. '매로써 학생들을 다스렸다'는 '매를 이용해서'를 의미하므로 '으로써'를 사용하여야 합니다.").build()
+
+def nng_컨대(nng_target: str):
+    return RuleBuilder(SpellErrorType.SPELLING).rank(2).id(f"NNG_컨대_{nng_target}").tag_form(Tag.일반명사, nng_target).context().tag_form(Tag.형용사, "크").tag_form(Tag.연결어미, "어").tag(Tag.긍정지정사).tag_form(Tag.연결어미, "ᆫ데").msg(f"'{nng_target}컨대'가 올바른 표현입니다.").build()
