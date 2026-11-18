@@ -22,6 +22,3 @@ class SrtParser(Parser):
             while text_lines and text_lines[-1] == "":
                 text_lines.pop()
             yield ParsedText(metadata=lines[ts_idx], text="\n".join(text_lines))
-    
-    
-    

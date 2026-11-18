@@ -16,12 +16,14 @@ from src.engines.spell_checker import SpellChecker
 from src.models.interface import SpellError, Tag
 from src.parsers.csv_parser import CsvParser
 from src.parsers.excel_parser import ExcelParser
+from src.parsers.smi_parser import SmiParser
 from src.parsers.srt_parser import SrtParser
 from src.parsers.txt_parser import TxtParser
 from src.tokenizations.ko_tokenizer import KoTokenizer
 from src.utils.paths import backend_resource_path, frontend_dist_path, user_data_path
 
 _PARSERS = {
+    ".smi": SmiParser,
     ".srt": SrtParser,
     ".txt": TxtParser,
     ".xlsx": ExcelParser,

@@ -15,7 +15,7 @@ class Api:
         result = webview.windows[0].create_file_dialog(
             webview.FileDialog.OPEN,
             allow_multiple=False,
-            file_types=("All files (*.*)", "SRT Files (*.srt)", "Text Files (*.txt)", "Excel Files (*.xlsx)", "CSV Files (*.csv)"),
+            file_types=("All files (*.*)", "SRT Files (*.srt)", "SMI Files (*.smi)", "Text Files (*.txt)", "Excel Files (*.xlsx)", "CSV Files (*.csv)"),
         )
         return result[0] if result else None
 

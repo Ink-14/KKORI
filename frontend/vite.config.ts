@@ -38,6 +38,7 @@ export default defineConfig(({ mode }) => {
         '/raw-check': 'http://127.0.0.1:8765',
         '/nfa-check': 'http://127.0.0.1:8765',
         '/check': 'http://127.0.0.1:8765',
+        '/file-check': 'http://127.0.0.1:8765',
         '/add-words': 'http://127.0.0.1:8765',
         '/words': 'http://127.0.0.1:8765',
       }

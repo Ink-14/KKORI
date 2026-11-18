@@ -47,7 +47,7 @@ type CsvConfig = {
   encoding: string
 }
 
-const SUPPORTED_EXTENSIONS = ['.srt', '.txt', '.xlsx', '.csv']
+const SUPPORTED_EXTENSIONS = ['.srt', '.smi', '.txt', '.xlsx', '.csv']
 
 const CSV_ENCODINGS = [
   { value: 'utf-8', label: 'UTF-8' },
@@ -157,6 +157,7 @@ function FileChecker() {
   function handleDevMockFile(ext: string) {
     const mockPaths: Record<string, string> = {
       '.srt': 'C:\\mock\\sample_subtitle.srt',
+      '.smi': 'C:\\mock\\sample_subtitle.smi',
       '.txt': 'C:\\mock\\sample_text.txt',
       '.xlsx': 'C:\\mock\\sample_data.xlsx',
       '.csv': 'C:\\mock\\sample_data.csv',
@@ -445,7 +446,7 @@ function FileChecker() {
               <div>
                 <strong>파일 선택</strong>
                 <p>파일 선택 버튼을 누르거나 파일을 끌어다 놓으세요.</p>
-                <p>지원 확장자: .xlsx, .csv, .txt, .srt</p>
+                <p>지원 확장자: {SUPPORTED_EXTENSIONS.join(', ')}</p>
               </div>
             </div>
             <div className="fc-guide-item">
